@@ -33,7 +33,6 @@ dependencies {
 
     implementation project(':FtcRobotController')
     implementation project(':OracleFTC')
-    implementation "page.j5155.roadrunner:ftc-otos:0.1.2+0.1.14"
 }
 
 repositories {
