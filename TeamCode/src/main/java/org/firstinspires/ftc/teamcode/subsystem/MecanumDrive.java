@@ -10,8 +10,8 @@ import com.smartcluster.oracleftc.utils.ProcessedGamepad;
 
 public class MecanumDrive {
     private DcMotor frontRight, frontLeft, backRight, backLeft;
-
-    public MecanumDrive(HardwareMap hardwareMap)
+    private HardwareMap hardwareMap;
+    public MecanumDrive(OpMode opMode,HardwareMap hardwareMap)
     {
         frontRight = hardwareMap.get(DcMotor.class, "frontRight");
         frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
