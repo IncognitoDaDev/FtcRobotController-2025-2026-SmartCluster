@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
+<Robot type="FirstInspires-FTC">
+    <LynxUsbDevice name="Control Hub Portal" serialNumber="(embedded)" parentModuleAddress="173">
+        <LynxModule name="Control Hub" port="173">
+            <ContinuousRotationServo name="servodexright" port="0"/>
+            <AnalogInput name="rotaryAnalog" port="0"/>
+        </LynxModule>
+    </LynxUsbDevice>
+    <LynxUsbDevice name="Expansion Hub Portal 1" serialNumber="DQ8P04TT" parentModuleAddress="1">
+        <LynxModule name="Expansion Hub 2" port="2">
+            <ContinuousRotationServo name="servodexleft" port="0"/>
+            <RevColorSensorV3 name="rotaryColorSensor" port="1"/>
+        </LynxModule>
+    </LynxUsbDevice>
+</Robot>
+
