@@ -10,7 +10,7 @@ import org.firstinspires.ftc.teamcode.subsystem.Spindex;
 
 @Config
 @TeleOp(group = "calibration")
-public class Flipper extends LinearOpMode  {
+public class FlipperDown extends LinearOpMode  {
     public static double Left=0;
     public static double Right=0;
     @Override
@@ -20,7 +20,7 @@ public class Flipper extends LinearOpMode  {
 
         waitForStart();
         while (opModeIsActive()){
-            spindex.flapperClosed(Left,Right);
+            spindex.flapperDown(Left,Right);
             telemetry.addData("servo left " , spindex.servoFlapperLeft.getPosition());
             telemetry.addData("servo right" , spindex.servoFlapperRight.getPosition());
             telemetry.update();

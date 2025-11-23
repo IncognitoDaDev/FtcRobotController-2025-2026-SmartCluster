@@ -66,11 +66,14 @@ public class Spindex extends Subsystem {
 
 
     }
-        public void flapperClosed(double Left,double Right) {
+        public void flapperDown (double Left,double Right) {
         servoFlapperRight.setPosition(Right);
         servoFlapperLeft.setPosition(Left);
-
     }
+     public void flapperUp (double Leftup ,double Rightup){
+        servoFlapperLeft.setPosition(Leftup);
+        servoFlapperRight.setPosition(Rightup);
+     }
     /*public Command SearchColor(BallColor desiredColor)
     {
         return Command.builder()
