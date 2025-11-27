@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.opmode;
 
 import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -10,6 +11,8 @@ import com.smartcluster.oracleftc.commands.ParallelCommand;
 import com.smartcluster.oracleftc.hardware.OracleLynxVoltageSensor;
 import com.smartcluster.oracleftc.utils.ProcessedGamepad;
 
+import org.firstinspires.ftc.teamcode.roadrunner.PinpointLocalizer;
+import org.firstinspires.ftc.teamcode.roadrunner.TwoDeadWheelLocalizer;
 import org.firstinspires.ftc.teamcode.subsystem.Robot;
 
 import java.util.List;
@@ -50,8 +53,22 @@ public class DuoMode extends LinearOpMode {
                 )
         );
 
+        //declararea localizatorului
+        PinpointLocalizer myLocalizer = new PinpointLocalizer (hardwareMap,imu,);
+        myLocalizer.setPose(new com.acmerobotics.roadrunner.Pose2d(10,10,Math.toRadians(90)));
         while(opModeIsActive())
         {
+            //pozitia de inceput
+            myLocalizer.update();
+            Pose2d myPos=myLocalizer.getPose();
+
+            telemetry.addData("x:",myPos.position.x);
+            telemetry.addData("y:",myPos.position.y);
+            telemetry.addData("heading:",myPos.heading);
+
+
+
+
             for(LynxModule lynxModule: lynxModules)
                 if(lynxModule.getSerialNumber().isEmbedded())
                 {
