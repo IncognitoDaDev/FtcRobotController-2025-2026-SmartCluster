@@ -2,14 +2,28 @@
 <Robot type="FirstInspires-FTC">
     <LynxUsbDevice name="Control Hub Portal" serialNumber="(embedded)" parentModuleAddress="173">
         <LynxModule name="Control Hub" port="173">
-            <ContinuousRotationServo name="servodexright" port="0"/>
-            <AnalogInput name="rotaryAnalog" port="0"/>
+            <goBILDA5202SeriesMotor name="frontLeft" port="3" />
+            <goBILDA5202SeriesMotor name="backLeft" port="2" />
+            <goBILDA5202SeriesMotor name="turretDown" port="1" />
+            <goBILDA5202SeriesMotor name="turretUp" port="0" />
+
+            <ContinuousRotationServo name="dexRight" port="0"/>
+            <Servo name="flapperRight" port="1"/>
+<!--            <AnalogInput name="rotaryAnalog" port="0"/>-->
+            <LynxEmbeddedIMU name="imu" port="0" bus="0" />
+            <RevColorSensorV3 name="rotaryColorSensor" port="1"/>
         </LynxModule>
     </LynxUsbDevice>
     <LynxUsbDevice name="Expansion Hub Portal 1" serialNumber="DQ8P04TT" parentModuleAddress="1">
         <LynxModule name="Expansion Hub 2" port="2">
-            <ContinuousRotationServo name="servodexleft" port="0"/>
-            <RevColorSensorV3 name="rotaryColorSensor" port="1"/>
+            <goBILDA5202SeriesMotor name="turretRotate" port="0" />
+            <goBILDA5202SeriesMotor name="backRight" port="1" />
+            <goBILDA5202SeriesMotor name="intake" port="2" />
+            <goBILDA5202SeriesMotor name="frontRight" port="3" />
+
+            <ContinuousRotationServo name="dexLeft" port="0"/>
+            <Servo name="flapperLeft" port="1"/>
+            <goBILDAPinpoint name="pinpoint" port="0"/>
         </LynxModule>
     </LynxUsbDevice>
 </Robot>

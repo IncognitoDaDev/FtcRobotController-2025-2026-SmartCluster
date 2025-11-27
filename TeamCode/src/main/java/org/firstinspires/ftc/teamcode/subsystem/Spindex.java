@@ -4,24 +4,20 @@ import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.AnalogInput;
-import com.qualcomm.robotcore.hardware.AnalogInputController;
-import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
-import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
-import com.qualcomm.robotcore.util.ElapsedTime;
 import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.InstantCommand;
-import com.smartcluster.oracleftc.hardware.OracleLynxVoltageSensor;
+import com.smartcluster.oracleftc.hardware.subsystem.ServoActuator;
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
 import com.smartcluster.oracleftc.math.control.PIDController;
+import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
 
 @Config
 public class Spindex extends Subsystem {
     public final CRServoImplEx servoDexRight, servoDexLeft;
-    public final Servo servoFlapperRight , servoFlapperLeft ;
-    public final AnalogInput rotaryAnalog; // Uses ServoDexRight
+    public final ServoImplEx servoFlapperRight;
     public final RevColorSensorV3 rotaryColorSensor;
 
     //private OracleLynxVoltageSensor voltageSensor;
@@ -32,61 +28,74 @@ public class Spindex extends Subsystem {
     public double previousValueAnalog = 0;
     public double rotaryCurrentPos = 0;
     public double rotaryTargetPos = 0;
+
+    public final ServoActuator flapper;
+    public static double flapperDownVal = 0.85, flapperUpVal = 0.4;
+
     public Spindex (OpMode mode)
     {
         super(mode);
 
-        servoDexRight = hardwareMap.get(CRServoImplEx.class, "servodexright");
-        servoDexLeft = hardwareMap.get(CRServoImplEx.class, "servodexleft");
-        //servoTongue = mode.hardwareMap.get(ServoImplEx.class, "tongue");
-        servoFlapperRight=hardwareMap.get(Servo.class,"flapperRight");
-        servoFlapperLeft=hardwareMap.get(Servo.class,"flapperLeft");
-        rotaryAnalog = hardwareMap.get(AnalogInput.class, "rotaryAnalog");
+        servoDexRight = hardwareMap.get(CRServoImplEx.class, "dexRight");
+        servoDexLeft = hardwareMap.get(CRServoImplEx.class, "dexLeft");
+        servoFlapperRight=hardwareMap.get(ServoImplEx.class,"flapperRight");
+        //servoFlapperLeft=hardwareMap.get(ServoImplEx.class,"flapperLeft");
         rotaryColorSensor = hardwareMap.get(RevColorSensorV3.class, "rotaryColorSensor");
-        servoFlapperRight.setDirection(Servo.Direction.FORWARD);
-        servoFlapperLeft.setDirection(Servo.Direction.REVERSE);
+
+        //servoFlapperRight.setDirection(Servo.Direction.REVERSE);
+        //servoFlapperLeft.setDirection(Servo.Direction.REVERSE);
+
+        flapper = new ServoActuator(this, "flapper", new TrapezoidalMotionProfile(12, 16, 12), servoFlapperRight)
+        {
+            @Override
+            public Command reset()
+            {
+                setTarget(flapperDownVal);
+                return new InstantCommand(() ->
+                {
+                    servoFlapperRight.setPosition(this.target.get());
+                    //servoFlapperLeft.setPosition(this.target.get());
+                });
+            }
+
+            @Override
+            public boolean setTarget(double target)
+            {
+                this.target.set(target);
+                return true;
+            }
+        };
+
     }
     public enum BallColor
     {
-        ANY,
+        EMPTY,
         PURPLE,
         GREEN
     }
 
-    public BallColor IdentifyColor(){
-
-                    if (rotaryColorSensor.green()>=Color.Green.GREEN_THRESHOLD[0]){
-                     return BallColor.GREEN;
-
-                    }
-                    if (rotaryColorSensor.blue()>=Color.Purple.BLUE_THRESHOLD[0]){
-                        return BallColor.PURPLE;
-                    }
-                    return BallColor.ANY;
-
-
-    }
-        public void flapperDown (double Left,double Right) {
-        servoFlapperRight.setPosition(Right);
-        servoFlapperLeft.setPosition(Left);
-    }
-     public void flapperUp (double Leftup ,double Rightup){
-        servoFlapperLeft.setPosition(Leftup);
-        servoFlapperRight.setPosition(Rightup);
-     }
-    /*public Command SearchColor(BallColor desiredColor)
+    public void FlapperDown()
     {
-        return Command.builder()
-                .update(() ->
-                {
-                    switch(desiredColor)
-                    {
-                        case PURPLE:
-                            if (rotaryColorSensor.)
-                            break;
-                    }
-                })
-    } */
+        flapper.setTarget(flapperDownVal);
+    }
+
+    public void FlapperUp()
+    {
+        flapper.setTarget(flapperUpVal);
+    }
+
+
+    public BallColor IdentifyColor()
+    {
+        if (rotaryColorSensor.green()>=Color.Green.GREEN_THRESHOLD[0]){
+            return BallColor.GREEN;
+
+        }
+        if (rotaryColorSensor.blue()>=Color.Purple.BLUE_THRESHOLD[0]){
+            return BallColor.PURPLE;
+        }
+        return BallColor.EMPTY;
+    }
 
     public void setTarget(double target)
     {
@@ -105,7 +114,7 @@ public class Spindex extends Subsystem {
 
     public double getRotaryPosition()
     {
-        rotaryCurrentPos = rotaryAnalog.getVoltage() * 355 / 3.3;
+        //rotaryCurrentPos = rotaryAnalog.getVoltage() * 355 / 3.3;
         return rotaryCurrentPos;
     }
 
@@ -131,12 +140,7 @@ public class Spindex extends Subsystem {
 
     public Command reset()
     {
-        rotaryAnalog.getVoltage();
         return new InstantCommand(()-> {setRotaryPower(0);});
     }
-
-
-
-
 
 }

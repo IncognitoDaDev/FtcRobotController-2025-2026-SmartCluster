@@ -29,7 +29,7 @@ public class SpindexRotaryServo extends LinearOpMode {
 
         telemetry.addData("CurrentPosition", spindex.rotaryCurrentPos);
         telemetry.addData("Target", spindex.rotaryTargetPos);
-        telemetry.addData("Servo Voltage", spindex.rotaryAnalog.getVoltage());
+        //telemetry.addData("Servo Voltage", spindex.rotaryAnalog.getVoltage());
 
         telemetry.addData("Red", spindex.rotaryColorSensor.red());
         telemetry.addData("Green", spindex.rotaryColorSensor.green());
@@ -52,7 +52,7 @@ public class SpindexRotaryServo extends LinearOpMode {
 
             telemetry.addData("CurrentPosition", spindex.getRotaryPosition());
             telemetry.addData("Target", spindex.rotaryTargetPos);
-            telemetry.addData("Servo Voltage", spindex.rotaryAnalog.getVoltage());
+            //telemetry.addData("Servo Voltage", spindex.rotaryAnalog.getVoltage());
 
             telemetry.addData("Red", spindex.rotaryColorSensor.red());
             telemetry.addData("Green", spindex.rotaryColorSensor.green());

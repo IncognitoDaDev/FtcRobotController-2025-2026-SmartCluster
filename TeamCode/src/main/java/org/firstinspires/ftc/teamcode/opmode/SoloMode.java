@@ -16,7 +16,6 @@ import org.firstinspires.ftc.teamcode.subsystem.Robot;
 @Config
 @TeleOp(name="SoloMode")
 public class SoloMode extends LinearOpMode {
-
     private final CommandScheduler scheduler = new CommandScheduler();
 
     enum TeleOpState
@@ -53,12 +52,6 @@ public class SoloMode extends LinearOpMode {
             if(driverGamepad.dpad_down.get()) robot.mecanumDrive.setDriveMode(MecanumDrive.DriveMode.PARKING);
             if(driverGamepad.dpad_up.get()) robot.mecanumDrive.setDriveMode(MecanumDrive.DriveMode.NORMAL);
 
-            telemetry.addData("rotaryPosition", robot.spinDex.getRotaryPosition());
-            telemetry.addData("rotaryTarget", robot.spinDex.rotaryTargetPos);
-
-//            telemetry.addData("Red", robot.spinDex.rotaryColorSensor.red());
-//            telemetry.addData("Green", robot.spinDex.rotaryColorSensor.green());
-//            telemetry.addData("Blue", robot.spinDex.rotaryColorSensor.blue());
             telemetry.addData("state", 1);
             telemetry.update();
 
