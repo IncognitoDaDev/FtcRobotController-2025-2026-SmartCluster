@@ -1,3 +1,5 @@
 include ':FtcRobotController'
 include ':TeamCode'
 include ':OracleFTC'
+include ':MeepMeepTesting'
+include ':MeepMeepTesting'
