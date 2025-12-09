@@ -3,6 +3,8 @@ package org.firstinspires.ftc.teamcode.opmode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.smartcluster.oracleftc.utils.ProcessedGamepad;
 
+import org.firstinspires.ftc.teamcode.subsystem.Intake;
+
 
 public class SoloMode extends LinearOpMode {
 
@@ -11,9 +13,26 @@ public class SoloMode extends LinearOpMode {
         waitForStart();
         ProcessedGamepad driverGamepad = new ProcessedGamepad(gamepad1);
 
-        while(opModeIsActive())
+        Intake intake = new Intake(this);
+
+       while(opModeIsActive())
         {
-            // do stuff
+            double intakePower = 0;
+
+            if (gamepad2.right_bumper) {      // R1
+                intake.intake();
+
+            }
+            else if (gamepad2.left_bumper) {  // L1
+               intake.intake();
+            }
+            else {
+               intake.reset();
+            }
+
+            telemetry.addData("intakePower:", intakePower);
+            telemetry.update();
+            sleep(20);
         }
 
     }
