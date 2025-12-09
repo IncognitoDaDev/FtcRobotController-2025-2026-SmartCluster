@@ -13,7 +13,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 
 public class CameraRecognition extends Subsystem {
     private final Limelight3A camera;
-    private String[] order ={"Empty","PURPLE","PURPLE","PURPLE"};
+    private String[] order ={"Empty","PURPLE","GREEN","PURPLE"};
 
     public CameraRecognition(OpMode opMode) {
         super(opMode);
@@ -25,9 +25,11 @@ public class CameraRecognition extends Subsystem {
 
 
     public void Start(Limelight3A limelight) {
-        camera.pipelineSwitch(2);
         camera.start();
 
+    }
+    public void ColorOrder(Limelight3A ll){
+        ll.pipelineSwitch(2);
     }
 
     public void getResults(Limelight3A limelight,int pipelineNr) {
@@ -39,15 +41,36 @@ public class CameraRecognition extends Subsystem {
                 switch(pipelineNr) {
                     case 2:
                         int rezultat = result.getBotposeTagCount();
-                        telemetry.addData("Botpose Tag Count", result.getBotposeTagCount());
+
                         switch(rezultat) {
                             case 21:
-
+                                setOrder(new String[]{"Empty","GREEN","PURPLE","PURPLE"});
+                                telemetry.addData("Order",order);
+                                break;
+                            case 22:
+                                setOrder(new String[]{"Empty","PURPLE","GREEN","PURPLE"});
+                                telemetry.addData("Order",order);
+                                break;
+                            case 23:
+                                setOrder(new String[]{"Empty","PURPLE","PURPLE","GREEN"});
+                                telemetry.addData("Order",order);
+                                break;
                         }
                     case 3:
+
+
+
 
                 }
             }
         }
+    }
+
+    public String[] getOrder() {
+        return order;
+    }
+
+    public void setOrder(String[] order) {
+        this.order = order;
     }
 }

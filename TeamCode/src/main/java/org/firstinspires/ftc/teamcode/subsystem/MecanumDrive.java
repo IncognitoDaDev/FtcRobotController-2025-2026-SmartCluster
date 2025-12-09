@@ -10,6 +10,7 @@ import com.smartcluster.oracleftc.utils.ProcessedGamepad;
 
 public class MecanumDrive {
     private DcMotor frontRight, frontLeft, backRight, backLeft;
+    double baseSpeed = 1.0;
     private HardwareMap hardwareMap;
     public MecanumDrive(OpMode opMode,HardwareMap hardwareMap)
     {
@@ -18,8 +19,8 @@ public class MecanumDrive {
         backRight = hardwareMap.get(DcMotor.class, "backRight");
         backLeft = hardwareMap.get(DcMotor.class, "backLeft");
 
-        frontLeft.setDirection(DcMotor.Direction.REVERSE);
-        backLeft.setDirection(DcMotor.Direction.REVERSE);
+        frontRight.setDirection(DcMotor.Direction.REVERSE);
+        backRight.setDirection(DcMotor.Direction.REVERSE);
 
         frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -31,20 +32,20 @@ public class MecanumDrive {
     {
         return new CommandBuilder()
                 .update(()->{
-                    double y = -gamepad.left_stick.get().y; // Remember, Y stick is reversed!
-                    double x = gamepad.left_stick.get().x; // Counteract imperfect strafing
+                    ProcessedGamepad.Joystick.JoystickData leftStick = gamepad.left_stick.get();
+                    ProcessedGamepad.Joystick.JoystickData rightStick = gamepad.right_stick.get();
 
-                    if(gamepad.left_trigger.get() < 0.1)
-                    {
-                        y/=2;
-                        x/=2;
-                    }
+                    double boost = (gamepad.left_bumper.get() || gamepad.right_bumper.get() ? 1 : 0.3);
 
-                    double denominator = Math.max(Math.abs(y) + Math.abs(x), 1);
-                    double frontLeftPower = (y + x) / denominator;
-                    double backLeftPower = (y - x) / denominator;
-                    double frontRightPower = (y - x) / denominator;
-                    double backRightPower = (y + x) / denominator;
+                    double rx = rightStick.x * boost;
+                    double x = leftStick.x * 1.0 * boost;
+                    double y = -leftStick.y * boost;
+
+                    double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
+                    double frontLeftPower = (y + x + rx) / denominator * baseSpeed;
+                    double backLeftPower = (y - x + rx) / denominator * baseSpeed;
+                    double frontRightPower = (y - x - rx) / denominator * baseSpeed;
+                    double backRightPower = (y + x - rx) / denominator * baseSpeed;
 
                     frontRight.setPower(frontRightPower);
                     frontLeft.setPower(frontLeftPower);

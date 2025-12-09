@@ -11,6 +11,7 @@ import com.smartcluster.oracleftc.commands.CommandScheduler;
 import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.commands.ParallelCommand;
 import com.smartcluster.oracleftc.commands.SequentialCommand;
+import com.smartcluster.oracleftc.commands.WaitCommand;
 import com.smartcluster.oracleftc.fsm.FSM;
 import com.smartcluster.oracleftc.hardware.OracleLynxVoltageSensor;
 import com.smartcluster.oracleftc.math.Vector2d;
@@ -19,7 +20,9 @@ import com.smartcluster.oracleftc.utils.Performance;
 import com.smartcluster.oracleftc.utils.ProcessedGamepad;
 
 //import org.firstinspires.ftc.teamcode.subsystem.MecanumDrive;
+import org.firstinspires.ftc.teamcode.subsystem.Intake;
 import org.firstinspires.ftc.teamcode.subsystem.Robot;
+import org.firstinspires.ftc.teamcode.subsystem.Spindexer;
 
 
 import java.util.List;
@@ -32,27 +35,21 @@ public class DuoMode extends LinearOpMode {
     private final CommandScheduler scheduler = new CommandScheduler();
     public enum TeleOpState{
         INIT,IDLE,CHARGING,SHOOTING
-
     }
-
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         telemetry.setMsTransmissionInterval(100);
         Robot robot = new Robot(this);
+        Intake intake = new Intake(this);
+        Spindexer spindex = new Spindexer(this);
 
         ProcessedGamepad driverGamepad = new ProcessedGamepad(gamepad1),
                 operatorGamepad = new ProcessedGamepad(gamepad2);
+
         Command.run(robot.reset());
-        while (opModeInInit()) {
-            scheduler.update();
-            // You can add telemetry here to monitor initialization if needed
-            telemetry.addData("Status", "Robot is Initializing and Resetting");
-            telemetry.update();
-        }
 
         waitForStart();
-
         if(!opModeIsActive())return;
         List<LynxModule> lynxModules = hardwareMap.getAll(LynxModule.class);
         for (LynxModule lynxModule : lynxModules)
@@ -69,33 +66,64 @@ public class DuoMode extends LinearOpMode {
         scheduler.schedule(
                 new ParallelCommand(
                         //de adaugat restul de comenzi aici
-                        robot.drive.drive(driverGamepad),
-                        robot.turret.hood.update(),
-                        robot.turret.turret.update(),
-                        robot.turret.rotation.update()
+                        robot.drive.drive(driverGamepad)
+//                        robot.turret.hood.update(),
+////                        robot.turret.turret.update(),
+//                        robot.turret.rotation.update()
                 ));
+
+        //Initialize
         FSM.FSMBuilder<TeleOpState> fsmBuilder =  FSM.<TeleOpState>builder()
-                .state(TeleOpState.INIT,
-                        new SequentialCommand(
-                                robot.turret.turret.move(new AtomicReference<>(0.0)),
-                                robot.turret.rotation.move(new AtomicReference<>(0.0))
-                        )
-                )
                 .initial(TeleOpState.INIT)
-                .transition(TeleOpState.INIT, TeleOpState.IDLE, this::isStarted, new SequentialCommand(
-                        robot.turret.turret.move(new AtomicReference<>(0.0)),
-                        robot.turret.rotation.move(new AtomicReference<>(0.0))
-
+                .transition(TeleOpState.INIT, TeleOpState.IDLE, this::opModeIsActive,
+                        new SequentialCommand(
+//                                robot.turret.turret.move(new AtomicReference<>(0.0)),
+//                                robot.turret.rotation.move(new AtomicReference<>(0.0)),
+                                new InstantCommand(intake::Reset)
 
                 ));
+        //Intake
         fsmBuilder = fsmBuilder
-                .transition(TeleOpState.IDLE, TeleOpState.CHARGING, operatorGamepad.cross.pressed(),
-                        new SequentialCommand(
-                                new InstantCommand(()->robot.turret.turret.setTarget(3000.0)),
-                                new InstantCommand(()->robot.turret.rotation.setTarget(10.0)),
-                                new InstantCommand(()->robot.turret.hood.setTarget(10.0)
+                .transition(TeleOpState.IDLE,TeleOpState.IDLE,driverGamepad.left_bumper.pressed(),
+                        new InstantCommand(intake::On)
+                        );
 
-                                )));
+
+        fsmBuilder = fsmBuilder
+                .transition(TeleOpState.IDLE,TeleOpState.IDLE,driverGamepad.left_bumper.released(),
+                        new InstantCommand(intake::Reset)
+                );
+        fsmBuilder = fsmBuilder
+                .transition(TeleOpState.IDLE,TeleOpState.IDLE,driverGamepad.dpad_left.pressed(),
+                        spindex.nextBall(1)
+                );
+        fsmBuilder = fsmBuilder
+                .transition(TeleOpState.IDLE,TeleOpState.IDLE,driverGamepad.dpad_up.released(),
+                        spindex.switchPhase()
+                );
+
+
+        //Charge init
+        fsmBuilder = fsmBuilder
+                .transition(TeleOpState.IDLE, TeleOpState.CHARGING, operatorGamepad.cross.pressed(),//alex e sigma
+                        new SequentialCommand(
+//                                new InstantCommand(()->robot.turret.setSpeed(3000.0)),
+//                                new InstantCommand(()->robot.turret.setRotation(30)),
+//                                new InstantCommand(()->robot.turret.hood.setTarget(0.4))
+
+                        ));
+        //Charge cancel
+        fsmBuilder = fsmBuilder
+                .transition(TeleOpState.CHARGING,TeleOpState.IDLE,operatorGamepad.triangle.pressed(),//👍
+                            new SequentialCommand(
+//                                    new InstantCommand(()->robot.turret.setSpeed(0)),
+//                                    new InstantCommand(()->robot.turret.setRotation(0)),
+//                                    new InstantCommand(()->robot.turret.hood.setTarget(0.0))
+
+                            )
+
+                );
+
 
 
         FSM<TeleOpState> fsm = fsmBuilder.build(scheduler);
@@ -111,13 +139,15 @@ public class DuoMode extends LinearOpMode {
                     lynxModule.getBulkData();
 
                 }
-            telemetry.addData("state", fsm.getCurrentState());
-            telemetry.addData("hz", loopTimeFilter.update(1/(Performance.loopTimeNano()/1E9)));
-            telemetry.update();
-
             driverGamepad.process();
             operatorGamepad.process();
             fsm.update();
+            telemetry.addData("state", fsm.getCurrentState());
+            telemetry.addData("hz", loopTimeFilter.update(1/(Performance.loopTimeNano()/1E9)));
+            telemetry.update();
+            scheduler.update();
+
+
 
 
 

@@ -7,32 +7,34 @@ import com.smartcluster.oracleftc.commands.ParallelCommand;
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
 
 public class Robot{
-    public final Turret turret;
+//    public final Turret turret;
     public final MecanumDrive drive;
+    public final Spindexer spindex;
     private OpMode opmode;
     private HardwareMap hardwareMap;
 
     public Robot(OpMode opMode) {
         this.opmode= opMode;
         this.drive = new MecanumDrive(opMode,opMode.hardwareMap);
-        this.turret = new Turret(opMode,"turret");
+        this.spindex = new Spindexer(opMode);
+//        this.turret = new Turret(opMode,"turret");
 
 
     }
     public Command update()
     {
         return new ParallelCommand(
-                turret.hood.update(),
-                turret.turret.update(),
-                turret.rotation.update()
+//                turret.hood.update(),
+////                turret.turret.update(),
+//                turret.rotation.update()
         );
     }
 
     public Command reset(){
         return new ParallelCommand(
-                turret.hood.reset(),
-                turret.turret.reset(),
-                turret.rotation.reset()
+//                turret.hood.reset()
+//                turret.turret.reset()
+//                turret.rotation.reset()
         );
 
 

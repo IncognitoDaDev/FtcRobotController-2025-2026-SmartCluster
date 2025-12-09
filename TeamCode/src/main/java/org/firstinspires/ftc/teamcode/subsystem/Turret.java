@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.subsystem;
 
 
 
+import com.qualcomm.hardware.lynx.LynxVoltageSensor;
 import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.hardware.wrappers.Encoder;
 import com.smartcluster.oracleftc.hardware.wrappers.RawEncoder;
@@ -18,6 +19,8 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.smartcluster.oracleftc.hardware.subsystem.ServoActuator;
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
 import com.smartcluster.oracleftc.math.DualNum;
+import com.smartcluster.oracleftc.math.Pose2d;
+import com.smartcluster.oracleftc.math.Pose2dDual;
 import com.smartcluster.oracleftc.math.Time;
 import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
@@ -42,9 +45,10 @@ public class Turret extends Subsystem {
     public static TrapezoidalMotionProfile rotationalMotionProfile = new TrapezoidalMotionProfile(6000,40000,20000);
     private final Encoder t1,t2,rotate;
     public double[] Speed ={0,4500,5000,6000};
-    private OracleLynxVoltageSensor voltageSensor;
+    private final OracleLynxVoltageSensor voltageSensor;
 
     private final ElapsedTime time = new ElapsedTime();
+
 
 
     public Actuator turret;
@@ -74,18 +78,14 @@ public class Turret extends Subsystem {
         t1.setDirection(Encoder.Direction.REVERSE);
         t2 = new RawEncoder(hardwareMap.get(DcMotorEx.class,"turretUp"));
         rotate = new RawEncoder(hardwareMap.get(DcMotorEx.class,"turretRotate"));
+        voltageSensor = hardwareMap.getAll(OracleLynxVoltageSensor.class).iterator().next();
+
 
 
         turret = new Actuator(this, "turret", shootPidController.clone(), shootMotionProfile, 50, turret1,turret2) {
 
 
-            public Command setSpeed(double speed) {
-                return new InstantCommand(() -> {
-                    setTarget(speed);
-                });
 
-
-            }
 
             @Override
             public boolean setTarget(double target) {
@@ -99,22 +99,19 @@ public class Turret extends Subsystem {
             }
             @Override
             public DualNum<Time> getPosition() {
-                return new DualNum<Time>(getSpeed(),0);
+                return new DualNum<>(getSpeed(),0);
             }
 
             @Override
             public Command reset() {
                 return Command.builder()
                         .init(() -> {
-                            turret1.setPower(0);
-                            turret2.setPower(0);
-
-
                             turret1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                             turret2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
                             turret1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                             turret2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
 
 
                         })
@@ -125,67 +122,7 @@ public class Turret extends Subsystem {
 
 
         };
-        rotation = new Actuator(this,"rotation",rotationalPidController.clone(),rotationalMotionProfile,10,rot) {
-            @Override
-            public boolean setTarget(double target) {
-                // Clamp the target angle to prevent wire twist and damage
-                if (target < -180) {
-                    target = 180;
-                }
-                if (target > 180) {
-                    target = -180;
-                }
-                this.target.set(target);
-                return true; // Signal that the target was accepted
-            }
 
-            @Override
-            public DualNum<Time> getPosition() {
-
-
-                // Convert the raw ticks into degrees by dividing by our constant.
-                // This automatically scales both the position and the velocity.
-                return rotate.getCurrentPosition().div(ENCODER_TICKS_PER_DEGREE);
-            }
-
-            @Override
-            public Command reset() {
-                // This command should move the turret to a known "zero" position.
-                // This could be against a hard stop or aligned with a limit switch.
-                this.target.set(0.0);
-                AtomicReference<DualNum<Time>> lastPosition = new AtomicReference<>(getPosition());
-                ElapsedTime resetTime = new ElapsedTime();
-
-                return Command.builder()
-                        .init(() -> {
-                            // Move towards the hard stop. Use negative power if going the other way.
-                            // Use a gentle power to avoid damage.
-                            rot.setPower(0.3);
-                            resetTime.reset();
-                        })
-                        .finished(() -> {
-                            DualNum<Time> currentPosition = getPosition();
-                            // Check if the turret has stopped moving (stalled against the stop)
-                            if (Math.abs(currentPosition.minus(lastPosition.get()).size()) < 0.5) { // 0.5 degree tolerance
-                                // If stalled, wait for a timeout to confirm
-                                return resetTime.milliseconds() > 500; // Wait 500ms
-                            } else {
-                                // If still moving, update the position and reset the timer
-                                lastPosition.set(currentPosition);
-                                resetTime.reset();
-                            }
-                            return false;
-                        })
-                        .end((interrupted) -> {
-                            // THIS IS THE GOAL: Reset the encoder to zero at the hard stop.
-                            rot.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-                            // Set a small holding power or stop the motor
-                            rot.setPower(0);
-                        })
-                        .requires(Turret.this)
-                        .build();
-            }
-        };
         hood = new ServoActuator(this, "hood", new TrapezoidalMotionProfile(10,16,16),s1,s2) {
             @Override
             public Command reset() {
@@ -218,6 +155,45 @@ public class Turret extends Subsystem {
 
 
     }
+    public void setRotation(int angle){
+        time.reset();
+
+        int currentAngle = rot.getCurrentPosition();
+        int targetAngle = (int) ((currentAngle + angle)*ENCODER_TICKS_PER_DEGREE);
+
+        rot.setTargetPosition(targetAngle);
+        rot.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        DualNum<Time> mp = rotationalMotionProfile.getMotionState(Math.abs(targetAngle),time.seconds());
+        double power = rotationalPidController.update(mp.get(0),currentAngle);
+        rot.setPower(power);
+
+        telemetry.addData(String.format("%s.target angle", name), targetAngle);
+        telemetry.addData(String.format("%s.position", name), rot.getCurrentPosition());
+        telemetry.addData(String.format("%s.power", name), power);
+        telemetry.addData(String.format("%s.mp", name), mp.get(1));
+
+    }
+    public double getRotation(){
+        return rotate.getCurrentPosition().get(0)*ENCODER_TICKS_PER_DEGREE;
+    }
 
 
-}
+
+    public void setSpeed(double speed) {
+        double a = 12/voltageSensor.getVoltage();
+        turret1.setPower(speed/6000*a);
+        turret2.setPower(speed/6000*a);
+    }
+    public int ppToAngle(Pose2d pose){
+        int angle = 0;
+        final Pose2d corner = new Pose2d(-60,63,0);
+
+
+
+        return angle;
+
+    }
+
+
+    }
+
