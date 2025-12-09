@@ -17,27 +17,31 @@ public class MeepMeepTesting {
         MeepMeep meepMeep = new MeepMeep(800);
 
         RoadRunnerBotEntity myBot = new DefaultBotBuilder(meepMeep)
-                // Set bot constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
-                .setConstraints(60, 60, Math.toRadians(180), Math.toRadians(180), 18)
-                .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(-60, 63, Math.toRadians(315)))
-                        .forward(30)
-                        .turn(Math.toRadians(90))
-                        .forward(30)
-                        .turn(Math.toRadians(90))
-                        .forward(30)
-                        .turn(Math.toRadians(90))
-                        .forward(30)
-                        .turn(Math.toRadians(90))
-                        .build());
+
+                
+            // Set bot constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
+            .setConstraints(60, 60, Math.toRadians(180), Math.toRadians(180), 15)
+            .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(0, 0, 0))
+        .forward(30)
+            .turn(Math.toRadians(90))
+            .forward(30)
+            .turn(Math.toRadians(90))
+            .forward(30)
+            .turn(Math.toRadians(90))
+            .forward(30)
+            .turn(Math.toRadians(90))
+            .build());
 
         Image img = null;
-        try { img = ImageIO.read(new File("C:/Users/minec/Documents/field-2025-juice-dark.jpg")); }
+        try { img = ImageIO.read(new File("<PATH TO IMAGE>")); }
         catch(IOException e) {}
 
-        meepMeep.setBackground(img)
-                .setDarkMode(true)
-                .setBackgroundAlpha(0.95f)
-                .addEntity(myBot)
-                .start();
+        meepMeep.setBackground(img);
+
+        meepMeep.setBackground(MeepMeep.Background.GRID_BLUE    )
+            .setDarkMode(true)
+            .setBackgroundAlpha(0.95f)
+            .addEntity(myBot)
+            .start();
     }
 }
