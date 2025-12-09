@@ -52,7 +52,6 @@ public class SoloMode extends LinearOpMode {
             if(driverGamepad.dpad_down.get()) robot.mecanumDrive.setDriveMode(MecanumDrive.DriveMode.PARKING);
             if(driverGamepad.dpad_up.get()) robot.mecanumDrive.setDriveMode(MecanumDrive.DriveMode.NORMAL);
 
-            telemetry.addData("state", 1);
             telemetry.update();
 
             fsm.update();
