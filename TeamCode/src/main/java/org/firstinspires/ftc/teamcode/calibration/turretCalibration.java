@@ -9,10 +9,11 @@ import com.smartcluster.oracleftc.commands.CommandScheduler;
 import com.smartcluster.oracleftc.commands.ParallelCommand;
 import com.smartcluster.oracleftc.commands.SequentialCommand;
 import com.smartcluster.oracleftc.commands.ThreadedCommandScheduler;
+
 import org.firstinspires.ftc.teamcode.subsystem.Turret;
 
 @Config
-@TeleOp(group="calibration")
+@TeleOp(group = "calibration")
 public class turretCalibration extends LinearOpMode {
 
     private final ThreadedCommandScheduler scheduler = new ThreadedCommandScheduler();
