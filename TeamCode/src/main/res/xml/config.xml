@@ -10,8 +10,8 @@
 
             <ContinuousRotationServo name = "dexLeft" port = "0"/>
             <RevColorSensorV3 name="rotaryColorSensorF" port="3"/>
-            <RevColorSensorV3 name="rotaryColorSensorL" port="2"/>
-            <RevColorSensorV3 name="rotaryColorSensorR" port="1"/>
+            <ColorSensor name="rotaryColorSensorL" port="2"/>
+            <ColorSensor name="rotaryColorSensorR" port="1"/>
 
             <LynxEmbeddedIMU name="imu" port="0" bus="0" />
         </LynxModule>
