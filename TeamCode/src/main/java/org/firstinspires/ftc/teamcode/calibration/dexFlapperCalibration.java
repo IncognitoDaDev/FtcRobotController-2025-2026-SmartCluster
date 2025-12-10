@@ -11,11 +11,9 @@ import com.smartcluster.oracleftc.utils.ProcessedGamepad;
 
 import org.firstinspires.ftc.teamcode.subsystem.Spindex;
 
-import java.util.concurrent.atomic.AtomicReference;
-
 @Config
 @TeleOp (group = "calibration")
-public class SpindexFlapper extends LinearOpMode {
+public class dexFlapperCalibration extends LinearOpMode {
     private final CommandScheduler scheduler = new CommandScheduler();
 
     @Override
@@ -34,8 +32,8 @@ public class SpindexFlapper extends LinearOpMode {
         waitForStart();
         while (opModeIsActive()){
 
-            if(driverGamepad.dpad_up.get()) spindex.flapper.setTarget(spindex.flapperUpVal);
-            else spindex.flapper.setTarget(spindex.flapperDownVal);
+            if(driverGamepad.dpad_up.get()) spindex.FlapperUp();
+            else spindex.FlapperDown();
 
             scheduler.update();
 
