@@ -136,6 +136,7 @@ public class Turret extends Subsystem {
                         .build();
             }
             public double setAngle(double angle) {
+                angle = angle/100;
                 //Angle between 0 - 60 degrees
                 setTarget(angle);
                 return angle;
@@ -143,6 +144,7 @@ public class Turret extends Subsystem {
 
             @Override
             public boolean setTarget(double target) {
+                target = target/100;
                 if(target<HOOD_MIN_ANGLE)target = HOOD_MIN_ANGLE;
                 if(target>HOOD_MAX_ANGLE)target = HOOD_MAX_ANGLE;
 

@@ -7,8 +7,8 @@ import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
 public class Intake extends Subsystem {
 
     public DcMotor intakeMotor;
-    public double intakePower = 0.72;
-    public double intakePowerSlowly = 0.5;
+    public double intakePower = 0.85;
+
     public Intake(OpMode mode)
     {
         super(mode);
@@ -25,11 +25,9 @@ public class Intake extends Subsystem {
         intakeMotor.setPower(power);
     }
 
-    public void intake() {
+    public void Intake() {
         intakeMotor.setPower(intakePower);
     }
 
-    public void intakeSlowly() {
-        intakeMotor.setPower(intakePowerSlowly);
-    }
+
 }

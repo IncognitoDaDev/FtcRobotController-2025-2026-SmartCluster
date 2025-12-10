@@ -21,11 +21,8 @@ public class intakeCalibration extends LinearOpMode {
             {
 
                 if (gamepad2.right_bumper) {      // R1
-                    intake.intake();
+                    intake.Intake();
 
-                }
-                else if (gamepad2.left_bumper) {  // L1
-                    intake.intakeSlowly();
                 }
                 else {
                     intake.reset();

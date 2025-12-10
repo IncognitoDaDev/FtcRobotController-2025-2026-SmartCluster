@@ -23,7 +23,7 @@
             <Servo name="leftHood" port="2"/>
             <Servo name="rightHood" port="3"/>
 
-            <goBILDA5202SeriesMotor name="intake" port="2" /> <!-- ARE ENCODER PENTRU SPINDEX -->
+            <goBILDA5202SeriesMotor name="intakeMotor" port="2" /> <!-- ARE ENCODER PENTRU SPINDEX -->
 
             <ContinuousRotationServo name="dexRight" port="0"/>
             <Servo name="flapperRight" port="1"/>

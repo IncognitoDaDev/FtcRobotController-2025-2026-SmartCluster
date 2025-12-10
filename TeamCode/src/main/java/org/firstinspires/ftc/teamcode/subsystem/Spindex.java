@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.subsystem;
 
+import android.graphics.Color;
+
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -208,6 +210,26 @@ public class Spindex extends Subsystem {
             setTarget(rotaryCurrentPos + ThirdTurn*1.5);
             return true;
         }
+        return false;
+    }
+
+    public boolean sortEmpty()
+    {
+        if (IdentifyColor(rotaryColorSensorL, new ColorType[]{ColorType.Nothing}))
+        {
+            setTarget(rotaryCurrentPos + ThirdTurn);
+            return true;
+        }
+        if (IdentifyColor(rotaryColorSensorR, new ColorType[]{ColorType.Nothing}))
+        {
+            setTarget(rotaryCurrentPos - ThirdTurn);
+            return true;
+        }
+//        if (IdentifyColor(rotaryColorSensorF, new ColorType[]{ColorType.Nothing}))
+//        {
+//            setTarget(rotaryCurrentPos + ThirdTurn*2);
+//            return true;
+//        } // We want to move ball to an empty space from front position
         return false;
     }
 
