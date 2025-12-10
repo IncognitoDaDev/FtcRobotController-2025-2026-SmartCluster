@@ -5,7 +5,6 @@ import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
 import com.qualcomm.robotcore.hardware.ColorRangeSensor;
-import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
@@ -21,7 +20,8 @@ public class Spindex extends Subsystem {
     public final CRServoImplEx servoDexRight, servoDexLeft;
     public final ServoImplEx servoFlapperRight;
     public final RevColorSensorV3 rotaryColorSensorF;
-    public final ColorSensor rotaryColorSensorR, rotaryColorSensorL;
+
+    public final ColorRangeSensor rotaryColorSensorR, rotaryColorSensorL;
     public final DcMotorEx rotaryEncoder;
 
     //private OracleLynxVoltageSensor voltageSensor;
@@ -45,8 +45,8 @@ public class Spindex extends Subsystem {
         servoFlapperRight=hardwareMap.get(ServoImplEx.class,"flapperRight");
         //servoFlapperLeft=hardwareMap.get(ServoImplEx.class,"flapperLeft");
         rotaryColorSensorF = hardwareMap.get(RevColorSensorV3.class, "rotaryColorSensorF");
-        rotaryColorSensorR = hardwareMap.get(ColorSensor.class, "rotaryColorSensorR");
-        rotaryColorSensorL = hardwareMap.get(ColorSensor.class, "rotaryColorSensorL");
+        rotaryColorSensorR = hardwareMap.get(ColorRangeSensor.class, "rotaryColorSensorR");
+        rotaryColorSensorL = hardwareMap.get(ColorRangeSensor.class, "rotaryColorSensorL");
         rotaryEncoder = hardwareMap.get(DcMotorEx.class, "intake");
 
         rotaryEncoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -104,7 +104,7 @@ public class Spindex extends Subsystem {
         return false;
     }
 
-    public boolean IdentifyColor(ColorSensor sensor, ColorType[] ColorCheck)
+    public boolean IdentifyColor(ColorRangeSensor sensor, ColorType[] ColorCheck)
     {
         for(ColorType check : ColorCheck)
         {
@@ -135,7 +135,7 @@ public class Spindex extends Subsystem {
         return ColorType.IdentityObject.EMPTY;
     }
 
-    public ColorType.IdentityObject IdentifyColor(ColorSensor sensor)
+    public ColorType.IdentityObject IdentifyColor(ColorRangeSensor sensor)
     {
         ColorType[] colorCheck = {ColorType.Purple, ColorType.Green, ColorType.Wall, ColorType.Nothing};
         for(ColorType check : colorCheck)

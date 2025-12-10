@@ -12,6 +12,7 @@ import com.smartcluster.oracleftc.commands.ParallelCommand;
 import com.smartcluster.oracleftc.hardware.OracleLynxVoltageSensor;
 import com.smartcluster.oracleftc.utils.ProcessedGamepad;
 
+import org.firstinspires.ftc.teamcode.roadrunner.Localizer;
 import org.firstinspires.ftc.teamcode.roadrunner.PinpointLocalizer;
 import org.firstinspires.ftc.teamcode.roadrunner.TwoDeadWheelLocalizer;
 import org.firstinspires.ftc.teamcode.subsystem.Robot;
@@ -54,7 +55,7 @@ public class localizerCalibration extends LinearOpMode {
         );
 
         //declararea localizatorului
-        PinpointLocalizer myLocalizer = new PinpointLocalizer(hardwareMap,8,new Pose2d(1,-3,90));
+        Localizer myLocalizer = new PinpointLocalizer(hardwareMap, new Pose2d(1,-3,90));
         myLocalizer.setPose(new Pose2d(1,-3,Math.toRadians(90)));
         while(opModeIsActive())
         {

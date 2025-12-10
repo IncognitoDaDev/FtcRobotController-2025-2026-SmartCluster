@@ -10,8 +10,7 @@
 
             <ContinuousRotationServo name = "dexLeft" port = "0"/>
             <RevColorSensorV3 name="rotaryColorSensorF" port="3"/>
-            <ColorSensor name="rotaryColorSensorL" port="2"/>
-            <ColorSensor name="rotaryColorSensorR" port="1"/>
+            <ColorRangeSensor name="rotaryColorSensorL" port="2"/>
 
             <LynxEmbeddedIMU name="imu" port="0" bus="0" />
         </LynxModule>
@@ -28,6 +27,7 @@
 
             <ContinuousRotationServo name="dexRight" port="0"/>
             <Servo name="flapperRight" port="1"/>
+            <ColorRangeSensor name="rotaryColorSensorR" port="3"/>
 
             <goBILDAPinpoint name="pinpoint" port="0"/>
             <LynxEmbeddedIMU name="imu" port="0" bus="0" />
