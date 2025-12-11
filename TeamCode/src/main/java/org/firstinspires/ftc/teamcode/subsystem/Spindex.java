@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.subsystem;
 
+import android.graphics.Color;
+
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.lynx.LynxI2cColorRangeSensor;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
@@ -18,6 +20,44 @@ import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
 
 @Config
 public class Spindex extends Subsystem {
+
+    public class CachedSensor
+    {
+        private ColorType.IdentityObject Front;
+        private ColorType.IdentityObject Left;
+        private ColorType.IdentityObject Right;
+
+        public void setFront(ColorType.IdentityObject obj)
+        {
+            if (obj != ColorType.IdentityObject.EMPTY)
+                Front = obj;
+        }
+
+        public ColorType.IdentityObject getFront() { return Front; }
+
+        public void setRight(ColorType.IdentityObject obj)
+        {
+            if (obj != ColorType.IdentityObject.EMPTY)
+                Right = obj;
+        }
+
+        public ColorType.IdentityObject getRight() { return Right; }
+
+        public void setLeft(ColorType.IdentityObject obj)
+        {
+            if (obj != ColorType.IdentityObject.EMPTY)
+                Left = obj;
+        }
+
+        public ColorType.IdentityObject getLeft() { return Left; }
+
+        public void reset()
+        {
+            Front = ColorType.IdentityObject.EMPTY;
+            Left = ColorType.IdentityObject.EMPTY;
+            Right = ColorType.IdentityObject.EMPTY;
+        }
+    }
     public final CRServoImplEx servoDexRight, servoDexLeft;
     public final ServoImplEx servoFlapperRight;
     public final RevColorSensorV3 rotaryColorSensorF;
@@ -38,6 +78,8 @@ public class Spindex extends Subsystem {
 
     public final ServoActuator flapper;
     public static double flapperDownVal = 0.51, flapperUpVal = 1.0;
+
+    public CachedSensor cachedSensor;
 
     public Spindex (OpMode mode)
     {
@@ -176,17 +218,17 @@ public class Spindex extends Subsystem {
 
     public boolean sortPurple()
     {
-        if (IdentifyColor(rotaryColorSensorL, new ColorType[]{ColorType.Purple}))
+        if (cachedSensor.getLeft() == ColorType.IdentityObject.PURPLE)
         {
             setTarget(rotaryTargetPos - ThirdTurn/2 - rotaryTargetPos%ThirdTurn);
             return true;
         }
-        if (IdentifyColor(rotaryColorSensorR, new ColorType[]{ColorType.Purple}))
+        if (cachedSensor.getRight() == ColorType.IdentityObject.PURPLE)
         {
             setTarget(rotaryTargetPos + ThirdTurn/2 - rotaryTargetPos%ThirdTurn);
             return true;
         }
-        if (IdentifyColor(rotaryColorSensorF, new ColorType[]{ColorType.Purple}))
+        if (cachedSensor.getFront() == ColorType.IdentityObject.PURPLE)
         {
             setTarget(rotaryTargetPos + ThirdTurn*1.5 - rotaryTargetPos%ThirdTurn);
             return true;
@@ -196,17 +238,17 @@ public class Spindex extends Subsystem {
 
     public boolean sortGreen()
     {
-        if (IdentifyColor(rotaryColorSensorL, new ColorType[]{ColorType.Green}))
+        if (cachedSensor.getLeft() == ColorType.IdentityObject.GREEN)
         {
             setTarget(rotaryTargetPos - ThirdTurn/2 - rotaryTargetPos%ThirdTurn);
             return true;
         }
-        if (IdentifyColor(rotaryColorSensorR, new ColorType[]{ColorType.Green}))
+        if (cachedSensor.getRight() == ColorType.IdentityObject.GREEN)
         {
             setTarget(rotaryTargetPos + ThirdTurn/2 - rotaryTargetPos%ThirdTurn);
             return true;
         }
-        if (IdentifyColor(rotaryColorSensorF, new ColorType[]{ColorType.Green}))
+        if (cachedSensor.getFront() == ColorType.IdentityObject.GREEN)
         {
             setTarget(rotaryTargetPos + ThirdTurn*1.5 - rotaryTargetPos%ThirdTurn);
             return true;
@@ -216,17 +258,17 @@ public class Spindex extends Subsystem {
 
     public boolean sortAny()
     {
-        if (IdentifyColor(rotaryColorSensorL, new ColorType[]{ColorType.Green, ColorType.Purple}))
+        if (cachedSensor.getLeft() == ColorType.IdentityObject.PURPLE || cachedSensor.getLeft() == ColorType.IdentityObject.GREEN)
         {
             setTarget(rotaryTargetPos - ThirdTurn/2 - rotaryTargetPos%ThirdTurn);
             return true;
         }
-        if (IdentifyColor(rotaryColorSensorR, new ColorType[]{ColorType.Green, ColorType.Purple}))
+        if (cachedSensor.getRight() == ColorType.IdentityObject.PURPLE || cachedSensor.getRight() == ColorType.IdentityObject.GREEN)
         {
             setTarget(rotaryTargetPos + ThirdTurn/2 - rotaryTargetPos%ThirdTurn);
             return true;
         }
-        if (IdentifyColor(rotaryColorSensorF, new ColorType[]{ColorType.Green, ColorType.Purple}))
+        if (cachedSensor.getFront() == ColorType.IdentityObject.PURPLE || cachedSensor.getFront() == ColorType.IdentityObject.GREEN)
         {
             setTarget(rotaryTargetPos + ThirdTurn*1.5 - rotaryTargetPos%ThirdTurn);
             return true;
@@ -236,12 +278,12 @@ public class Spindex extends Subsystem {
 
     public boolean sortEmpty()
     {
-        if (IdentifyColor(rotaryColorSensorL, new ColorType[]{ColorType.Nothing}))
+        if (cachedSensor.getLeft() == ColorType.IdentityObject.EMPTY)
         {
             setTarget(rotaryTargetPos - ThirdTurn - rotaryTargetPos%ThirdTurn);
             return true;
         }
-        if (IdentifyColor(rotaryColorSensorR, new ColorType[]{ColorType.Nothing}))
+        if (cachedSensor.getRight() == ColorType.IdentityObject.EMPTY)
         {
             setTarget(rotaryTargetPos + ThirdTurn - rotaryTargetPos%ThirdTurn);
             return true;

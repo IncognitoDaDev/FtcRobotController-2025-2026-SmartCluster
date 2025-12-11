@@ -9,6 +9,7 @@ import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.CommandScheduler;
 import com.smartcluster.oracleftc.commands.ParallelCommand;
 
+import org.firstinspires.ftc.teamcode.subsystem.ColorType;
 import org.firstinspires.ftc.teamcode.subsystem.Spindex;
 
 @Config
@@ -50,16 +51,21 @@ public class dexRotaryCalibration extends LinearOpMode {
             else if (gamepad1.triangleWasPressed()) found = spindex.sortGreen();
             else if (gamepad1.crossWasPressed()) spindex.FixOrientationForIntake();
 
+            if (spindex.IdentifyColor(spindex.rotaryColorSensorF) == ColorType.IdentityObject.WALL)
+                spindex.cachedSensor.reset();
 
-            telemetry.addData("EncoderPosition", spindex.rotaryEncoder.getCurrentPosition());
+            spindex.cachedSensor.setFront(spindex.IdentifyColor(spindex.rotaryColorSensorF));
+            spindex.cachedSensor.setRight(spindex.IdentifyColor(spindex.rotaryColorSensorR));
+            spindex.cachedSensor.setLeft(spindex.IdentifyColor(spindex.rotaryColorSensorL));
+
             telemetry.addData("CurrentPosition", spindex.getPosition());
             telemetry.addData("TargetPosition", spindex.rotaryTargetPos);
             telemetry.addData("ErrorDistance", Math.abs(spindex.rotaryTargetPos-spindex.getPosition()));
 
             telemetry.addData("Found desired ball", found);
-            telemetry.addData("F_Sensor",spindex.IdentifyColor(spindex.rotaryColorSensorF));
-            telemetry.addData("L_Sensor",spindex.IdentifyColor(spindex.rotaryColorSensorL));
-            telemetry.addData("R_Sensor",spindex.IdentifyColor(spindex.rotaryColorSensorR));
+            telemetry.addData("F_Sensor",spindex.cachedSensor.getFront());
+            telemetry.addData("L_Sensor",spindex.cachedSensor.getLeft());
+            telemetry.addData("R_Sensor",spindex.cachedSensor.getRight());
 
             telemetry.update();
         }
