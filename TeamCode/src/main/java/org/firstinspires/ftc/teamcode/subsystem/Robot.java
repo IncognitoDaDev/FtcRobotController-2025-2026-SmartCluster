@@ -26,13 +26,15 @@ public class Robot {
     public Command reset()
     {
         return new ParallelCommand(
-            //spinDex.reset()
+            spinDex.reset(),
+            turret.reset()
         );
     }
 
     public Command update()
     {
         return new ParallelCommand(
+                turret.update()
         );
     }
 

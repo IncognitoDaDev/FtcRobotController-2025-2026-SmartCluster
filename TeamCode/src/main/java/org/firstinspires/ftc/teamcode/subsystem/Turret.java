@@ -2,6 +2,8 @@ package org.firstinspires.ftc.teamcode.subsystem;
 
 
 
+import com.ThermalEquilibrium.homeostasis.Controllers.Feedforward.BasicFeedforward;
+import com.ThermalEquilibrium.homeostasis.Parameters.FeedforwardCoefficients;
 import com.qualcomm.hardware.lynx.LynxVoltageSensor;
 import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.hardware.wrappers.Encoder;
@@ -32,7 +34,6 @@ public class Turret extends Subsystem {
 
     final double HOOD_MIN_ANGLE = 0.0;   // Example: Angle when servo is at position 0.0
     final double HOOD_MAX_ANGLE = 60.0;
-    public final double MAX_FLYWHEEL_TICKS_PER_SEC = 2800;
     public final double MOTOR_TO_TURRET_RATIO =  260.0/48;
     public final double ENCODER_TICKS_PER_ROTATION = 384.5*MOTOR_TO_TURRET_RATIO;
     public final double ENCODER_TICKS_PER_DEGREE = ENCODER_TICKS_PER_ROTATION/360;
@@ -43,12 +44,19 @@ public class Turret extends Subsystem {
     public static TrapezoidalMotionProfile shootMotionProfile = new TrapezoidalMotionProfile(6000,40000,20000);
     public static PIDController rotationalPidController = new PIDController(0.0,0.0,0.0);
     public static TrapezoidalMotionProfile rotationalMotionProfile = new TrapezoidalMotionProfile(6000,40000,20000);
-    private final Encoder t1,t2,rotate;
+    private final Encoder rotate;
     public double[] Speed ={0,4500,5000,6000};
     private final OracleLynxVoltageSensor voltageSensor;
+    public static double tolerance = 2;
 
     private final ElapsedTime time = new ElapsedTime();
-
+    public static double Kv = 1.1;
+    public static double Ka = 0.2;
+    public static double Ks = 0.001;
+    FeedforwardCoefficients coefficients = new FeedforwardCoefficients(Kv,Ka,Ks);
+    BasicFeedforward shootController = new BasicFeedforward(coefficients);
+    public double targetSpeed = 0;
+    public int targetAngle = 0;
 
 
     public Actuator turret;
@@ -59,30 +67,29 @@ public class Turret extends Subsystem {
         super(opMode);
         this.name = name;
         turret1 = hardwareMap.get(DcMotorEx.class,"turretDown");
-        turret2 = hardwareMap.get(DcMotorEx.class,"turretUp");
+//        turret2 = hardwareMap.get(DcMotorEx.class,"turretUp");
         rot = hardwareMap.get(DcMotorEx.class,"turretRotate");
 
 
-        s1 = hardwareMap.get(ServoImplEx.class,"leftHood");
-        s2 = hardwareMap.get(ServoImplEx.class,"rightHood");
-        s2.setDirection(Servo.Direction.REVERSE);
+//        s1 = hardwareMap.get(ServoImplEx.class,"leftHood");
+//        s2 = hardwareMap.get(ServoImplEx.class,"rightHood");
+//        s2.setDirection(Servo.Direction.REVERSE);
 
 
         turret1.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
-        turret2.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
+//        turret2.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
         rot.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
 
         turret1.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        t1 = new RawEncoder(hardwareMap.get(DcMotorEx.class,"turretDown"));
-        t1.setDirection(Encoder.Direction.REVERSE);
-        t2 = new RawEncoder(hardwareMap.get(DcMotorEx.class,"turretUp"));
+
+//        t2 = new RawEncoder(hardwareMap.get(DcMotorEx.class,"turretUp"));
         rotate = new RawEncoder(hardwareMap.get(DcMotorEx.class,"turretRotate"));
         voltageSensor = hardwareMap.getAll(OracleLynxVoltageSensor.class).iterator().next();
 
 
 
-        turret = new Actuator(this, "turret", shootPidController.clone(), shootMotionProfile, 50, turret1,turret2) {
+        /*turret = new Actuator(this, "turret", shootPidController.clone(), shootMotionProfile, 50, turret1,turret2) {
 
 
 
@@ -155,24 +162,27 @@ public class Turret extends Subsystem {
 
 
 
-
+*/
     }
+    public void setAngle(int angle){targetAngle = angle;}
     public void setRotation(int angle){
+        AtomicReference<DualNum<Time>> lastPosition = new AtomicReference<>(rotate.getCurrentPosition().div(ENCODER_TICKS_PER_DEGREE));
         time.reset();
 
-        int currentAngle = rot.getCurrentPosition();
-        int targetAngle = (int) ((currentAngle + angle)*ENCODER_TICKS_PER_DEGREE);
+        if (rotate.getCurrentPosition().get(0) <= tolerance || rotate.getCurrentPosition().get(0) >= -tolerance) {
+            rot.setPower(0);}
 
-        rot.setTargetPosition(targetAngle);
+        DualNum<Time> currentPosition = rotate.getCurrentPosition();
+
+        final double distance = angle - currentPosition.get(0);
+        DualNum<Time> mop = rotationalMotionProfile.getMotionState(Math.abs(distance),
+                time.seconds());
+        double power = rotationalPidController.update(mop.get(0) *Math.signum(distance),
+                rotate.getCurrentPosition().get(0));
+
+        rot.setTargetPosition(angle);
         rot.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        DualNum<Time> mp = rotationalMotionProfile.getMotionState(Math.abs(targetAngle),time.seconds());
-        double power = rotationalPidController.update(mp.get(0),currentAngle);
         rot.setPower(power);
-
-        telemetry.addData(String.format("%s.target angle", name), targetAngle);
-        telemetry.addData(String.format("%s.position", name), rot.getCurrentPosition());
-        telemetry.addData(String.format("%s.power", name), power);
-        telemetry.addData(String.format("%s.mp", name), mp.get(1));
 
     }
     public double getRotation(){
@@ -181,10 +191,17 @@ public class Turret extends Subsystem {
 
 
 
-    public void setSpeed(double speed) {
-        double a = 12/voltageSensor.getVoltage();
-        turret1.setPower(speed/6000*a);
-        turret2.setPower(speed/6000*a);
+    public void setTargetSpeed(double speed) {
+        targetSpeed = shootController.calculate(0,speed,shootMotionProfile.maxAcceleration);
+    }
+    public void setShooter(double power){
+        if (power < -1.0) power = -1.0;
+        else if (power > 1.0) power = 1.0;
+        turret1.setPower(power);
+    }
+    public double getSpeed(){
+
+        return turret1.getVelocity();
     }
     public int ppToAngle(Pose2d pose){
         int angle = 0;
@@ -194,6 +211,41 @@ public class Turret extends Subsystem {
 
         return angle;
 
+    }
+    public Command update(){
+        return Command.builder()
+                .update(()->{
+                        setShooter(shootController.calculate(0,targetSpeed,shootMotionProfile.maxAcceleration));
+                        telemetry.addData("Error ", getSpeed() - targetSpeed);
+                        setRotation(targetAngle);
+                        telemetry.addData("Rotation error ", getRotation()-targetAngle);
+                })
+                .finished(()->{
+                    if (Math.abs(getRotation() - targetAngle) <= tolerance&&getSpeed()-targetSpeed==0)
+                    {
+                        setShooter(0);
+                        return true;
+                    }
+
+                    else return false;
+                })
+                .build();
+
+    }
+    public Command reset(){
+        return Command.builder()
+                .update(()->{
+                    turret1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                    rot.setTargetPosition(0);
+                    rot.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    rot.setPower(0.7);
+                })
+                .finished(()->{
+                    if(getRotation()==0 && getSpeed()==0)return true;
+                    else return false;
+                })
+                .requires(this)
+                .build();
     }
 
 

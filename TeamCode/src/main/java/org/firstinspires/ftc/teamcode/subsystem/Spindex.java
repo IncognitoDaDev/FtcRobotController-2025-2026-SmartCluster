@@ -3,10 +3,12 @@ package org.firstinspires.ftc.teamcode.subsystem;
 import android.graphics.Color;
 
 import com.acmerobotics.dashboard.config.Config;
+import com.qualcomm.hardware.lynx.LynxI2cColorRangeSensor;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
 import com.qualcomm.robotcore.hardware.ColorRangeSensor;
+import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
@@ -23,7 +25,7 @@ public class Spindex extends Subsystem {
     public final ServoImplEx servoFlapperRight;
     public final RevColorSensorV3 rotaryColorSensorF;
 
-    public final ColorRangeSensor rotaryColorSensorR, rotaryColorSensorL;
+    public final LynxI2cColorRangeSensor rotaryColorSensorR, rotaryColorSensorL;
     public final DcMotorEx rotaryEncoder;
 
     //private OracleLynxVoltageSensor voltageSensor;
@@ -47,9 +49,9 @@ public class Spindex extends Subsystem {
         servoFlapperRight=hardwareMap.get(ServoImplEx.class,"flapperRight");
         //servoFlapperLeft=hardwareMap.get(ServoImplEx.class,"flapperLeft");
         rotaryColorSensorF = hardwareMap.get(RevColorSensorV3.class, "rotaryColorSensorF");
-        rotaryColorSensorR = hardwareMap.get(ColorRangeSensor.class, "rotaryColorSensorR");
-        rotaryColorSensorL = hardwareMap.get(ColorRangeSensor.class, "rotaryColorSensorL");
-        rotaryEncoder = hardwareMap.get(DcMotorEx.class, "intake");
+        rotaryColorSensorR = hardwareMap.get(LynxI2cColorRangeSensor.class, "rotaryColorSensorR");
+        rotaryColorSensorL = hardwareMap.get(LynxI2cColorRangeSensor.class, "rotaryColorSensorL");
+        rotaryEncoder = hardwareMap.get(DcMotorEx.class, "intakeMotor");
 
         rotaryEncoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 

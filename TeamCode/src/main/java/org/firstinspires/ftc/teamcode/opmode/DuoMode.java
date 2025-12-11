@@ -6,6 +6,7 @@ import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.CommandScheduler;
 import com.smartcluster.oracleftc.commands.InstantCommand;
@@ -64,9 +65,9 @@ public class DuoMode extends LinearOpMode {
         scheduler.schedule(
                 new ParallelCommand(
                         //de adaugat restul de comenzi aici
-                        robot.mecanumDrive.drive(driverGamepad)
+                        robot.mecanumDrive.drive(driverGamepad),
 //                        robot.turret.hood.update(),
-////                        robot.turret.turret.update(),
+                        robot.turret.update()
 //                        robot.turret.rotation.update()
                 ));
 
@@ -79,39 +80,54 @@ public class DuoMode extends LinearOpMode {
                         new SequentialCommand(
 //                                robot.turret.turret.move(new AtomicReference<>(0.0)),
 //                                robot.turret.rotation.move(new AtomicReference<>(0.0)),
-
+                                robot.turret.reset(),
+                                new InstantCommand(()->robot.turret.rot.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER)),
                                 new InstantCommand(robot.intake::reset)
                         ))
 
+
                 // IDLE -------------------------------------------------------------
                 .state(TeleOpState.IDLE,
-                        new InstantCommand(()->{
-                            if (operatorGamepad.left_bumper.get())
-                                robot.intake.Intake();
-                            else robot.intake.setPower(0.0);
-
-//                            if (gamepad2.circleWasPressed())  robot.spinDex.sortAny();
-//                            else if (gamepad2.squareWasPressed()) robot.spinDex.sortPurple();
-//                            else if (gamepad2.triangleWasPressed()) robot.spinDex.sortGreen();
-
-                            if (gamepad2.dpadLeftWasPressed()) robot.spinDex.setTarget(robot.spinDex.rotaryTargetPos + robot.spinDex.ThirdTurn);
-                            else if (gamepad2.dpadRightWasPressed()) robot.spinDex.setTarget(robot.spinDex.rotaryTargetPos - robot.spinDex.ThirdTurn);
-                            else if (gamepad2.dpadDownWasPressed()) robot.spinDex.setTarget(robot.spinDex.rotaryTargetPos + robot.spinDex.ThirdTurn/2);
-                            else if (gamepad2.dpadUpWasPressed()) robot.spinDex.setTarget(robot.spinDex.rotaryTargetPos - robot.spinDex.ThirdTurn/2);
-
+                        Command.builder()
+                                .update(()->{
                             if (robot.spinDex.IdentifyColor(robot.spinDex.rotaryColorSensorF, new ColorType[] {ColorType.Green, ColorType.Purple}))
                             {
                                 gamepad2.rumble(200);
-                            }
+                            }})
+                            .build()
+                        );
+        fsmBuilder = fsmBuilder
+        .transition(TeleOpState.IDLE,TeleOpState.IDLE,operatorGamepad.left_bumper.pressed(),
+                new SequentialCommand(
+                        new InstantCommand(robot.intake::Intake)
 
-                        }));
-
+                ))
+        .transition(TeleOpState.IDLE,TeleOpState.IDLE,operatorGamepad.left_bumper.not(),
+                new SequentialCommand(
+                        new InstantCommand(robot.intake::reset)
+                ))
+        .transition(TeleOpState.IDLE,TeleOpState.IDLE,operatorGamepad.dpad_left.pressed(),
+                new SequentialCommand(
+                        new InstantCommand(()->{robot.spinDex.setTarget(robot.spinDex.rotaryTargetPos + robot.spinDex.ThirdTurn);})
+                ))
+        .transition(TeleOpState.IDLE,TeleOpState.IDLE,operatorGamepad.dpad_right.pressed(),
+                new SequentialCommand(
+                        new InstantCommand(()->{robot.spinDex.setTarget(robot.spinDex.rotaryTargetPos - robot.spinDex.ThirdTurn);;})
+                ))
+        .transition(TeleOpState.IDLE,TeleOpState.IDLE,operatorGamepad.dpad_down.pressed(),
+                new SequentialCommand(
+                        new InstantCommand(()->{robot.spinDex.setTarget(robot.spinDex.rotaryTargetPos + robot.spinDex.ThirdTurn/2);;})
+                ))
+        .transition(TeleOpState.IDLE,TeleOpState.IDLE,operatorGamepad.dpad_up.pressed(),
+                new SequentialCommand(
+                        new InstantCommand(()->{ robot.spinDex.setTarget(robot.spinDex.rotaryTargetPos - robot.spinDex.ThirdTurn/2);;})
+                ));
 
         //Charge init
         fsmBuilder = fsmBuilder
                 .transition(TeleOpState.IDLE, TeleOpState.CHARGING, operatorGamepad.cross.pressed(),//alex e sigma
                         new SequentialCommand(
-                                new InstantCommand(()->robot.turret.setSpeed(3000.0)),
+                                new InstantCommand(()->robot.turret.setShooter(3000.0)),
                                 new InstantCommand(()->robot.turret.setRotation(30)),
                                 new InstantCommand(()->robot.turret.hood.setTarget(0.4)),
                                 new InstantCommand(robot.spinDex::sortAny)
