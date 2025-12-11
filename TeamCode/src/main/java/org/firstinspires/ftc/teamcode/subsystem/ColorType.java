@@ -43,12 +43,12 @@ public class ColorType {
     public V2 v2;
     public IdentityObject identity;
 
-    public static ColorType Purple = new ColorType(IdentityObject.PURPLE, new double[]{150, 250}, new double[]{240 , 320}, new double[]{450, 620},
-            new double[]{400, 500}, new double[]{370, 450}, new double[]{500, 600});
-    public static ColorType Green = new ColorType(IdentityObject.GREEN, new double[]{550, 650}, new double[]{2200, 2700}, new double[]{1700, 2200},
-            new double[]{220, 330}, new double[]{650, 750}, new double[]{400, 500});
+    public static ColorType Purple = new ColorType(IdentityObject.PURPLE, new double[]{300, 1800}, new double[]{800, 2300}, new double[]{1600, 3300},
+            new double[]{300, 600}, new double[]{300, 600}, new double[]{300, 750});
+    public static ColorType Green = new ColorType(IdentityObject.GREEN, new double[]{300, 1000}, new double[]{2200, 3400}, new double[]{1700, 2600},
+            new double[]{150, 450}, new double[]{450, 900}, new double[]{300, 900});
     public static ColorType Wall = new ColorType(IdentityObject.WALL, new double[]{100, 140}, new double[]{240, 320}, new double[]{420, 500},
-            new double[]{20, 60}, new double[]{50 , 90}, new double[]{50, 90});
+            new double[]{10, 60}, new double[]{30 , 90}, new double[]{50, 90});
     public static ColorType Nothing = new ColorType(IdentityObject.EMPTY, new double[]{0, 50}, new double[]{0 , 80}, new double[]{0, 70},
             new double[]{0, 30}, new double[]{0, 30}, new double[]{0, 30});
 

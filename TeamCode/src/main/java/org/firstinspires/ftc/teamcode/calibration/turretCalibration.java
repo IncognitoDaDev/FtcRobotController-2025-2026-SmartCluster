@@ -1,8 +1,10 @@
-package org.firstinspires.ftc.teamcode.Calibration;
+package org.firstinspires.ftc.teamcode.calibration;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.smartcluster.oracleftc.commands.CommandScheduler;
 import com.smartcluster.oracleftc.commands.ParallelCommand;
 import com.smartcluster.oracleftc.commands.SequentialCommand;
@@ -10,7 +12,9 @@ import com.smartcluster.oracleftc.commands.ThreadedCommandScheduler;
 
 import org.firstinspires.ftc.teamcode.subsystem.Turret;
 
-public class TurretCalibration extends LinearOpMode {
+@Config
+@TeleOp(group="calibration")
+public class turretCalibration extends LinearOpMode {
 
     private final ThreadedCommandScheduler scheduler = new ThreadedCommandScheduler();
     public static double turretAngle = 90;

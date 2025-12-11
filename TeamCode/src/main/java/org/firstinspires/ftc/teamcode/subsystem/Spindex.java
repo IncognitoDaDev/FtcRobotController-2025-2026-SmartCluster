@@ -1,19 +1,16 @@
 package org.firstinspires.ftc.teamcode.subsystem;
 
-import android.graphics.Color;
-
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.lynx.LynxI2cColorRangeSensor;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
-import com.qualcomm.robotcore.hardware.ColorRangeSensor;
-import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.InstantCommand;
+import com.smartcluster.oracleftc.hardware.OracleLynxVoltageSensor;
 import com.smartcluster.oracleftc.hardware.subsystem.ServoActuator;
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
 import com.smartcluster.oracleftc.math.control.PIDController;
@@ -28,10 +25,12 @@ public class Spindex extends Subsystem {
     public final LynxI2cColorRangeSensor rotaryColorSensorR, rotaryColorSensorL;
     public final DcMotorEx rotaryEncoder;
 
+    public final OracleLynxVoltageSensor voltageSensor;
+
     //private OracleLynxVoltageSensor voltageSensor;
-    public static PIDController rotaryPID = new PIDController(0.00032, 0.000000015, 0.000013, 0);
+    public static PIDController rotaryPID = new PIDController(0.00012, 0.00000025, 0);//new PIDController(0.00032, 0.000000015, 0.000013, 0);
     public static double Tolerance = 40;
-    public static double ThirdTurn = 2750;
+    public static double ThirdTurn = 2750; // 120 degrees
 
     public double previousValueAnalog = 0;
     public double rotaryCurrentPos = 0;
@@ -54,6 +53,10 @@ public class Spindex extends Subsystem {
         rotaryEncoder = hardwareMap.get(DcMotorEx.class, "intakeMotor");
 
         rotaryEncoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        voltageSensor = hardwareMap.getAll(OracleLynxVoltageSensor.class).iterator().next();
+        voltageSensor.setPolicy(OracleLynxVoltageSensor.OracleLynxVoltageSensorPolicy.CACHED);
+        voltageSensor.setVoltageCacheFreshness(300);
 
         flapper = new ServoActuator(this, "flapper", new TrapezoidalMotionProfile(12, 16, 12), servoFlapperRight)
         {
@@ -98,9 +101,9 @@ public class Spindex extends Subsystem {
         for(ColorType check : ColorCheck)
         {
             int ok = 1;
-            if (check.v3.RED_THRESHOLD[0] < sensor.red() || check.v3.RED_THRESHOLD[1] > sensor.red()) ok = 0;
-            if (check.v3.GREEN_THRESHOLD[0] < sensor.green() || check.v3.GREEN_THRESHOLD[1] > sensor.green()) ok = 0;
-            if (check.v3.BLUE_THRESHOLD[0] < sensor.blue() || check.v3.BLUE_THRESHOLD[1] > sensor.blue()) ok = 0;
+            if (check.v3.RED_THRESHOLD[0] > sensor.red() || check.v3.RED_THRESHOLD[1] < sensor.red()) ok = 0;
+            if (check.v3.GREEN_THRESHOLD[0] > sensor.green() || check.v3.GREEN_THRESHOLD[1] < sensor.green()) ok = 0;
+            if (check.v3.BLUE_THRESHOLD[0] > sensor.blue() || check.v3.BLUE_THRESHOLD[1] < sensor.blue()) ok = 0;
 
             if (ok == 1) return true;
         }
@@ -108,14 +111,22 @@ public class Spindex extends Subsystem {
         return false;
     }
 
-    public boolean IdentifyColor(ColorRangeSensor sensor, ColorType[] ColorCheck)
+    public boolean IdentifyColor(LynxI2cColorRangeSensor sensor, ColorType[] ColorCheck)
     {
+        int r = sensor.red(), g = sensor.green(), b = sensor.blue();
+        if (sensor == rotaryColorSensorR)
+        {
+            r *= 2;
+            g *= 2;
+            b *= 2;
+        }
+
         for(ColorType check : ColorCheck)
         {
             int ok = 1;
-            if (check.v2.RED_THRESHOLD[0] < sensor.red() || check.v2.RED_THRESHOLD[1] > sensor.red()) ok = 0;
-            if (check.v2.GREEN_THRESHOLD[0] < sensor.green() || check.v2.GREEN_THRESHOLD[1] > sensor.green()) ok = 0;
-            if (check.v2.BLUE_THRESHOLD[0] < sensor.blue() || check.v2.BLUE_THRESHOLD[1] > sensor.blue()) ok = 0;
+            if (check.v2.RED_THRESHOLD[0] > r || check.v2.RED_THRESHOLD[1] < r) ok = 0;
+            if (check.v2.GREEN_THRESHOLD[0] > g || check.v2.GREEN_THRESHOLD[1] < g) ok = 0;
+            if (check.v2.BLUE_THRESHOLD[0] > b || check.v2.BLUE_THRESHOLD[1] < b) ok = 0;
 
             if (ok == 1) return true;
         }
@@ -129,9 +140,9 @@ public class Spindex extends Subsystem {
         for(ColorType check : colorCheck)
         {
             int ok = 1;
-            if (check.v3.RED_THRESHOLD[0] < sensor.red() || check.v3.RED_THRESHOLD[1] > sensor.red()) ok = 0;
-            if (check.v3.GREEN_THRESHOLD[0] < sensor.green() || check.v3.GREEN_THRESHOLD[1] > sensor.green()) ok = 0;
-            if (check.v3.BLUE_THRESHOLD[0] < sensor.blue() || check.v3.BLUE_THRESHOLD[1] > sensor.blue()) ok = 0;
+            if (check.v3.RED_THRESHOLD[0] > sensor.red() || check.v3.RED_THRESHOLD[1] < sensor.red()) ok = 0;
+            if (check.v3.GREEN_THRESHOLD[0] > sensor.green() || check.v3.GREEN_THRESHOLD[1] < sensor.green()) ok = 0;
+            if (check.v3.BLUE_THRESHOLD[0] > sensor.blue() || check.v3.BLUE_THRESHOLD[1] < sensor.blue()) ok = 0;
 
             if (ok == 1) return check.identity;
         }
@@ -139,15 +150,23 @@ public class Spindex extends Subsystem {
         return ColorType.IdentityObject.EMPTY;
     }
 
-    public ColorType.IdentityObject IdentifyColor(ColorRangeSensor sensor)
+    public ColorType.IdentityObject IdentifyColor(LynxI2cColorRangeSensor sensor)
     {
+        int r = sensor.red(), g = sensor.green(), b = sensor.blue();
+        if (sensor == rotaryColorSensorR)
+        {
+            r *= 2;
+            g *= 2;
+            b *= 2;
+        }
+
         ColorType[] colorCheck = {ColorType.Purple, ColorType.Green, ColorType.Wall, ColorType.Nothing};
         for(ColorType check : colorCheck)
         {
             int ok = 1;
-            if (check.v2.RED_THRESHOLD[0] < sensor.red() || check.v2.RED_THRESHOLD[1] > sensor.red()) ok = 0;
-            if (check.v2.GREEN_THRESHOLD[0] < sensor.green() || check.v2.GREEN_THRESHOLD[1] > sensor.green()) ok = 0;
-            if (check.v2.BLUE_THRESHOLD[0] < sensor.blue() || check.v2.BLUE_THRESHOLD[1] > sensor.blue()) ok = 0;
+            if (check.v2.RED_THRESHOLD[0] > r || check.v2.RED_THRESHOLD[1] < r) ok = 0;
+            if (check.v2.GREEN_THRESHOLD[0] > g || check.v2.GREEN_THRESHOLD[1] < g) ok = 0;
+            if (check.v2.BLUE_THRESHOLD[0] > b || check.v2.BLUE_THRESHOLD[1] < b) ok = 0;
 
             if (ok == 1) return check.identity;
         }
@@ -159,17 +178,17 @@ public class Spindex extends Subsystem {
     {
         if (IdentifyColor(rotaryColorSensorL, new ColorType[]{ColorType.Purple}))
         {
-            setTarget(rotaryCurrentPos + ThirdTurn/2);
+            setTarget(rotaryTargetPos - ThirdTurn/2 - rotaryTargetPos%ThirdTurn);
             return true;
         }
         if (IdentifyColor(rotaryColorSensorR, new ColorType[]{ColorType.Purple}))
         {
-            setTarget(rotaryCurrentPos - ThirdTurn/2);
+            setTarget(rotaryTargetPos + ThirdTurn/2 - rotaryTargetPos%ThirdTurn);
             return true;
         }
         if (IdentifyColor(rotaryColorSensorF, new ColorType[]{ColorType.Purple}))
         {
-            setTarget(rotaryCurrentPos + ThirdTurn*1.5);
+            setTarget(rotaryTargetPos + ThirdTurn*1.5 - rotaryTargetPos%ThirdTurn);
             return true;
         }
         return false;
@@ -179,17 +198,17 @@ public class Spindex extends Subsystem {
     {
         if (IdentifyColor(rotaryColorSensorL, new ColorType[]{ColorType.Green}))
         {
-            setTarget(rotaryCurrentPos + ThirdTurn/2);
+            setTarget(rotaryTargetPos - ThirdTurn/2 - rotaryTargetPos%ThirdTurn);
             return true;
         }
         if (IdentifyColor(rotaryColorSensorR, new ColorType[]{ColorType.Green}))
         {
-            setTarget(rotaryCurrentPos - ThirdTurn/2);
+            setTarget(rotaryTargetPos + ThirdTurn/2 - rotaryTargetPos%ThirdTurn);
             return true;
         }
         if (IdentifyColor(rotaryColorSensorF, new ColorType[]{ColorType.Green}))
         {
-            setTarget(rotaryCurrentPos + ThirdTurn*1.5);
+            setTarget(rotaryTargetPos + ThirdTurn*1.5 - rotaryTargetPos%ThirdTurn);
             return true;
         }
         return false;
@@ -199,17 +218,17 @@ public class Spindex extends Subsystem {
     {
         if (IdentifyColor(rotaryColorSensorL, new ColorType[]{ColorType.Green, ColorType.Purple}))
         {
-            setTarget(rotaryCurrentPos + ThirdTurn/2);
+            setTarget(rotaryTargetPos - ThirdTurn/2 - rotaryTargetPos%ThirdTurn);
             return true;
         }
         if (IdentifyColor(rotaryColorSensorR, new ColorType[]{ColorType.Green, ColorType.Purple}))
         {
-            setTarget(rotaryCurrentPos - ThirdTurn/2);
+            setTarget(rotaryTargetPos + ThirdTurn/2 - rotaryTargetPos%ThirdTurn);
             return true;
         }
         if (IdentifyColor(rotaryColorSensorF, new ColorType[]{ColorType.Green, ColorType.Purple}))
         {
-            setTarget(rotaryCurrentPos + ThirdTurn*1.5);
+            setTarget(rotaryTargetPos + ThirdTurn*1.5 - rotaryTargetPos%ThirdTurn);
             return true;
         }
         return false;
@@ -219,12 +238,12 @@ public class Spindex extends Subsystem {
     {
         if (IdentifyColor(rotaryColorSensorL, new ColorType[]{ColorType.Nothing}))
         {
-            setTarget(rotaryCurrentPos + ThirdTurn);
+            setTarget(rotaryTargetPos - ThirdTurn - rotaryTargetPos%ThirdTurn);
             return true;
         }
         if (IdentifyColor(rotaryColorSensorR, new ColorType[]{ColorType.Nothing}))
         {
-            setTarget(rotaryCurrentPos - ThirdTurn);
+            setTarget(rotaryTargetPos + ThirdTurn - rotaryTargetPos%ThirdTurn);
             return true;
         }
 //        if (IdentifyColor(rotaryColorSensorF, new ColorType[]{ColorType.Nothing}))
@@ -235,6 +254,12 @@ public class Spindex extends Subsystem {
         return false;
     }
 
+
+    public void FixOrientationForIntake()
+    {
+        setTarget(rotaryTargetPos - rotaryTargetPos%ThirdTurn);
+    }
+
     public void setTarget(double target)
     {
         rotaryTargetPos = target;
@@ -242,14 +267,16 @@ public class Spindex extends Subsystem {
 
     public void setRotaryPower(double value)
     {
+        double voltage = voltageSensor.getVoltage();
+
         if (value < -1.0) value = -1.0;
         else if (value > 1.0) value = 1.0;
 
-        servoDexRight.setPower(value);
-        servoDexLeft.setPower(value);
+        servoDexRight.setPower(value*(12.0/voltage));
+        servoDexLeft.setPower(value*(12.0/voltage));
     }
 
-    public double getRotaryPosition()
+    public double getPosition()
     {
         return rotaryEncoder.getCurrentPosition();
     }
@@ -257,7 +284,7 @@ public class Spindex extends Subsystem {
     public void updateRotaryPosition()
     {
         setRotaryPower(rotaryPID.update(rotaryTargetPos, rotaryEncoder.getCurrentPosition()));
-        telemetry.addData("RotaryPosError", getRotaryPosition() - rotaryTargetPos);
+        telemetry.addData("RotaryPosError", getPosition() - rotaryTargetPos);
     }
 
     public Command update()
@@ -266,11 +293,11 @@ public class Spindex extends Subsystem {
                 .update(() ->
                 {
                     setRotaryPower(rotaryPID.update(rotaryTargetPos, rotaryEncoder.getCurrentPosition()));
-                    telemetry.addData("Error", getRotaryPosition() - rotaryTargetPos);
+                    telemetry.addData("Error", getPosition() - rotaryTargetPos);
                 })
                 .finished(() ->
                         {
-                           if (Math.abs(getRotaryPosition() - rotaryTargetPos) <= Tolerance)
+                           if (Math.abs(getPosition() - rotaryTargetPos) <= Tolerance)
                            {
                                setRotaryPower(0);
                                return true;

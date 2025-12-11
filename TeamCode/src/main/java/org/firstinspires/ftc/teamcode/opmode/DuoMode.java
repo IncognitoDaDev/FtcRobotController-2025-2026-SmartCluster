@@ -158,9 +158,6 @@ public class DuoMode extends LinearOpMode {
                         ));
 
 
-
-
-
         FSM<TeleOpState> fsm = fsmBuilder.build(scheduler);
         MovingAverageFilter loopTimeFilter=new MovingAverageFilter(50);
 
