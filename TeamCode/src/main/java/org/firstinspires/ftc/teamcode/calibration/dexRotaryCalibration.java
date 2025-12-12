@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.calibration;
+package org.firstinspires.ftc.teamcode.Calibration;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
@@ -9,14 +9,17 @@ import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.CommandScheduler;
 import com.smartcluster.oracleftc.commands.ParallelCommand;
 
+import org.firstinspires.ftc.teamcode.subsystem.ColorType;
 import org.firstinspires.ftc.teamcode.subsystem.Spindex;
+
+import java.util.function.Supplier;
 
 @Config
 @TeleOp(group="calibration")
 public class dexRotaryCalibration extends LinearOpMode {
     private final CommandScheduler scheduler = new CommandScheduler();
 
-    boolean found = false;
+    Supplier<Boolean> found = ()->false;
 
     @Override
     public void runOpMode() throws InterruptedException
@@ -44,22 +47,26 @@ public class dexRotaryCalibration extends LinearOpMode {
             if (gamepad1.dpadLeftWasPressed()) spindex.setTarget(spindex.rotaryTargetPos + spindex.ThirdTurn);
             else if (gamepad1.dpadRightWasPressed()) spindex.setTarget(spindex.rotaryTargetPos - spindex.ThirdTurn);
 
-
             if (gamepad1.circleWasPressed()) found = spindex.sortAny();
             else if (gamepad1.squareWasPressed()) found = spindex.sortPurple();
             else if (gamepad1.triangleWasPressed()) found = spindex.sortGreen();
             else if (gamepad1.crossWasPressed()) spindex.FixOrientationForIntake();
 
+            if (spindex.IdentifyColor(spindex.rotaryColorSensorF) == ColorType.IdentityObject.WALL)
+                spindex.cachedSensor.reset();
 
-            telemetry.addData("EncoderPosition", spindex.rotaryEncoder.getCurrentPosition());
+            spindex.cachedSensor.setFront(spindex.IdentifyColor(spindex.rotaryColorSensorF));
+            spindex.cachedSensor.setRight(spindex.IdentifyColor(spindex.rotaryColorSensorR));
+            spindex.cachedSensor.setLeft(spindex.IdentifyColor(spindex.rotaryColorSensorL));
+
             telemetry.addData("CurrentPosition", spindex.getPosition());
             telemetry.addData("TargetPosition", spindex.rotaryTargetPos);
             telemetry.addData("ErrorDistance", Math.abs(spindex.rotaryTargetPos-spindex.getPosition()));
 
             telemetry.addData("Found desired ball", found);
-            telemetry.addData("F_Sensor",spindex.IdentifyColor(spindex.rotaryColorSensorF));
-            telemetry.addData("L_Sensor",spindex.IdentifyColor(spindex.rotaryColorSensorL));
-            telemetry.addData("R_Sensor",spindex.IdentifyColor(spindex.rotaryColorSensorR));
+            telemetry.addData("F_Sensor",spindex.cachedSensor.getFront());
+            telemetry.addData("L_Sensor",spindex.cachedSensor.getLeft());
+            telemetry.addData("R_Sensor",spindex.cachedSensor.getRight());
 
             telemetry.update();
         }

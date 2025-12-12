@@ -6,6 +6,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.smartcluster.oracleftc.commands.CommandScheduler;
 
+import org.firstinspires.ftc.teamcode.subsystem.ColorType;
 import org.firstinspires.ftc.teamcode.subsystem.Spindex;
 
 @TeleOp(group="calibration")
@@ -22,9 +23,19 @@ public class dexColorSensorCalibration extends LinearOpMode {
         waitForStart();
         while(opModeIsActive())
         {
-            telemetry.addData("F_Sensor",spindex.IdentifyColor(spindex.rotaryColorSensorF));
-            telemetry.addData("L_Sensor",spindex.IdentifyColor(spindex.rotaryColorSensorL));
-            telemetry.addData("R_Sensor",spindex.IdentifyColor(spindex.rotaryColorSensorR));
+            if (spindex.IdentifyColor(spindex.rotaryColorSensorF) == ColorType.IdentityObject.WALL)
+                spindex.cachedSensor.reset();
+
+            spindex.cachedSensor.setFront(spindex.IdentifyColor(spindex.rotaryColorSensorF));
+            spindex.cachedSensor.setRight(spindex.IdentifyColor(spindex.rotaryColorSensorR));
+            spindex.cachedSensor.setLeft(spindex.IdentifyColor(spindex.rotaryColorSensorL));
+
+            telemetry.addData("Last Obj F_Sensor",spindex.cachedSensor.getFront());
+            telemetry.addData("Last Obj L_Sensor",spindex.cachedSensor.getLeft());
+            telemetry.addData("Last Obj R_Sensor",spindex.cachedSensor.getRight());
+            telemetry.addData("Current Obj F_Sensor",spindex.IdentifyColor(spindex.rotaryColorSensorF));
+            telemetry.addData("Current Obj L_Sensor",spindex.IdentifyColor(spindex.rotaryColorSensorR));
+            telemetry.addData("Current Obj R_Sensor",spindex.IdentifyColor(spindex.rotaryColorSensorL));
 
             telemetry.addData("F_Red", spindex.rotaryColorSensorF.red());
             telemetry.addData("F_Green", spindex.rotaryColorSensorF.green());
@@ -37,6 +48,8 @@ public class dexColorSensorCalibration extends LinearOpMode {
             telemetry.addData("R_Red", spindex.rotaryColorSensorR.red());
             telemetry.addData("R_Green", spindex.rotaryColorSensorR.green());
             telemetry.addData("R_Blue", spindex.rotaryColorSensorR.blue());
+
+            telemetry.update();
 
             telemetry.update();
         }

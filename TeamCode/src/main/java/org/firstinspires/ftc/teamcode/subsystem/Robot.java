@@ -26,6 +26,7 @@ public class Robot {
     public Command reset()
     {
         return new ParallelCommand(
+            turret.hood.reset(),
             spinDex.reset(),
             turret.reset()
         );
@@ -34,7 +35,9 @@ public class Robot {
     public Command update()
     {
         return new ParallelCommand(
-                turret.update()
+                turret.hood.update(),
+                turret.update(),
+                spinDex.update()
         );
     }
 

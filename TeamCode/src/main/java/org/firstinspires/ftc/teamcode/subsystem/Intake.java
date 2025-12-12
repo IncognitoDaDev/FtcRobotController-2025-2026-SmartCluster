@@ -2,19 +2,20 @@ package org.firstinspires.ftc.teamcode.subsystem;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorImplEx;
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
 
 public class Intake extends Subsystem {
 
-    public DcMotor intakeMotor;
-    public double intakePower = 0.85;
+    public DcMotorImplEx intakeMotor;
+    public double intakePower = 0.65;
 
     public Intake(OpMode mode)
     {
         super(mode);
 
-        intakeMotor = hardwareMap.get(DcMotor.class, "intakeMotor");
-        intakeMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        intakeMotor = hardwareMap.get(DcMotorImplEx.class, "intakeMotor");
+        //intakeMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
     }
 
     public void reset() {

@@ -3,14 +3,17 @@
     <Webcam name="Turret Webcam" serialNumber="VendorProduct:vendor=0x090c|product=0x037c|connection=" />
     <LynxUsbDevice name="Control Hub Portal" serialNumber="(embedded)" parentModuleAddress="173">
         <LynxModule name="Control Hub" port="173">
-            <goBILDA5202SeriesMotor name="turretDown" port="0" />
-            <goBILDA5202SeriesMotor name="turretRotate" port="1" />
+            <goBILDA5202SeriesMotor name="turretUp" port="0" />
+            <goBILDA5202SeriesMotor name="turretDown" port="1" />
             <goBILDA5202SeriesMotor name="backRight" port="2" />
             <goBILDA5202SeriesMotor name="frontRight" port="3" />
 
             <ContinuousRotationServo name = "dexLeft" port = "0" />
             <RevColorSensorV3 name="rotaryColorSensorF" port="0" bus="3"/>
             <LynxColorSensor name="rotaryColorSensorL" port="0" bus="2"/>
+            <Servo name="leftHood" port="2"/>
+            <Servo name="rightHood" port="3"/>
+
 
             <goBILDAPinpoint name="pinpoint" port="1"/>
             <LynxEmbeddedIMU name="imu" port="0" bus="0" />
@@ -20,10 +23,7 @@
         <LynxModule name="Expansion Hub 2" port="2">
             <goBILDA5202SeriesMotor name="frontLeft" port="3" />
             <goBILDA5202SeriesMotor name="backLeft" port="1" />
-
-<!--            <Servo name="leftHood" port="2"/>-->
-<!--            <Servo name="rightHood" port="3"/>-->
-
+            <goBILDA5202SeriesMotor name="turretRotate" port="0" />
             <goBILDA5202SeriesMotor name="intakeMotor" port="2" /> <!-- ARE ENCODER PENTRU SPINDEX -->
 
             <ContinuousRotationServo name="dexRight" port="0"/>
