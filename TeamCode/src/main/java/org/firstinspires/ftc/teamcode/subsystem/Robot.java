@@ -14,6 +14,7 @@ public class Robot {
 
     public Robot(OpMode mode)
     {
+
         this.opMode = mode;
 
         this.intake = new Intake(mode);

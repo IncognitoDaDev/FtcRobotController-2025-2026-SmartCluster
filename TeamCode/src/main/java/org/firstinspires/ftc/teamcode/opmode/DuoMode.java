@@ -166,9 +166,9 @@ public class DuoMode extends LinearOpMode {
                                 new InstantCommand(()->robot.turret.hood.setTarget(0.0))
 
                         )
-
-                //Next Ball
-                )
+                );
+        //Next Ball
+        fsmBuilder = fsmBuilder
                 .transition(TeleOpState.SHOOTING,TeleOpState.SHOOTING,robot.spinDex.flapperIsDown(),
                         new SequentialCommand(
                             new InstantCommand(robot.spinDex::sortAny)

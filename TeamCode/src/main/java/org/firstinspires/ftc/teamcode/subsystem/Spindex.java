@@ -22,7 +22,7 @@ import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
 @Config
 public class Spindex extends Subsystem {
 
-    public class CachedSensor
+    public static class CachedSensor
     {
         private ColorType.IdentityObject Front = ColorType.IdentityObject.EMPTY;;
         private ColorType.IdentityObject Left = ColorType.IdentityObject.EMPTY;;
