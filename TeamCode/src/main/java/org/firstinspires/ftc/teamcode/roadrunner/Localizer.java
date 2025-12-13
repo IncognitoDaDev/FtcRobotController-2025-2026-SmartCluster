@@ -13,6 +13,7 @@ public interface Localizer {
      * Returns the current pose estimate.
      * NOTE: Does not update the pose estimate;
      * you must call update() to update the pose estimate.
+     *
      * @return the Localizer's current pose
      */
     Pose2d getPose();

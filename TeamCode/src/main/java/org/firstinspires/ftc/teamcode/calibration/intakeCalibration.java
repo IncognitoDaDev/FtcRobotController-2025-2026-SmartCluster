@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.smartcluster.oracleftc.utils.ProcessedGamepad;
 
 import org.firstinspires.ftc.teamcode.subsystem.Intake;
+import org.firstinspires.ftc.teamcode.subsystem.Spindex;
 
 @Config
 @TeleOp(group="calibration")
@@ -14,14 +15,14 @@ public class intakeCalibration extends LinearOpMode {
         public void runOpMode() throws InterruptedException {
             waitForStart();
             ProcessedGamepad driverGamepad = new ProcessedGamepad(gamepad1);
-
+            Spindex soindex = new Spindex(this);
             Intake intake = new Intake(this);
 
             while(opModeIsActive())
             {
 
                 if (gamepad2.right_bumper) {      // R1
-                    intake.Intake();
+                    intake.intake();
 
                 }
                 else {

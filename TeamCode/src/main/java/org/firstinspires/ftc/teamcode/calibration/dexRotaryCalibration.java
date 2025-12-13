@@ -32,11 +32,6 @@ public class dexRotaryCalibration extends LinearOpMode {
 
         waitForStart();
 
-        scheduler.schedule(
-                new ParallelCommand(
-                        spindex.update()
-                )
-        );
 
         while(opModeIsActive() && !isStopRequested())
         {

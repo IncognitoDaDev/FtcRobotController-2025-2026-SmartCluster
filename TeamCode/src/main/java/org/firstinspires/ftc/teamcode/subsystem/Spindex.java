@@ -13,9 +13,12 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.InstantCommand;
+import com.smartcluster.oracleftc.commands.SequentialCommand;
 import com.smartcluster.oracleftc.hardware.OracleLynxVoltageSensor;
 import com.smartcluster.oracleftc.hardware.subsystem.ServoActuator;
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
+import com.smartcluster.oracleftc.hardware.wrappers.Encoder;
+import com.smartcluster.oracleftc.hardware.wrappers.RawEncoder;
 import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
 
@@ -64,17 +67,15 @@ public class Spindex extends Subsystem {
     public final RevColorSensorV3 rotaryColorSensorF;
 
     public final LynxI2cColorRangeSensor rotaryColorSensorR, rotaryColorSensorL;
-    public final DcMotorEx rotaryEncoder;
+    public final Encoder rotaryEncoder;
 
     public final OracleLynxVoltageSensor voltageSensor;
 
     //private OracleLynxVoltageSensor voltageSensor;
-    public static PIDController rotaryPID = new PIDController(0.00012, 0.00000025, 0);//new PIDController(0.00032, 0.000000015, 0.000013, 0);
-    public static double Tolerance = 40;
-    public static double ThirdTurn = 2750; // 120 degrees
+    public static PIDController rotaryPID = new PIDController(0.008, 0, 0.000365);//new PIDController(0.00032, 0.000000015, 0.000013, 0);
+    public static double Tolerance = 2;
+    public static double ThirdTurn = 120; // 2750 degrees
 
-    public double previousValueAnalog = 0;
-    public double rotaryCurrentPos = 0;
     public double rotaryTargetPos = 0;
 
     public final ServoActuator flapper;
@@ -93,9 +94,9 @@ public class Spindex extends Subsystem {
         rotaryColorSensorF = hardwareMap.get(RevColorSensorV3.class, "rotaryColorSensorF");
         rotaryColorSensorR = hardwareMap.get(LynxI2cColorRangeSensor.class, "rotaryColorSensorR");
         rotaryColorSensorL = hardwareMap.get(LynxI2cColorRangeSensor.class, "rotaryColorSensorL");
-        rotaryEncoder = hardwareMap.get(DcMotorEx.class, "intakeMotor");
+        rotaryEncoder = new RawEncoder(hardwareMap.get(DcMotorEx.class,"intakeMotor"));
 
-        rotaryEncoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        //rotaryEncoder.setDirection(Encoder.Direction.REVERSE);
 
         cachedSensor = new CachedSensor();
 
@@ -314,50 +315,67 @@ public class Spindex extends Subsystem {
 
     public void setRotaryPower(double value)
     {
-        double voltage = voltageSensor.getVoltage();
+        //double voltage = voltageSensor.getVoltage();
 
         if (value < -1.0) value = -1.0;
         else if (value > 1.0) value = 1.0;
 
-        servoDexRight.setPower(value*(12.0/voltage));
-        servoDexLeft.setPower(value*(12.0/voltage));
+        servoDexRight.setPower(value);
+        servoDexLeft.setPower(value);
     }
 
     public double getPosition()
     {
-        return rotaryEncoder.getCurrentPosition();
+        return rotaryEncoder.getCurrentPosition().get(0)/8192*360;
     }
 
     public void updateRotaryPosition()
     {
-        setRotaryPower(rotaryPID.update(rotaryTargetPos, rotaryEncoder.getCurrentPosition()));
+        setRotaryPower(rotaryPID.update(rotaryTargetPos, getPosition()));
         telemetry.addData("RotaryPosError", getPosition() - rotaryTargetPos);
     }
 
-    public Command update()
+    public final Command update()
     {
         return Command.builder()
+                .init(() ->
+                {
+                    setTarget(0);
+                })
                 .update(() ->
                 {
-                    setRotaryPower(rotaryPID.update(rotaryTargetPos, rotaryEncoder.getCurrentPosition()));
-                    telemetry.addData("Error", getPosition() - rotaryTargetPos);
+                    setRotaryPower(rotaryPID.update(rotaryTargetPos, getPosition()));
+
+                    telemetry.addData("CurrentPosition", getPosition());
+                    telemetry.addData("TargetPosition", rotaryTargetPos);
+                    telemetry.addData("ErrorDistance", Math.abs(rotaryTargetPos-getPosition()));
                 })
-                .finished(() ->
+                .build();
+    }
+
+    public final Command move(double position)
+    {
+        return Command.builder()
+                .init(() ->
                 {
-                    if (Math.abs(getPosition() - rotaryTargetPos) <= Tolerance)
-                    {
-                        setRotaryPower(0);
-                        return true;
-                    }
-                    else return false;
+                    setTarget(rotaryTargetPos + position);
                 })
+                .finished(() -> Math.abs(getPosition() - rotaryTargetPos) <= Tolerance)
+                .end((interrupted) -> setRotaryPower(0))
                 .requires(this)
                 .build();
     }
 
+    public void moveVoid(double position)
+    {
+        setTarget(rotaryTargetPos + position);
+    }
+
     public Command reset()
     {
-        return new InstantCommand(()-> {setRotaryPower(0);});
+        return new SequentialCommand(
+                new InstantCommand(()-> {setRotaryPower(0);}),
+                new InstantCommand(rotaryEncoder::reset));
     }
 
 }

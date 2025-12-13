@@ -13,8 +13,8 @@ public class Intake extends Subsystem {
     public Intake(OpMode mode)
     {
         super(mode);
-
         intakeMotor = hardwareMap.get(DcMotorImplEx.class, "intakeMotor");
+        intakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         //intakeMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
     }
 
@@ -26,7 +26,7 @@ public class Intake extends Subsystem {
         intakeMotor.setPower(power);
     }
 
-    public void Intake() {
+    public void intake() {
         intakeMotor.setPower(intakePower);
     }
 

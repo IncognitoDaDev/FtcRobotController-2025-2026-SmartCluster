@@ -4,7 +4,9 @@ package org.firstinspires.ftc.teamcode.subsystem;
 
 import com.ThermalEquilibrium.homeostasis.Controllers.Feedforward.BasicFeedforward;
 import com.ThermalEquilibrium.homeostasis.Parameters.FeedforwardCoefficients;
-import com.qualcomm.hardware.lynx.LynxVoltageSensor;
+import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.roadrunner.Pose2d;
+import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.hardware.wrappers.Encoder;
 import com.smartcluster.oracleftc.hardware.wrappers.RawEncoder;
@@ -21,16 +23,18 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.smartcluster.oracleftc.hardware.subsystem.ServoActuator;
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
 import com.smartcluster.oracleftc.math.DualNum;
-import com.smartcluster.oracleftc.math.Pose2d;
-import com.smartcluster.oracleftc.math.Pose2dDual;
+
 import com.smartcluster.oracleftc.math.Time;
 import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
 
+import org.firstinspires.ftc.teamcode.roadrunner.PinpointLocalizer;
+
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-
+@Config
 public class Turret extends Subsystem {
 
     final double HOOD_MIN_ANGLE = 0.0;   // Example: Angle when servo is at position 0.0
@@ -41,10 +45,10 @@ public class Turret extends Subsystem {
     private final String name;
     public DcMotorEx turret1,turret2,rot;
     public ServoImplEx s1,s2;
-    public static PIDController shootPidController = new PIDController(0.0,0.0,0.0);
+//    public static PIDController shootPidController = new PIDController(0.0,0.0,0.0);
     public static TrapezoidalMotionProfile shootMotionProfile = new TrapezoidalMotionProfile(6000,40000,20000);
-    public static PIDController rotationalPidController = new PIDController(0.0,0.0,0.0);
-    public static TrapezoidalMotionProfile rotationalMotionProfile = new TrapezoidalMotionProfile(6000,40000,20000);
+    public static PIDController rotationalPidController = new PIDController(0.0002,0.0002,0.0003);
+    public static TrapezoidalMotionProfile rotationalMotionProfile = new TrapezoidalMotionProfile(6000,1000,1000);
     public final Encoder rotate;
     public double[] Speed ={0,4500,5000,6000};
     private final OracleLynxVoltageSensor voltageSensor;
@@ -57,16 +61,20 @@ public class Turret extends Subsystem {
     FeedforwardCoefficients coefficients = new FeedforwardCoefficients(Kv,Ka,Ks);
     BasicFeedforward shootController = new BasicFeedforward(coefficients);
     public double targetSpeed = 0;
-    public int targetAngle = 0;
+    public double targetAngle = 0;
 
-
+    public GoBildaPinpointDriver pinpoint;
     public Actuator turret;
     public Actuator rotation;
     public ServoActuator hood;
+    PinpointLocalizer localizer;
+    Pose2d robotPose = new Pose2d(0,0,90);
 
     public Turret(OpMode opMode, String name) {
         super(opMode);
         this.name = name;
+
+        this.localizer = new PinpointLocalizer(hardwareMap,robotPose);
         turret1 = hardwareMap.get(DcMotorEx.class,"turretDown");
         turret2 = hardwareMap.get(DcMotorEx.class,"turretUp");
         rot = hardwareMap.get(DcMotorEx.class,"turretRotate");
@@ -141,11 +149,14 @@ public class Turret extends Subsystem {
                         .requires(Turret.this)
                         .build();
             }
-            public double setAngle(double angle) {
+            public void setAngle(double angle) {
                 angle = angle/100;
                 //Angle between 0 - 60 degrees
-                setTarget(angle);
-                return angle;
+                if(angle<HOOD_MIN_ANGLE)angle = HOOD_MIN_ANGLE;
+                if(angle>HOOD_MAX_ANGLE)angle = HOOD_MAX_ANGLE;
+                s1.setPosition(angle);
+                s2.setPosition(angle);
+
             }
 
             @Override
@@ -162,9 +173,12 @@ public class Turret extends Subsystem {
 
 
     }
-    public void setAngle(int angle){targetAngle = angle;}
-    public void setRotation(int angle){
-        AtomicReference<DualNum<Time>> lastPosition = new AtomicReference<>(rotate.getCurrentPosition().div(ENCODER_TICKS_PER_DEGREE));
+    public void setAngle(double angle){
+        targetAngle = angle;
+        setRotation();
+    }
+    public void setRotation(){
+        double angle = targetAngle;
         time.reset();
 
         if (rotate.getCurrentPosition().get(0) <= tolerance || rotate.getCurrentPosition().get(0) >= -tolerance) {
@@ -178,13 +192,13 @@ public class Turret extends Subsystem {
         double power = rotationalPidController.update(mop.get(0) *Math.signum(distance),
                 rotate.getCurrentPosition().get(0));
 
-        rot.setTargetPosition(angle);
+        rot.setTargetPosition((int) targetAngle);
         rot.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         rot.setPower(power);
 
     }
     public double getRotation(){
-        return rotate.getCurrentPosition().get(0)*ENCODER_TICKS_PER_DEGREE;
+        return rotate.getCurrentPosition().get(0)/8192/MOTOR_TO_TURRET_RATIO;
     }
     public Supplier<Boolean> atSpeed(){
         if(Math.abs(getSpeed()-targetSpeed)<=100)return ()->true;
@@ -193,11 +207,12 @@ public class Turret extends Subsystem {
 
 
 
-    public double setTargetSpeed(double speed) {
-        return shootController.calculate(0,speed,shootMotionProfile.maxAcceleration);
+    public void setTargetSpeed(double speed) {
+        targetSpeed =  shootController.calculate(0,speed,shootMotionProfile.maxAcceleration)/6000;
+        setShooter();
     }
-    public void setShooter(double speed){
-        double power = setTargetSpeed(speed) ;
+    public void setShooter(){
+        double power = targetSpeed;
         if (power < -1.0) power = -1.0;
         else if (power > 1.0) power = 1.0;
         turret1.setPower(power*(12/voltageSensor.getVoltage()));
@@ -208,32 +223,38 @@ public class Turret extends Subsystem {
 
         return turret1.getVelocity();
     }
-    public double ppToAngle(Pose2d pose,String TeamColor){
+    public double ppToAngle(PinpointLocalizer pinpoint,String TeamColor){
+        Pose2d pose = pinpoint.getPose();
         double angle = 0;
         Pose2d corner = null;
-        if(TeamColor == "RED")
+        if(Objects.equals(TeamColor, "RED"))
             corner = new Pose2d(60,63,0);
-        else if (TeamColor == "BLUE")
+        else if (Objects.equals(TeamColor, "BLUE"))
             corner = new Pose2d(-60,63,0);
 
         assert corner != null;
-        angle = Math.atan2(Math.abs(pose.getX()-corner.getX()), Math.abs(pose.getY()- pose.getY()));
+        double distance2origin = Math.abs(Math.sqrt(Math.pow(pose.position.x,2)+Math.pow(pose.position.y, 2)));
+        double corner2origin =  Math.abs(Math.sqrt(Math.pow(corner.position.x,2)+Math.pow(corner.position.y,2)));
+        angle = Math.atan2(distance2origin,corner2origin);
 
         return angle;
 
     }
+    public Command trackCorner(PinpointLocalizer pinpoint,String TeamColor){
+        return new InstantCommand(()->{setAngle(ppToAngle(pinpoint,TeamColor));});
+    }
     public Command update(){
         return Command.builder()
                 .update(()->{
-                        setShooter(shootController.calculate(0,targetSpeed,shootMotionProfile.maxAcceleration));
+                        setTargetSpeed(targetSpeed);
                         telemetry.addData("Error ", getSpeed() - targetSpeed);
-                        setRotation(targetAngle);
+                        setAngle(targetAngle);
                         telemetry.addData("Rotation error ", getRotation()-targetAngle);
                 })
                 .finished(()->{
                     if (Math.abs(getRotation() - targetAngle) <= tolerance&&getSpeed()-targetSpeed<=100.0)
                     {
-                        setShooter(0);
+                        setTargetSpeed(0);
                         return true;
                     }
 
@@ -250,11 +271,11 @@ public class Turret extends Subsystem {
 
                     rot.setTargetPosition(0);
                     rot.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    rot.setPower(0.7);
+                    rot.setPower(0.85);
+
                 })
                 .finished(()->{
-                    if(getRotation()==0 && getSpeed()==0)return true;
-                    else return false;
+                    return getRotation() == 0 && getSpeed() == 0;
                 })
                 .requires(this)
                 .build();

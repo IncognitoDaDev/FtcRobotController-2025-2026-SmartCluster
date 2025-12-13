@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class Test extends LinearOpMode {
     public DcMotor rotation, turret;
     public static int position = 0;
+    public static int target = 0;
     public static double speed = 0;
     public static int tolerance = 2;
     public Encoder rotate;
@@ -51,7 +52,6 @@ public class Test extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         ElapsedTime resetTime = new ElapsedTime();
-        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
         Turret turret = new Turret(this, "Turret");
         Command.run(turret.reset());
@@ -65,14 +65,11 @@ public class Test extends LinearOpMode {
         while (opModeIsActive() && !isStopRequested()) {
             //turret.set HELP ME 🤗
 
-            double shootPower = shootController.calculate(0,speed, mp.maxAcceleration);
+//            double shootPower = shootController.calculate(0,speed, mp.maxAcceleration);
             if(gamepad2.x)position = 100;
-
-
-            AtomicReference<DualNum<Time>> lastPosition = new AtomicReference<>(turret.rotate.getCurrentPosition().div(ENCODER_TICKS_PER_DEGREE));
             resetTime.reset();
 
-            if (turret.rotate.getCurrentPosition().get(0) <= tolerance || turret.rotate.getCurrentPosition().get(0) >= -tolerance) {
+            if(Math.abs(turret.getRotation()-position)<=tolerance){
                 turret.rot.setPower(0);
             }
 
@@ -84,15 +81,16 @@ public class Test extends LinearOpMode {
             double power = pid.update(mop.get(0) * Math.signum(distance),
                     turret.rotate.getCurrentPosition().get(0));
 
-            turret.rot.setTargetPosition(position);
-            turret.rot.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            turret.rot.setPower(power);
-            turret.setShooter(speed/6000);
+
+            turret.setAngle(position);
+            turret.setTargetSpeed(speed);
+            turret.hood.setTarget(target);
 
             telemetry.addData("Input speed ", speed/6000);
             telemetry.addData("Turret speed", turret.getSpeed());
             telemetry.addData("Input position", position);
             telemetry.addData("Current position", turret.rotate.getCurrentPosition().get(0));
+            telemetry.addData("Hood pose", turret.hood.getTarget());
             telemetry.update();
 
         }
