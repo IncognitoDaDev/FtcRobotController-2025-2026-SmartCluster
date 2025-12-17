@@ -1,11 +1,15 @@
 package org.firstinspires.ftc.teamcode.subsystem;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.lynx.LynxI2cColorRangeSensor;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorImplEx;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.commands.SequentialCommand;
@@ -14,14 +18,18 @@ import com.smartcluster.oracleftc.hardware.subsystem.ServoActuator;
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
 import com.smartcluster.oracleftc.hardware.wrappers.Encoder;
 import com.smartcluster.oracleftc.hardware.wrappers.RawEncoder;
+import com.smartcluster.oracleftc.math.DualNum;
+import com.smartcluster.oracleftc.math.Time;
 import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
 
 import java.util.function.Supplier;
 
+@Config
 public class NeoSpindexer extends Subsystem {
-    public static PIDController rotaryPID = new PIDController(0.008, 0, 0.000365);//new PIDController(0.00032, 0.000000015, 0.000013, 0);
-    public static double Tolerance = 2;
+    public static TrapezoidalMotionProfile rotmp = new TrapezoidalMotionProfile(100,1000,1000);
+    public static PIDController rotaryPID = new PIDController(0.0065, 0.001, 0.00025);//new PIDController(0.00032, 0.000000015, 0.000013, 0);
+    public static double Tolerance = 1;
     public static double ThirdTurn = 120;
     public static class CachedSensor
     {
@@ -64,8 +72,9 @@ public class NeoSpindexer extends Subsystem {
 
 
         public final CRServoImplEx servoDexRight, servoDexLeft;
-        public final ServoImplEx servoFlapperRight;
+        public final ServoImplEx servoFlapperRight,servoFlapperLeft;
         public final RevColorSensorV3 rotaryColorSensorF;
+        public CachedSensor cachedSensor;
 
         public final LynxI2cColorRangeSensor rotaryColorSensorR, rotaryColorSensorL;
         public final Encoder rotaryEncoder;
@@ -74,15 +83,17 @@ public class NeoSpindexer extends Subsystem {
 
         //private OracleLynxVoltageSensor voltageSensor;
 
-
+        public boolean enabled = true;
         public double rotaryTargetPos = 0;
-
+        public double currentPosition,target;
+        private final ElapsedTime timer = new ElapsedTime();
         public final ServoActuator flapper;
         public static double flapperDownVal = 0.51, flapperUpVal = 1.0;
         public static ColorType[] Order = {
                 ColorType.Nothing,ColorType.Nothing,ColorType.Nothing,ColorType.Nothing
-        };//Al patrulea spatiu este pentru a face rotatii mai usoare
-        public org.firstinspires.ftc.teamcode.subsystem.Spindex.CachedSensor cachedSensor;
+        };
+        //Al patrulea spatiu este pentru a face rotatii mai usoare
+
         public NeoSpindexer (OpMode mode)
         {
             super(mode);
@@ -90,21 +101,21 @@ public class NeoSpindexer extends Subsystem {
             servoDexRight = hardwareMap.get(CRServoImplEx.class, "dexRight");
             servoDexLeft = hardwareMap.get(CRServoImplEx.class, "dexLeft");
             servoFlapperRight=hardwareMap.get(ServoImplEx.class,"flapperRight");
-            //servoFlapperLeft=hardwareMap.get(ServoImplEx.class,"flapperLeft");
+            servoFlapperLeft=hardwareMap.get(ServoImplEx.class,"flapperLeft");
             rotaryColorSensorF = hardwareMap.get(RevColorSensorV3.class, "rotaryColorSensorF");
             rotaryColorSensorR = hardwareMap.get(LynxI2cColorRangeSensor.class, "rotaryColorSensorR");
             rotaryColorSensorL = hardwareMap.get(LynxI2cColorRangeSensor.class, "rotaryColorSensorL");
-            rotaryEncoder = new RawEncoder(hardwareMap.get(DcMotorEx.class,"intakeMotor"));
+            rotaryEncoder = new RawEncoder(hardwareMap.get(DcMotorImplEx.class,"intakeMotor"));
+            servoFlapperLeft.setDirection(Servo.Direction.REVERSE);
 
             //rotaryEncoder.setDirection(Encoder.Direction.REVERSE);
 
-            cachedSensor = new org.firstinspires.ftc.teamcode.subsystem.Spindex.CachedSensor();
 
             voltageSensor = hardwareMap.getAll(OracleLynxVoltageSensor.class).iterator().next();
             voltageSensor.setPolicy(OracleLynxVoltageSensor.OracleLynxVoltageSensorPolicy.CACHED);
             voltageSensor.setVoltageCacheFreshness(300);
 
-            flapper = new ServoActuator(this, "flapper", new TrapezoidalMotionProfile(12, 16, 12), servoFlapperRight)
+            flapper = new ServoActuator(this, "flapper", new TrapezoidalMotionProfile(12, 16, 12), servoFlapperRight,servoFlapperLeft)
             {
                 @Override
                 public Command reset()
@@ -113,7 +124,7 @@ public class NeoSpindexer extends Subsystem {
                     return new InstantCommand(() ->
                     {
                         servoFlapperRight.setPosition(this.target.get());
-                        //servoFlapperLeft.setPosition(this.target.get());
+                        servoFlapperLeft.setPosition(this.target.get());
                     });
                 }
 
@@ -228,36 +239,54 @@ public class NeoSpindexer extends Subsystem {
             return ColorType.IdentityObject.EMPTY;
         }
 
-        public void sortPurple()
+        public Command sortPurple()
         {
             if (cachedSensor.getLeft() == ColorType.IdentityObject.PURPLE)
             {
-                SwitchMode(-1);
+                return new SequentialCommand(
+                        new InstantCommand(()->{this.SwitchMode(-1);})
+                );
             }
             if (cachedSensor.getRight() == ColorType.IdentityObject.PURPLE)
             {
-                SwitchMode(1);
+                return new SequentialCommand(
+                        new InstantCommand(()->{this.SwitchMode(1);})
+
+                );
             }
             if (cachedSensor.getFront() == ColorType.IdentityObject.PURPLE)
             {
-                setTarget(rotaryTargetPos + 180);
+                return new SequentialCommand(
+                        new InstantCommand(()->{this.SwitchMode(-1);}),
+                        new InstantCommand(this::NextSpace)
+                );
             }
+            return null;
         }
 
-        public void sortGreen()
+        public Command sortGreen()
         {
             if (cachedSensor.getLeft() == ColorType.IdentityObject.GREEN)
             {
-                SwitchMode(-1);
+                return new SequentialCommand(
+                        new InstantCommand(()->{this.SwitchMode(-1);})
+                );
             }
             if (cachedSensor.getRight() == ColorType.IdentityObject.GREEN)
             {
-                SwitchMode(1);
+                return new SequentialCommand(
+                        new InstantCommand(()->{this.SwitchMode(1);})
+
+                );
             }
             if (cachedSensor.getFront() == ColorType.IdentityObject.GREEN)
             {
-                setTarget(rotaryTargetPos + 180);
+                return new SequentialCommand(
+                        new InstantCommand(()->{this.SwitchMode(-1);}),
+                        new InstantCommand(this::NextSpace)
+                );
             }
+            return null;
         }
 
         public void sortAny()
@@ -272,7 +301,8 @@ public class NeoSpindexer extends Subsystem {
             }
             if (cachedSensor.getFront() == ColorType.IdentityObject.PURPLE || cachedSensor.getFront() == ColorType.IdentityObject.GREEN)
             {
-                setTarget(rotaryTargetPos + 180);
+                SwitchMode(1);
+                NextSpace();
             }
         }
 
@@ -290,7 +320,8 @@ public class NeoSpindexer extends Subsystem {
             }
         if (IdentifyColor(rotaryColorSensorF, new ColorType[]{ColorType.Nothing}))
         {
-            setTarget(rotaryTargetPos + 180);
+            NextSpace();
+            SwitchMode(1);
             return ()->true;
 //        } // We want to move ball to an empty space from front position
 
@@ -298,19 +329,22 @@ public class NeoSpindexer extends Subsystem {
             return () -> false;
         }
 
-
         public void FixOrientationForIntake()
         {
-            setPosition(rotaryTargetPos - rotaryTargetPos%ThirdTurn);
+            setTarget(rotaryTargetPos - rotaryTargetPos%ThirdTurn);
         }
+    public void FixOrientationForOuttake()
+    {
+        setTarget(rotaryTargetPos + rotaryTargetPos%ThirdTurn);
+    }
         public void NextSpace(){
-            setPosition(rotaryTargetPos + ThirdTurn);
+            setTarget(rotaryTargetPos + ThirdTurn);
         }
         public void PrevSpace(){
-            setPosition(rotaryTargetPos - ThirdTurn);
+            setTarget(rotaryTargetPos - ThirdTurn);
         }
         public void SwitchMode(int direction){
-            setPosition(rotaryTargetPos - rotaryTargetPos%ThirdTurn*direction);
+            setTarget(rotaryTargetPos - 60*direction);
         }
         public ColorType[] OrderChange(ColorType[] Order,ColorType color){
             if(color!=ColorType.Wall) Order[1] = color;
@@ -346,6 +380,7 @@ public class NeoSpindexer extends Subsystem {
         public void setTarget(double target)
         {
             rotaryTargetPos = target;
+            setPosition();
         }
 
         public void setRotaryPower(double value)
@@ -358,10 +393,10 @@ public class NeoSpindexer extends Subsystem {
             servoDexRight.setPower(value);
             servoDexLeft.setPower(value);
         }
-        public void setPosition(double position){
-            if (Math.abs(getPosition())<=position-2.5)
+        public void setPosition(){
+            if (Math.abs(getPosition()-rotaryTargetPos)<=Tolerance)
                 setRotaryPower(0.7);
-            setRotaryPower(0);
+            else setRotaryPower(0);
         }
         public double getPosition()
         {
@@ -371,19 +406,31 @@ public class NeoSpindexer extends Subsystem {
         public final Command update()
         {
             return Command.builder()
+                    .init(()->{
+                        currentPosition = getPosition();
+                        target = rotaryTargetPos;
+                        timer.reset();
+
+                    })
                     .update(() ->
                     {
-                        if(Math.abs(getPosition()-rotaryTargetPos)<=2.5)
-                            setPosition(rotaryTargetPos);
 
-                        telemetry.addData("CurrentPosition", getPosition());
-                        telemetry.addData("TargetPosition", rotaryTargetPos);
-                        telemetry.addData("ErrorDistance", Math.abs(rotaryTargetPos-getPosition()));
+                        if(currentPosition!=getPosition())currentPosition = getPosition();
+                        if(target!=rotaryTargetPos)target = rotaryTargetPos;
+
+                        final double distance = target - currentPosition;
+                        DualNum<Time> mp = rotmp.getMotionState(Math.abs(distance),
+                                timer.seconds());
+                        double power = rotaryPID.update(mp.get(0) *Math.signum(distance)+currentPosition,
+                                getPosition());
+                        if(enabled) setRotaryPower(power);
+
+
+                        telemetry.addData("CurrentSpindexerPosition", getPosition());
+                        telemetry.addData("SpindexerTargetPosition", rotaryTargetPos);
+                        telemetry.addData("Error Rotation", Math.abs(rotaryTargetPos-getPosition()));
                     })
-                    .finished(()->Math.abs(getPosition()-rotaryTargetPos)<=2.5)
-                    .end((interrupted)->{
-                        setRotaryPower(0);
-                    })
+                    .requires(this)
                     .build();
         }
 

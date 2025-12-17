@@ -8,6 +8,8 @@
             <goBILDA5202SeriesMotor name="backRight" port="2" />
             <goBILDA5202SeriesMotor name="frontRight" port="3" />
 
+            <Servo name="flapperLeft" port="1"/>
+
             <ContinuousRotationServo name = "dexLeft" port = "0" />
             <RevColorSensorV3 name="rotaryColorSensorF" port="0" bus="3"/>
             <LynxColorSensor name="rotaryColorSensorL" port="0" bus="2"/>

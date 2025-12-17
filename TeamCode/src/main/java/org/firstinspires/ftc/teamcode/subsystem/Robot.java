@@ -32,8 +32,8 @@ public class Robot {
     {
         return new ParallelCommand(
             turret.hood.reset(),
-            spinDex.reset(),
-            turret.reset()
+            spinDex.reset()
+            //turret.reset()
         );
     }
 
@@ -42,7 +42,8 @@ public class Robot {
         return new ParallelCommand(
                 turret.hood.update(),
                 turret.update(),
-                spinDex.update()
+                spinDex.flapper.update()
+                //spinDex.update()
         );
     }
 
