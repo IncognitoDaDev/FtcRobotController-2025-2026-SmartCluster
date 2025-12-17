@@ -221,15 +221,15 @@ public class Turret extends Subsystem {
         double angle = 0;
         Pose2d corner = null;
         if(Objects.equals(TeamColor, "RED"))
-            corner = new Pose2d(60,63,0);
+            corner = new Pose2d(60,63,315);
         else if (Objects.equals(TeamColor, "BLUE"))
-            corner = new Pose2d(-60,63,0);
+            corner = new Pose2d(-60,63,315);
 
         assert corner != null;
         double distance2origin = Math.abs(Math.sqrt(Math.pow(pose.position.x,2)+Math.pow(pose.position.y, 2)));
         double corner2origin =  Math.abs(Math.sqrt(Math.pow(corner.position.x,2)+Math.pow(corner.position.y,2)));
         angle = Math.atan2(distance2origin,corner2origin);
-        setAngle(angle);
+        setAngle(angle+pose.heading.log());
     }
     public Command trackCorner(String TeamColor){
         return new InstantCommand(()->{ppToAngle(this.robotPose,TeamColor);});

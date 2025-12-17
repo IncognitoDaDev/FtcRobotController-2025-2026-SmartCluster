@@ -12,6 +12,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.commands.SequentialCommand;
@@ -21,6 +22,8 @@ import com.smartcluster.oracleftc.hardware.subsystem.ServoActuator;
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
 import com.smartcluster.oracleftc.hardware.wrappers.Encoder;
 import com.smartcluster.oracleftc.hardware.wrappers.RawEncoder;
+import com.smartcluster.oracleftc.math.DualNum;
+import com.smartcluster.oracleftc.math.Time;
 import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
 
@@ -74,9 +77,13 @@ public class Spindex extends Subsystem {
     public final OracleLynxVoltageSensor voltageSensor;
 
     public static PIDController rotaryPID = new PIDController(0.0065, 0.001, 0.00025);
+    public static TrapezoidalMotionProfile rotmp = new TrapezoidalMotionProfile(100,1000,1000);
     public static double Tolerance = 2;
     public static double ThirdTurn = 120; // 2750 degrees
     private double RightColorSensorOffset = 2.2;
+    public boolean enabled = true;
+    public double currentPosition,target;
+    public final ElapsedTime timer = new ElapsedTime();
 
     public double rotaryTargetPos = 0;
 
@@ -369,17 +376,28 @@ public class Spindex extends Subsystem {
     public final Command update()
     {
         return Command.builder()
-                .init(() ->
-                {
-                    setTarget(0);
+                .init(()->{
+                    currentPosition = getPosition();
+                    target = rotaryTargetPos;
+                    timer.reset();
+
                 })
                 .update(() ->
                 {
-                    setRotaryPower(rotaryPID.update(rotaryTargetPos, getPosition()));
+                    if(currentPosition!=getPosition())currentPosition = getPosition();
+                    if(target!=rotaryTargetPos)target = rotaryTargetPos;
 
-                    telemetry.addData("CurrentPosition", getPosition());
-                    telemetry.addData("TargetPosition", rotaryTargetPos);
-                    telemetry.addData("ErrorDistance", getErrorDist());
+                    final double distance = target - currentPosition;
+                    DualNum<Time> mp = rotmp.getMotionState(Math.abs(distance),
+                            timer.seconds());
+                    double power = rotaryPID.update(mp.get(0) *Math.signum(distance)+currentPosition,
+                            getPosition());
+                    if(enabled) setRotaryPower(power);
+
+
+                    telemetry.addData("CurrentSpindexerPosition", getPosition());
+                    telemetry.addData("SpindexerTargetPosition", rotaryTargetPos);
+                    telemetry.addData("Error Rotation", Math.abs(rotaryTargetPos-getPosition()));
                 })
                 .requires(this)
                 .build();

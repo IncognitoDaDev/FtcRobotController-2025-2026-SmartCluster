@@ -13,14 +13,12 @@ public class Robot {
     public final MecanumDrive mecanumDrive;
     public final Intake intake;
     public final Spindex spinDex;
-    public final PinpointLocalizer pinpoint;
     public final Turret turret;
 
     public Robot(OpMode mode)
     {
 
         this.opMode = mode;
-        this.pinpoint = new PinpointLocalizer(mode.hardwareMap,new Pose2d(0,0,0));
         this.spinDex = new Spindex(mode);
         this.intake = new Intake(mode);
         this.mecanumDrive = new MecanumDrive(mode.hardwareMap, new Pose2d(0, 0, 0));

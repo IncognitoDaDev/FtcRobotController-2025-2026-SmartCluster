@@ -1,6 +1,8 @@
 package org.firstinspires.ftc.teamcode.Calibration;
 
+import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -12,6 +14,7 @@ import com.smartcluster.oracleftc.commands.ParallelCommand;
 import com.smartcluster.oracleftc.hardware.OracleLynxVoltageSensor;
 import com.smartcluster.oracleftc.utils.ProcessedGamepad;
 
+import org.firstinspires.ftc.teamcode.roadrunner.Drawing;
 import org.firstinspires.ftc.teamcode.roadrunner.Localizer;
 import org.firstinspires.ftc.teamcode.roadrunner.PinpointLocalizer;
 import org.firstinspires.ftc.teamcode.roadrunner.TwoDeadWheelLocalizer;
@@ -29,24 +32,11 @@ public class localizerCalibration extends LinearOpMode {
     {
         ProcessedGamepad driverGamepad = new ProcessedGamepad(gamepad1),
                 operatorGamepad = new ProcessedGamepad(gamepad2);
+
         Robot robot = new Robot(this);
-        List<LynxModule> modules = hardwareMap.getAll(LynxModule.class);
 
         Command.run(robot.reset());
         waitForStart(); // STARTING POINT
-
-        List<LynxModule> lynxModules = hardwareMap.getAll(LynxModule.class);
-        for(LynxModule lynxModule: lynxModules)
-            lynxModule.setBulkCachingMode(LynxModule.BulkCachingMode.MANUAL);
-
-        List<OracleLynxVoltageSensor> voltageSensors =hardwareMap.getAll(OracleLynxVoltageSensor.class);
-        for (OracleLynxVoltageSensor voltageSensor :
-                voltageSensors) {
-            voltageSensor.setPolicy(OracleLynxVoltageSensor.OracleLynxVoltageSensorPolicy.CACHED);
-            voltageSensor.setVoltageCacheFreshness(100);
-
-        }
-
 
         scheduler.schedule(
                 new ParallelCommand(
@@ -55,32 +45,23 @@ public class localizerCalibration extends LinearOpMode {
         );
 
         //declararea localizatorului
-        Localizer myLocalizer = new PinpointLocalizer(hardwareMap, new Pose2d(1,-3,90));
-        myLocalizer.setPose(new Pose2d(1,-3,Math.toRadians(90)));
+        Pose2d StartPose = new Pose2d(1,-3,90);
+        robot.mecanumDrive.localizer.setPose(StartPose);
         while(opModeIsActive())
         {
+            robot.mecanumDrive.localizer.update();
+
             //pozitia de inceput
-            myLocalizer.update();
-            Pose2d myPos=myLocalizer.getPose();
-
-            telemetry.addData("x:",myPos.position.x);
-            telemetry.addData("y:",myPos.position.y);
-            telemetry.addData("heading:",myPos.heading);
-
-
-
-
-            for(LynxModule lynxModule: lynxModules)
-                if(lynxModule.getSerialNumber().isEmbedded())
-                {
-                    lynxModule.clearBulkCache();
-                    lynxModule.getBulkData();
-
-                }
-
-            telemetry.addData("state", 1);
+            Pose2d pose = robot.mecanumDrive.localizer.getPose();
+            telemetry.addData("x", pose.position.x);
+            telemetry.addData("y", pose.position.y);
+            telemetry.addData("heading (deg)", Math.toDegrees(pose.heading.toDouble()));
             telemetry.update();
 
+            TelemetryPacket packet = new TelemetryPacket();
+            packet.fieldOverlay().setStroke("#3F51B5");
+            Drawing.drawRobot(packet.fieldOverlay(), pose);
+            FtcDashboard.getInstance().sendTelemetryPacket(packet);
 
             driverGamepad.process();
             operatorGamepad.process();

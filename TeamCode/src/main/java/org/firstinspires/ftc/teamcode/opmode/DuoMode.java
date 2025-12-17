@@ -178,13 +178,13 @@ public class DuoMode extends LinearOpMode {
 
                         )
                 .transition(TeleOpState.CHARGING, TeleOpState.CHARGING, operatorGamepad.right_bumper.pressed(),//alex e sigma
-                        new InstantCommand(()->{robot.turret.ppToAngle(robot.pinpoint.getPose(),"RED");})
+                        new InstantCommand(()->{robot.turret.ppToAngle(robot.mecanumDrive.localizer.getPose(),"RED");})
 
                 )
             .transition(TeleOpState.CHARGING,TeleOpState.SHOOTING,operatorGamepad.triangle.pressed(),//👍
                         new SequentialCommand(
                                 new InstantCommand(()->{
-                                    robot.turret.ppToAngle(robot.pinpoint.getPose(), "RED");
+                                    robot.turret.ppToAngle(robot.mecanumDrive.localizer.getPose(), "RED");
 
                                     if (robot.spinDex.rotaryTargetPos%robot.spinDex.ThirdTurn != 0)
                                         robot.spinDex.SwitchMode(-1);

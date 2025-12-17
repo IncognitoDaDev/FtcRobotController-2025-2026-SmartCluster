@@ -80,8 +80,8 @@ public class Test extends LinearOpMode {
                 .initial(DuoMode.TeleOpState.INIT)
                 .transition(DuoMode.TeleOpState.INIT, DuoMode.TeleOpState.SHOOTING,operatorGamepad.right_bumper.pressed(),
                         new SequentialCommand(
-                                new InstantCommand(robot.pinpoint::update),
-                                new InstantCommand(()->robot.turret.ppToAngle(robot.pinpoint.getPose(), "RED"))
+                                //new InstantCommand(robot.pinpoint::update),
+                                //new InstantCommand(()->robot.turret.ppToAngle(robot.pinpoint.getPose(), "RED"))
                 ));
 
 
@@ -99,8 +99,8 @@ public class Test extends LinearOpMode {
             fsm.update();
             operatorGamepad.process();
             telemetry.addData("Current position", robot.turret.rotate.getCurrentPosition().get(0));
-            telemetry.addData("Current pose", String.valueOf(robot.pinpoint.getPose().position.x),robot.pinpoint.getPose().position.y);
-            telemetry.addData("Current heading", robot.pinpoint.getPose().heading.real);
+            //telemetry.addData("Current pose", String.valueOf(robot.pinpoint.getPose().position.x),robot.pinpoint.getPose().position.y);
+            //telemetry.addData("Current heading", robot.pinpoint.getPose().heading.real);
 
             telemetry.update();
 
