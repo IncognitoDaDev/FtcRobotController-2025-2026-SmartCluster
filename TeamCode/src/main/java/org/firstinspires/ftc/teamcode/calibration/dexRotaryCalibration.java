@@ -35,24 +35,24 @@ public class dexRotaryCalibration extends LinearOpMode {
 
         while(opModeIsActive() && !isStopRequested())
         {
-            if (Math.abs(spindex.getPosition() - spindex.rotaryTargetPos) <= spindex.Tolerance)
-                spindex.setRotaryPower(0); // Position is good
-            else spindex.updateRotaryPosition(); // Position is bad and meh
-
-            if (gamepad1.dpadLeftWasPressed()) spindex.setTarget(spindex.rotaryTargetPos + spindex.ThirdTurn);
-            else if (gamepad1.dpadRightWasPressed()) spindex.setTarget(spindex.rotaryTargetPos - spindex.ThirdTurn);
-
-            if (gamepad1.circleWasPressed()) found = spindex.sortAny();
-            else if (gamepad1.squareWasPressed()) found = spindex.sortPurple();
-            else if (gamepad1.triangleWasPressed()) found = spindex.sortGreen();
-            else if (gamepad1.crossWasPressed()) spindex.FixOrientationForIntake();
-
-            if (spindex.IdentifyColor(spindex.rotaryColorSensorF) == ColorType.IdentityObject.WALL)
-                spindex.cachedSensor.reset();
-
-            spindex.cachedSensor.setFront(spindex.IdentifyColor(spindex.rotaryColorSensorF));
-            spindex.cachedSensor.setRight(spindex.IdentifyColor(spindex.rotaryColorSensorR));
-            spindex.cachedSensor.setLeft(spindex.IdentifyColor(spindex.rotaryColorSensorL));
+//            if (Math.abs(spindex.getPosition() - spindex.rotaryTargetPos) <= spindex.Tolerance)
+//                spindex.setRotaryPower(0); // Position is good
+//            else spindex.updateRotaryPosition(); // Position is bad and meh
+//
+//            if (gamepad1.dpadLeftWasPressed()) spindex.setTarget(spindex.rotaryTargetPos + spindex.ThirdTurn);
+//            else if (gamepad1.dpadRightWasPressed()) spindex.setTarget(spindex.rotaryTargetPos - spindex.ThirdTurn);
+//
+//            if (gamepad1.circleWasPressed()) found = spindex.sortAny();
+//            else if (gamepad1.squareWasPressed()) found = spindex.sortPurple();
+//            else if (gamepad1.triangleWasPressed()) found = spindex.sortGreen();
+//            else if (gamepad1.crossWasPressed()) spindex.FixOrientationForIntake();
+//
+//            if (spindex.IdentifyColor(spindex.rotaryColorSensorF) == ColorType.IdentityObject.WALL)
+//                spindex.cachedSensor.reset();
+//
+//            spindex.cachedSensor.setFront(spindex.IdentifyColor(spindex.rotaryColorSensorF));
+//            spindex.cachedSensor.setRight(spindex.IdentifyColor(spindex.rotaryColorSensorR));
+//            spindex.cachedSensor.setLeft(spindex.IdentifyColor(spindex.rotaryColorSensorL));
 
             telemetry.addData("CurrentPosition", spindex.getPosition());
             telemetry.addData("TargetPosition", spindex.rotaryTargetPos);

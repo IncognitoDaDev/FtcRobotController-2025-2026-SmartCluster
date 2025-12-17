@@ -29,13 +29,13 @@ import java.util.function.Supplier;
 public class NeoSpindexer extends Subsystem {
     public static TrapezoidalMotionProfile rotmp = new TrapezoidalMotionProfile(100,1000,1000);
     public static PIDController rotaryPID = new PIDController(0.0065, 0.001, 0.00025);//new PIDController(0.00032, 0.000000015, 0.000013, 0);
-    public static double Tolerance = 1;
+    public static double Tolerance = 2;
     public static double ThirdTurn = 120;
     public static class CachedSensor
     {
-        private ColorType.IdentityObject Front = ColorType.IdentityObject.EMPTY;;
-        private ColorType.IdentityObject Left = ColorType.IdentityObject.EMPTY;;
-        private ColorType.IdentityObject Right = ColorType.IdentityObject.EMPTY;;
+        private ColorType.IdentityObject Front = ColorType.IdentityObject.EMPTY;
+        private ColorType.IdentityObject Left = ColorType.IdentityObject.EMPTY;
+        private ColorType.IdentityObject Right = ColorType.IdentityObject.EMPTY;
 
         public void setFront(ColorType.IdentityObject obj)
         {
@@ -69,8 +69,6 @@ public class NeoSpindexer extends Subsystem {
         }
     }
 
-
-
         public final CRServoImplEx servoDexRight, servoDexLeft;
         public final ServoImplEx servoFlapperRight,servoFlapperLeft;
         public final RevColorSensorV3 rotaryColorSensorF;
@@ -80,8 +78,6 @@ public class NeoSpindexer extends Subsystem {
         public final Encoder rotaryEncoder;
 
         public final OracleLynxVoltageSensor voltageSensor;
-
-        //private OracleLynxVoltageSensor voltageSensor;
 
         public boolean enabled = true;
         public double rotaryTargetPos = 0;
@@ -108,8 +104,7 @@ public class NeoSpindexer extends Subsystem {
             rotaryEncoder = new RawEncoder(hardwareMap.get(DcMotorImplEx.class,"intakeMotor"));
             servoFlapperLeft.setDirection(Servo.Direction.REVERSE);
 
-            //rotaryEncoder.setDirection(Encoder.Direction.REVERSE);
-
+            cachedSensor = new CachedSensor();
 
             voltageSensor = hardwareMap.getAll(OracleLynxVoltageSensor.class).iterator().next();
             voltageSensor.setPolicy(OracleLynxVoltageSensor.OracleLynxVoltageSensorPolicy.CACHED);
@@ -137,18 +132,19 @@ public class NeoSpindexer extends Subsystem {
             };
 
         }
-
-
         public void FlapperDown()
         {
             flapper.setTarget(flapperDownVal);
         }
-        public Supplier<Boolean> flapperIsDown(){
-            return () -> servoFlapperRight.getPosition()==flapperDownVal;
-        }
+
         public void FlapperUp()
         {
             flapper.setTarget(flapperUpVal);
+        }
+
+        public Supplier<Boolean> flapperIsDown()
+        {
+            return () -> servoFlapperRight.getPosition()==flapperDownVal;
         }
 
         /*
@@ -362,9 +358,8 @@ public class NeoSpindexer extends Subsystem {
         public boolean OrderFull() {
             return Order[1]!=ColorType.Nothing&&Order[2]!=ColorType.Nothing&&Order[3]!=ColorType.Nothing;
         }
-        public boolean IsEmpty(){
-        return Order[1]==ColorType.Nothing&&Order[2]==ColorType.Nothing&&Order[3]==ColorType.Nothing;
-        }
+
+        // isEmpty().get() == boolean
         public Supplier<Boolean> isEmpty(){
             return ()->Order[1]==ColorType.Nothing&&Order[2]==ColorType.Nothing&&Order[3]==ColorType.Nothing;
         }
@@ -380,24 +375,18 @@ public class NeoSpindexer extends Subsystem {
         public void setTarget(double target)
         {
             rotaryTargetPos = target;
-            setPosition();
         }
 
         public void setRotaryPower(double value)
         {
-            //double voltage = voltageSensor.getVoltage();
-
             if (value < -1.0) value = -1.0;
             else if (value > 1.0) value = 1.0;
 
             servoDexRight.setPower(value);
             servoDexLeft.setPower(value);
         }
-        public void setPosition(){
-            if (Math.abs(getPosition()-rotaryTargetPos)<=Tolerance)
-                setRotaryPower(0.7);
-            else setRotaryPower(0);
-        }
+
+
         public double getPosition()
         {
             return rotaryEncoder.getCurrentPosition().get(0)/8192*360;
@@ -414,7 +403,6 @@ public class NeoSpindexer extends Subsystem {
                     })
                     .update(() ->
                     {
-
                         if(currentPosition!=getPosition())currentPosition = getPosition();
                         if(target!=rotaryTargetPos)target = rotaryTargetPos;
 
@@ -433,24 +421,6 @@ public class NeoSpindexer extends Subsystem {
                     .requires(this)
                     .build();
         }
-
-//        public final Command move(double position)
-//        {
-//            return Command.builder()
-//                    .init(() ->
-//                    {
-//                        setTarget(rotaryTargetPos + position);
-//                    })
-//                    .finished(() -> Math.abs(getPosition() - rotaryTargetPos) <= Tolerance)
-//                    .end((interrupted) -> setRotaryPower(0))
-//                    .requires(this)
-//                    .build();
-//        }
-//
-//        public void moveVoid(double position)
-//        {
-//            setTarget(rotaryTargetPos + position);
-//        }
 
         public Command reset()
         {

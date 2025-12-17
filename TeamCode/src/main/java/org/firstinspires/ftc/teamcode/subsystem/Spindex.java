@@ -10,10 +10,12 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.commands.SequentialCommand;
+import com.smartcluster.oracleftc.commands.WaitCommand;
 import com.smartcluster.oracleftc.hardware.OracleLynxVoltageSensor;
 import com.smartcluster.oracleftc.hardware.subsystem.ServoActuator;
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
@@ -63,7 +65,7 @@ public class Spindex extends Subsystem {
         }
     }
     public final CRServoImplEx servoDexRight, servoDexLeft;
-    public final ServoImplEx servoFlapperRight;
+    public final ServoImplEx servoFlapperRight, servoFlapperLeft;
     public final RevColorSensorV3 rotaryColorSensorF;
 
     public final LynxI2cColorRangeSensor rotaryColorSensorR, rotaryColorSensorL;
@@ -71,10 +73,10 @@ public class Spindex extends Subsystem {
 
     public final OracleLynxVoltageSensor voltageSensor;
 
-    //private OracleLynxVoltageSensor voltageSensor;
-    public static PIDController rotaryPID = new PIDController(0.008, 0, 0.000365);//new PIDController(0.00032, 0.000000015, 0.000013, 0);
+    public static PIDController rotaryPID = new PIDController(0.0065, 0.001, 0.00025);
     public static double Tolerance = 2;
     public static double ThirdTurn = 120; // 2750 degrees
+    private double RightColorSensorOffset = 2.2;
 
     public double rotaryTargetPos = 0;
 
@@ -90,13 +92,13 @@ public class Spindex extends Subsystem {
         servoDexRight = hardwareMap.get(CRServoImplEx.class, "dexRight");
         servoDexLeft = hardwareMap.get(CRServoImplEx.class, "dexLeft");
         servoFlapperRight=hardwareMap.get(ServoImplEx.class,"flapperRight");
-        //servoFlapperLeft=hardwareMap.get(ServoImplEx.class,"flapperLeft");
+        servoFlapperLeft=hardwareMap.get(ServoImplEx.class,"flapperLeft");
         rotaryColorSensorF = hardwareMap.get(RevColorSensorV3.class, "rotaryColorSensorF");
         rotaryColorSensorR = hardwareMap.get(LynxI2cColorRangeSensor.class, "rotaryColorSensorR");
         rotaryColorSensorL = hardwareMap.get(LynxI2cColorRangeSensor.class, "rotaryColorSensorL");
         rotaryEncoder = new RawEncoder(hardwareMap.get(DcMotorEx.class,"intakeMotor"));
 
-        //rotaryEncoder.setDirection(Encoder.Direction.REVERSE);
+        servoFlapperLeft.setDirection(Servo.Direction.REVERSE);
 
         cachedSensor = new CachedSensor();
 
@@ -104,7 +106,9 @@ public class Spindex extends Subsystem {
         voltageSensor.setPolicy(OracleLynxVoltageSensor.OracleLynxVoltageSensorPolicy.CACHED);
         voltageSensor.setVoltageCacheFreshness(300);
 
-        flapper = new ServoActuator(this, "flapper", new TrapezoidalMotionProfile(12, 16, 12), servoFlapperRight)
+        flapper = new ServoActuator(this, "flapper",
+                new TrapezoidalMotionProfile(16, 20, 16),
+                servoFlapperRight, servoFlapperRight)
         {
             @Override
             public Command reset()
@@ -113,7 +117,7 @@ public class Spindex extends Subsystem {
                 return new InstantCommand(() ->
                 {
                     servoFlapperRight.setPosition(this.target.get());
-                    //servoFlapperLeft.setPosition(this.target.get());
+                    servoFlapperLeft.setPosition(this.target.get());
                 });
             }
 
@@ -124,7 +128,6 @@ public class Spindex extends Subsystem {
                 return true;
             }
         };
-
     }
 
     public void FlapperDown()
@@ -164,9 +167,9 @@ public class Spindex extends Subsystem {
         int r = sensor.red(), g = sensor.green(), b = sensor.blue();
         if (sensor == rotaryColorSensorR)
         {
-            r *= 2;
-            g *= 2;
-            b *= 2;
+            r = (int)(r*RightColorSensorOffset);
+            g = (int)(g*RightColorSensorOffset);
+            b = (int)(b*RightColorSensorOffset);
         }
 
         for(ColorType check : ColorCheck)
@@ -203,9 +206,9 @@ public class Spindex extends Subsystem {
         int r = sensor.red(), g = sensor.green(), b = sensor.blue();
         if (sensor == rotaryColorSensorR)
         {
-            r *= 2;
-            g *= 2;
-            b *= 2;
+            r = (int)(r*RightColorSensorOffset);
+            g = (int)(g*RightColorSensorOffset);
+            b = (int)(b*RightColorSensorOffset);
         }
 
         ColorType[] colorCheck = {ColorType.Purple, ColorType.Green, ColorType.Wall, ColorType.Nothing};
@@ -222,90 +225,121 @@ public class Spindex extends Subsystem {
         return ColorType.IdentityObject.EMPTY;
     }
 
-    public Supplier<Boolean> sortPurple()
+    public Command sortPurple()
     {
         if (cachedSensor.getLeft() == ColorType.IdentityObject.PURPLE)
         {
-            setTarget(rotaryTargetPos - ThirdTurn/2 - rotaryTargetPos%ThirdTurn);
-            return () -> true;
+            return new InstantCommand(()->{this.SwitchMode(-1);});
         }
         if (cachedSensor.getRight() == ColorType.IdentityObject.PURPLE)
         {
-            setTarget(rotaryTargetPos + ThirdTurn/2 - rotaryTargetPos%ThirdTurn);
-            return () -> true;
+            return new InstantCommand(()->{this.SwitchMode(1);});
         }
         if (cachedSensor.getFront() == ColorType.IdentityObject.PURPLE)
         {
-            setTarget(rotaryTargetPos + ThirdTurn*1.5 - rotaryTargetPos%ThirdTurn);
-            return () -> true;
+            return new SequentialCommand(
+                    new InstantCommand(()->{this.SwitchMode(-1);}),
+                    NextSpace()
+            );
         }
-        return () -> false;
+        return null;
     }
 
-    public Supplier<Boolean> sortGreen()
+    public Command sortGreen()
     {
         if (cachedSensor.getLeft() == ColorType.IdentityObject.GREEN)
         {
-            setTarget(rotaryTargetPos - ThirdTurn/2 - rotaryTargetPos%ThirdTurn);
-            return () -> true;
+            return new InstantCommand(()->{this.SwitchMode(-1);});
         }
         if (cachedSensor.getRight() == ColorType.IdentityObject.GREEN)
         {
-            setTarget(rotaryTargetPos + ThirdTurn/2 - rotaryTargetPos%ThirdTurn);
-            return () -> true;
+            return new InstantCommand(()->{this.SwitchMode(1);});
         }
         if (cachedSensor.getFront() == ColorType.IdentityObject.GREEN)
         {
-            setTarget(rotaryTargetPos + ThirdTurn*1.5 - rotaryTargetPos%ThirdTurn);
-            return () -> true;
+            return new SequentialCommand(
+                    new InstantCommand(()->{this.SwitchMode(-1);}),
+                    NextSpace()
+            );
         }
-        return () -> false;
+        return null;
     }
 
-    public Supplier<Boolean> sortAny()
+    public Command sortAny()
     {
         if (cachedSensor.getLeft() == ColorType.IdentityObject.PURPLE || cachedSensor.getLeft() == ColorType.IdentityObject.GREEN)
         {
-            setTarget(rotaryTargetPos - ThirdTurn/2 - rotaryTargetPos%ThirdTurn);
-            return ()->true;
+            return new InstantCommand(()->{this.SwitchMode(-1);});
         }
         if (cachedSensor.getRight() == ColorType.IdentityObject.PURPLE || cachedSensor.getRight() == ColorType.IdentityObject.GREEN)
         {
-            setTarget(rotaryTargetPos + ThirdTurn/2 - rotaryTargetPos%ThirdTurn);
-            return ()->true;
+            return new InstantCommand(()->{this.SwitchMode(1);});
         }
         if (cachedSensor.getFront() == ColorType.IdentityObject.PURPLE || cachedSensor.getFront() == ColorType.IdentityObject.GREEN)
         {
-            setTarget(rotaryTargetPos + ThirdTurn*1.5 - rotaryTargetPos%ThirdTurn);
-            return ()->true;
+            return new SequentialCommand(
+                    new InstantCommand(()->{this.SwitchMode(-1);}),
+                    NextSpace()
+            );
         }
-        return ()->false;
+        return null;
     }
 
-    public Supplier<Boolean> sortEmpty()
+    public Command sortEmpty()
     {
         if (cachedSensor.getLeft() == ColorType.IdentityObject.EMPTY)
         {
-            setTarget(rotaryTargetPos - ThirdTurn - rotaryTargetPos%ThirdTurn);
-            return () -> true;
+            return new InstantCommand(()->{this.SwitchMode(-1);});
         }
         if (cachedSensor.getRight() == ColorType.IdentityObject.EMPTY)
         {
-            setTarget(rotaryTargetPos + ThirdTurn - rotaryTargetPos%ThirdTurn);
-            return () -> true;
+            return new InstantCommand(()->{this.SwitchMode(1);});
         }
-//        if (IdentifyColor(rotaryColorSensorF, new ColorType[]{ColorType.Nothing}))
-//        {
-//            setTarget(rotaryCurrentPos + ThirdTurn*2);
-//            return true;
-//        } // We want to move ball to an empty space from front position
-        return () -> false;
+        if (cachedSensor.getFront() == ColorType.IdentityObject.EMPTY)
+        {
+            return new SequentialCommand(
+                    new InstantCommand(()->{this.SwitchMode(-1);}),
+                    NextSpace()
+            );
+        }
+        return null;
     }
-
 
     public void FixOrientationForIntake()
     {
         setTarget(rotaryTargetPos - rotaryTargetPos%ThirdTurn);
+    }
+
+    public Command NextSpace()
+    {
+        if (!flapperIsDown().get())
+        {
+            return new SequentialCommand(
+                    new InstantCommand(this::FlapperDown),
+                    new WaitCommand(200),
+                    new InstantCommand(() -> {setTarget(rotaryTargetPos + ThirdTurn);})
+            );
+        }
+
+        return new InstantCommand(() -> {setTarget(rotaryTargetPos + ThirdTurn);});
+    }
+
+    public Command PreviousSpace()
+    {
+        if (!flapperIsDown().get())
+        {
+            return new SequentialCommand(
+                    new InstantCommand(this::FlapperDown),
+                    new WaitCommand(150),
+                    new InstantCommand(() -> {setTarget(rotaryTargetPos - ThirdTurn);})
+            );
+        }
+
+        return new InstantCommand(() -> {setTarget(rotaryTargetPos - ThirdTurn);});
+    }
+
+    public void SwitchMode(int direction){
+        setTarget(rotaryTargetPos - 60 * direction);
     }
 
     public void setTarget(double target)
@@ -313,10 +347,13 @@ public class Spindex extends Subsystem {
         rotaryTargetPos = target;
     }
 
+    public double getErrorDist()
+    {
+        return Math.abs(rotaryTargetPos-getPosition());
+    }
+
     public void setRotaryPower(double value)
     {
-        //double voltage = voltageSensor.getVoltage();
-
         if (value < -1.0) value = -1.0;
         else if (value > 1.0) value = 1.0;
 
@@ -327,12 +364,6 @@ public class Spindex extends Subsystem {
     public double getPosition()
     {
         return rotaryEncoder.getCurrentPosition().get(0)/8192*360;
-    }
-
-    public void updateRotaryPosition()
-    {
-        setRotaryPower(rotaryPID.update(rotaryTargetPos, getPosition()));
-        telemetry.addData("RotaryPosError", getPosition() - rotaryTargetPos);
     }
 
     public final Command update()
@@ -348,27 +379,10 @@ public class Spindex extends Subsystem {
 
                     telemetry.addData("CurrentPosition", getPosition());
                     telemetry.addData("TargetPosition", rotaryTargetPos);
-                    telemetry.addData("ErrorDistance", Math.abs(rotaryTargetPos-getPosition()));
+                    telemetry.addData("ErrorDistance", getErrorDist());
                 })
-                .build();
-    }
-
-    public final Command move(double position)
-    {
-        return Command.builder()
-                .init(() ->
-                {
-                    setTarget(rotaryTargetPos + position);
-                })
-                .finished(() -> Math.abs(getPosition() - rotaryTargetPos) <= Tolerance)
-                .end((interrupted) -> setRotaryPower(0))
                 .requires(this)
                 .build();
-    }
-
-    public void moveVoid(double position)
-    {
-        setTarget(rotaryTargetPos + position);
     }
 
     public Command reset()
