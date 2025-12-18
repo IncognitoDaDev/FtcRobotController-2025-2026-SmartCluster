@@ -59,7 +59,7 @@ public class Turret extends Subsystem {
     public final Encoder rotate;
     public double[] Speed ={0,4500,5000,6000};
     private final OracleLynxVoltageSensor voltageSensor;
-    public static double tolerance = 2;
+    public static double tolerance = 3;
 
     private final ElapsedTime time = new ElapsedTime();
     public static double Kv = 1.1;
@@ -183,15 +183,11 @@ public class Turret extends Subsystem {
         double dx = corner.position.x - pose.position.x;
         double dy = corner.position.y - pose.position.y;
 
-        // Calculate absolute angle to corner (field-relative)
         double angleToCorner = Math.toDegrees(Math.atan2(dy, dx));
-
-        // Convert to robot-relative angle
         double robotHeading = Math.toDegrees(pose.heading.log());
         double turretAngle = Math.toDegrees(normalizeAngle(angleToCorner - robotHeading));
-        targetAngle = Math.max(MIN_TURRET_ANGLE, Math.min(MAX_TURRET_ANGLE, targetAngle));
         time.reset();
-        setAngle(targetAngle);
+        setAngle(turretAngle);
     }
 
 

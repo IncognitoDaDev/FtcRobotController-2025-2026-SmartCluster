@@ -7,7 +7,6 @@ import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
-import com.acmerobotics.roadrunner.InstantAction;
 import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.SequentialAction;
@@ -18,8 +17,6 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.RobotLog;
 import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.InstantCommand;
-import com.smartcluster.oracleftc.commands.ParallelCommand;
-import com.smartcluster.oracleftc.commands.RaceCommand;
 import com.smartcluster.oracleftc.commands.SequentialCommand;
 import com.smartcluster.oracleftc.commands.ThreadedCommandScheduler;
 import com.smartcluster.oracleftc.commands.WaitCommand;
@@ -36,7 +33,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicReference;
 
 @OracleOptimize
 @Autonomous
@@ -63,8 +59,8 @@ public class FarAuto extends LinearOpMode {
         };
     }
 
-    private final Pose2d startPose = new Pose2d(-40.5, -62, Math.toRadians(90));
-    private final Pose2d basketPose = new Pose2d(-58,-58, Math.toRadians(45));
+    private final Pose2d startPose = new Pose2d(-11, -57.5, Math.toRadians(270));
+    private final Pose2d cornerPose= new Pose2d(-60,60, Math.toRadians(315));
     private final Pose2d samplePose1 = new Pose2d(-48,-25.4, Math.toRadians(90)).plus(new Twist2d(new com.acmerobotics.roadrunner.Vector2d(-15.3,0),0));
    @Override
     public void runOpMode() throws InterruptedException {
@@ -89,18 +85,18 @@ public class FarAuto extends LinearOpMode {
                                             new InstantCommand(()->robot.turret.hood.setTarget(10)),
                                             new InstantCommand(robot.mecanumDrive.localizer::update),
                                             new InstantCommand(()->{robot.turret.ppToAngle(robot.mecanumDrive.localizer.getPose(),"RED");}),
-                                            new InstantCommand(robot.spinDex::FlapperUp),
+                                            new InstantCommand(robot.spindex::FlapperUp),
                                              new WaitCommand(200),
-                                            robot.spinDex.NextSpace(),
+                                            robot.spindex.NextSpace(),
                                             new WaitCommand(200),
-                                            new InstantCommand(robot.spinDex::FlapperUp),
+                                            new InstantCommand(robot.spindex::FlapperUp),
                                             new WaitCommand(200),
-                                            robot.spinDex.NextSpace(),
+                                            robot.spindex.NextSpace(),
                                              new WaitCommand(200),
-                                            new InstantCommand(robot.spinDex::FlapperUp),
+                                            new InstantCommand(robot.spindex::FlapperUp),
                                             new WaitCommand(200),
-                                            robot.spinDex.NextSpace(),
-                                            new InstantCommand(() -> {robot.spinDex.SwitchMode(1); }),
+                                            robot.spindex.NextSpace(),
+                                            new InstantCommand(() -> {robot.spindex.SwitchMode(1); }),
                                             new InstantCommand(()->robot.turret.hood.setTarget(0.0))
 
 

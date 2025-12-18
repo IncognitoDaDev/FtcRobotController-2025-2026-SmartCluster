@@ -233,7 +233,7 @@ public class Spindex extends Subsystem {
 
     public Supplier<Boolean> isBall(ColorType.IdentityObject Obj)
     {
-        return ()-> (Obj == ColorType.IdentityObject.GREEN || Obj == ColorType.IdentityObject.PURPLE);
+        return ()-> Obj == ColorType.IdentityObject.GREEN || Obj == ColorType.IdentityObject.PURPLE;
     }
 
     public Command sortPurple()
@@ -323,8 +323,6 @@ public class Spindex extends Subsystem {
 
     public Command NextSpace()
     {
-        if (!flapperIsDown().get())
-        {
             return new SequentialCommand(
                     new InstantCommand(this::FlapperDown),
                     new WaitCommand(200),
@@ -333,28 +331,16 @@ public class Spindex extends Subsystem {
             );
         }
 
-        return new  SequentialCommand(
-            new InstantCommand(() -> {setTarget(rotaryTargetPos + ThirdTurn);}),
-            new WaitCommand(200)
-        );
-    }
+
 
     public Command PreviousSpace()
     {
-        if (!flapperIsDown().get())
-        {
             return new SequentialCommand(
                     new InstantCommand(this::FlapperDown),
                     new WaitCommand(200),
                     new InstantCommand(() -> {setTarget(rotaryTargetPos - ThirdTurn);}),
                     new WaitCommand(200)
             );
-        }
-
-        return new  SequentialCommand(
-                new InstantCommand(() -> {setTarget(rotaryTargetPos - ThirdTurn);}),
-                new WaitCommand(200)
-        );
     }
 
     public void SwitchMode(int direction){
