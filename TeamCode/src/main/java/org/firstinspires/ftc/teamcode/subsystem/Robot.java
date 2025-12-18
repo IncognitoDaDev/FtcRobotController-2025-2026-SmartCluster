@@ -39,8 +39,9 @@ public class Robot {
     {
         return new ParallelCommand(
                 turret.hood.update(),
-                turret.update(),
-                spinDex.flapper.update()
+//                turret.update(),
+                spinDex.flapper.update(),
+                turret.ppUpdate(mecanumDrive.localizer)
                 //spinDex.update()
         );
     }

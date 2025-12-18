@@ -2,6 +2,8 @@ package org.firstinspires.ftc.teamcode.subsystem;
 
 
 
+import static com.ThermalEquilibrium.homeostasis.Utils.MathUtils.normalizeAngle;
+
 import com.ThermalEquilibrium.homeostasis.Controllers.Feedforward.BasicFeedforward;
 import com.ThermalEquilibrium.homeostasis.Parameters.FeedforwardCoefficients;
 import com.acmerobotics.dashboard.config.Config;
@@ -43,6 +45,8 @@ public class Turret extends Subsystem {
 
     final double HOOD_MIN_ANGLE = 0.0;   // Example: Angle when servo is at position 0.0
     final double HOOD_MAX_ANGLE = 60.0;
+    private static final double MIN_TURRET_ANGLE = -180;
+    private static final double MAX_TURRET_ANGLE = 180;
     public final double MOTOR_TO_TURRET_RATIO =  260.0/48;
     public final double ENCODER_TICKS_PER_ROTATION = 384.5*MOTOR_TO_TURRET_RATIO;
     public final double ENCODER_TICKS_PER_DEGREE = ENCODER_TICKS_PER_ROTATION/360;
@@ -98,70 +102,21 @@ public class Turret extends Subsystem {
         rotate = new RawEncoder(hardwareMap.get(DcMotorEx.class,"turretRotate"));
         voltageSensor = hardwareMap.getAll(OracleLynxVoltageSensor.class).iterator().next();
 
-
-
-       /* turret = new Actuator(this, "turret", shootPidController.clone(), shootMotionProfile, 50, turret1,turret2) {
-
-
-
-
-            @Override
-            public boolean setTarget(double target) {
-                this.target.set(target);
-                return true;
-            }
-
-
-            public double getSpeed() {
-                return (t1.getCurrentPosition().get(1)+t2.getCurrentPosition().get(1))/2.0;
-            }
-            @Override
-            public DualNum<Time> getPosition() {
-                return new DualNum<>(getSpeed(),0);
-            }
-
-            @Override
-            public Command reset() {
-                return Command.builder()
-                        .init(() -> {
-                            turret1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-                            turret2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
-                            turret1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                            turret2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-
-
-                        })
-                        .finished(() -> true)
-                        .requires(Turret.this)
-                        .build();
-            }
-
-
-        };*/
+        rot.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         hood = new ServoActuator(this, "hood", new TrapezoidalMotionProfile(10,16,16),s1,s2) {
             @Override
             public Command reset() {
                 return Command.builder()
                         .init(() -> {
-                            s1.setPosition(0);
-                            s2.setPosition(0);
+                            s1.setPosition(0.65);
+                            s2.setPosition(0.65);
                         })
                         .finished(() -> true)
                         .requires(Turret.this)
                         .build();
             }
-            public void setAngle(double angle) {
-                angle = angle/100;
-                //Angle between 0 - 60 degrees
-                if(angle<HOOD_MIN_ANGLE)angle = HOOD_MIN_ANGLE;
-                if(angle>HOOD_MAX_ANGLE)angle = HOOD_MAX_ANGLE;
-                s1.setPosition(angle);
-                s2.setPosition(angle);
 
-            }
 
             @Override
             public boolean setTarget(double target) {
@@ -201,7 +156,7 @@ public class Turret extends Subsystem {
         }
     }
     public double getRotation(){
-        return rotate.getCurrentPosition().get(0)/8192/MOTOR_TO_TURRET_RATIO;
+        return rotate.getCurrentPosition().get(0)/ENCODER_TICKS_PER_DEGREE;
     }
     public void setTargetSpeed(double speed){
         targetPower = shootController.calculate(0,speed,0)/6000;
@@ -218,7 +173,6 @@ public class Turret extends Subsystem {
         turret2.setPower(power);
     }
     public void ppToAngle(Pose2d pose, String TeamColor){
-        double angle = 0;
         Pose2d corner = null;
         if(Objects.equals(TeamColor, "RED"))
             corner = new Pose2d(60,63,315);
@@ -226,14 +180,20 @@ public class Turret extends Subsystem {
             corner = new Pose2d(-60,63,315);
 
         assert corner != null;
-        double distance2origin = Math.abs(Math.sqrt(Math.pow(pose.position.x,2)+Math.pow(pose.position.y, 2)));
-        double corner2origin =  Math.abs(Math.sqrt(Math.pow(corner.position.x,2)+Math.pow(corner.position.y,2)));
-        angle = Math.atan2(distance2origin,corner2origin);
-        setAngle(angle+pose.heading.log());
+        double dx = corner.position.x - pose.position.x;
+        double dy = corner.position.y - pose.position.y;
+
+        // Calculate absolute angle to corner (field-relative)
+        double angleToCorner = Math.toDegrees(Math.atan2(dy, dx));
+
+        // Convert to robot-relative angle
+        double robotHeading = Math.toDegrees(pose.heading.log());
+        double turretAngle = Math.toDegrees(normalizeAngle(angleToCorner - robotHeading));
+        targetAngle = Math.max(MIN_TURRET_ANGLE, Math.min(MAX_TURRET_ANGLE, targetAngle));
+        time.reset();
+        setAngle(targetAngle);
     }
-    public Command trackCorner(String TeamColor){
-        return new InstantCommand(()->{ppToAngle(this.robotPose,TeamColor);});
-    }
+
 
     public Command update(){
         return Command.builder()
@@ -252,10 +212,31 @@ public class Turret extends Subsystem {
                             rotate.getCurrentPosition().get(0));
                     rot.setPower(power);
 
-
+                    telemetry.addData("PP to Corner angle",targetAngle);
                     telemetry.addData("Rotation error ", getRotation()-targetAngle);
                     telemetry.addData("Rotational position", getRotation());
                     telemetry.addData("Current speed",getCurrentSpeed());
+                })
+                .build();
+    }
+    public Command ppUpdate(Localizer pp){
+        return Command.builder()
+                .init(()->{
+                    currentAngle = getRotation();
+                    time.reset();
+                })
+                .update(()->{
+                    if(currentAngle!=getRotation())currentAngle = getRotation();
+                    pp.update();
+                    ppToAngle(pp.getPose(),"RED");
+                    double distance = targetAngle - currentAngle;
+                    DualNum<Time> mp = rotationalMotionProfile.getMotionState(Math.abs(distance),
+                            time.seconds());
+                    double power = rotationalPidController.update(mp.get(0) *Math.signum(distance)+currentAngle,
+                            rotate.getCurrentPosition().get(0));
+                    rot.setPower(power);
+                    telemetry.addData("PP to Corner angle",targetAngle);
+                    telemetry.addData("Rotation error ", getRotation()-targetAngle);
                 })
                 .build();
     }
@@ -265,13 +246,14 @@ public class Turret extends Subsystem {
                 .update(()->{
                     turret1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                     turret2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                    rotate.reset(360);
 
                     rot.setTargetPosition(0);
                     rot.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     rot.setPower(0.85);
 
                 })
-                .finished(()-> getRotation() == 0)
+                .finished(()-> Math.abs(getRotation()) <= tolerance)
                 .requires(this)
                 .build();
     }

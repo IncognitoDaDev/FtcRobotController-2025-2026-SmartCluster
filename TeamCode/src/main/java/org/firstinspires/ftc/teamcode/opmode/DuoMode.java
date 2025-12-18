@@ -38,7 +38,7 @@ import java.util.List;
 public class DuoMode extends LinearOpMode {
     private final CommandScheduler scheduler = new CommandScheduler();
     public enum TeleOpState{
-        INIT,IDLE,INTAKE,CHARGING,SHOOTING
+        INIT,IDLE,INTAKE,CHARGING,SHOOTING,TRACKING
     }
     private TeleOpState CurrentState = TeleOpState.INIT;
     private double AimTolerance = 10, oldAngle = -1;
@@ -75,9 +75,9 @@ public class DuoMode extends LinearOpMode {
                         //de adaugat restul de comenzi aici
                         robot.mecanumDrive.drive(driverGamepad),
                         robot.spinDex.update(),
-                        robot.turret.update(),
+//                        robot.turret.update(),
+                        robot.turret.ppUpdate(robot.mecanumDrive.localizer),
                         robot.spinDex.flapper.update()
-//                        robot.turret.rotation.update()
                 ));
 
 
@@ -141,6 +141,14 @@ public class DuoMode extends LinearOpMode {
             .transition(TeleOpState.IDLE,TeleOpState.IDLE,operatorGamepad.dpad_right.pressed(),
                         new InstantCommand(()->robot.turret.setTargetSpeed(5000))
             )
+                .transition(TeleOpState.IDLE,TeleOpState.TRACKING,operatorGamepad.dpad_left.pressed(),
+                    new SequentialCommand(
+                        new InstantCommand(()->{robot.mecanumDrive.localizer.update();}),
+                        new InstantCommand(()->{robot.turret.ppToAngle(robot.mecanumDrive.localizer.getPose(),"RED");})
+                ))
+                .transition(TeleOpState.TRACKING,TeleOpState.IDLE,operatorGamepad.dpad_left.released(),
+                    new InstantCommand(()->{robot.turret.setAngle(0);})
+                        )
                 .transition(TeleOpState.IDLE, TeleOpState.CHARGING,operatorGamepad.right_bumper.pressed(),
                         new InstantCommand(()->robot.turret.setTargetSpeed(4000))
               )
@@ -148,31 +156,32 @@ public class DuoMode extends LinearOpMode {
         //Charge init
             .transition(TeleOpState.IDLE, TeleOpState.CHARGING, operatorGamepad.cross.pressed(),//alex e sigma
                         new SequentialCommand(
-                                new InstantCommand(()->robot.turret.setTargetSpeed(5250)),
-                                new InstantCommand(()->robot.turret.setAngle(0)),
+                                new InstantCommand(()->robot.turret.setTargetSpeed(5600)),
                                 new InstantCommand(()->robot.turret.hood.setTarget(10)),
-                                new InstantCommand(()-> robot.spinDex.SwitchMode(-1))
-                        ))
-            .state(TeleOpState.CHARGING,
-                        Command.builder()
-                                .init(() ->
-                                {
-                                    robot.turret.setTargetSpeed(5250);
-                                    oldAngle = robot.turret.targetAngle;
-                                })
-                                .update(()->{
-                                    double angle = operatorGamepad.left_stick.get().y*270;
-
-                                    if (Math.abs(angle-oldAngle) > AimTolerance)
-                                    {
-                                        robot.turret.setAngle(angle);
-                                        oldAngle = angle;
-                                    }
-
-                                    telemetry.addData("Robot turret position", robot.turret.getRotation() );
-                                })
-                                .build()
-                        )
+//                                new InstantCommand(()-> robot.spinDex.SwitchMode(-1)),
+                                new InstantCommand(()->{robot.mecanumDrive.localizer.update();}),
+                                new InstantCommand(()->{robot.turret.ppToAngle(robot.mecanumDrive.localizer.getPose(),"RED");})
+                                ))
+//            .state(TeleOpState.CHARGING,
+//                        Command.builder()
+//                                .init(() ->
+//                                {
+//                                    robot.turret.setTargetSpeed(5250);
+//                                    oldAngle = robot.turret.targetAngle;
+//                                })
+//                                .update(()->{
+//                                    double angle = operatorGamepad.left_stick.get().y*270;
+//
+//                                    if (Math.abs(angle-oldAngle) > AimTolerance)
+//                                    {
+//                                        robot.turret.setAngle(angle);
+//                                        oldAngle = angle;
+//                                    }
+//
+//                                    telemetry.addData("Robot turret position", robot.turret.getRotation() );
+//                                })
+//                                .build()
+//                        )
              .transition(TeleOpState.CHARGING, TeleOpState.CHARGING, operatorGamepad.left_bumper.pressed(),//alex e sigma
                         new InstantCommand(robot.spinDex::NextSpace)
 
@@ -183,6 +192,7 @@ public class DuoMode extends LinearOpMode {
                 )
             .transition(TeleOpState.CHARGING,TeleOpState.SHOOTING,operatorGamepad.triangle.pressed(),//👍
                         new SequentialCommand(
+                                new InstantCommand(()->{robot.mecanumDrive.localizer.update();}),
                                 new InstantCommand(()->{
                                     robot.turret.ppToAngle(robot.mecanumDrive.localizer.getPose(), "RED");
 
