@@ -41,7 +41,7 @@ public class DuoMode extends LinearOpMode {
         INIT,IDLE,INTAKE,CHARGING,SHOOTING,TRACKING
     }
     private TeleOpState CurrentState = TeleOpState.INIT;
-    private double AimTolerance = 10, oldAngle = -1;
+
     @Override
     public void runOpMode() throws InterruptedException {
 
@@ -106,17 +106,25 @@ public class DuoMode extends LinearOpMode {
                 .state(TeleOpState.INTAKE, Command.builder()
                         .update(() -> {
                             robot.spinDex.cachedSensor.setFront(robot.spinDex.IdentifyColor(robot.spinDex.rotaryColorSensorF));
-//                            robot.spinDex.cachedSensor.setLeft(robot.spinDex.IdentifyColor(robot.spinDex.rotaryColorSensorL));
-//                            robot.spinDex.cachedSensor.setRight(robot.spinDex.IdentifyColor(robot.spinDex.rotaryColorSensorR));
-//
-//                            telemetry.addData("dexFrontSensorObj", robot.spinDex.cachedSensor.getFront());
-//                            telemetry.addData("dexLeftSensorObj", robot.spinDex.cachedSensor.getLeft());
-//                            telemetry.addData("dexRightSensorObj", robot.spinDex.cachedSensor.getRight());
+
+                            telemetry.addData("dexFrontSensorObj", robot.spinDex.cachedSensor.getFront());
                         })
-//                        .finished(() -> robot.spinDex.cachedSensor.getFront() != ColorType.IdentityObject.EMPTY)
+                        .finished(() -> robot.spinDex.cachedSensor.getFront() != ColorType.IdentityObject.EMPTY)
                         .build()
                 )
                 .transition(TeleOpState.INTAKE, TeleOpState.INTAKE, robot.spinDex.isBall(robot.spinDex.cachedSensor.getFront()),
+                        new SequentialCommand(
+                                robot.spinDex.NextSpace(),
+                                new InstantCommand(() ->
+                                {
+                                    robot.spinDex.cachedSensor.reset();
+                                    gamepad1.rumble(50);
+                                }),
+                                new WaitCommand(100)
+                        ))
+                .transition(TeleOpState.INTAKE, TeleOpState.INTAKE, () ->\][\
+        ] robot.spinDex.cachedSensor.getFront() == ColorType.IdentityObject.PURPLE ||
+                        robot.spinDex.cachedSensor.getFront() == ColorType.IdentityObject.GREEN,
                         new SequentialCommand(
                                 robot.spinDex.NextSpace(),
                                 new InstantCommand(() ->

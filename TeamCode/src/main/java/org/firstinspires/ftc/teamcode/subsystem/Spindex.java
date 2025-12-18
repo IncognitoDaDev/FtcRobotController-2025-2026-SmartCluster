@@ -233,7 +233,7 @@ public class Spindex extends Subsystem {
 
     public Supplier<Boolean> isBall(ColorType.IdentityObject Obj)
     {
-        return ()-> Obj == ColorType.IdentityObject.GREEN || Obj == ColorType.IdentityObject.PURPLE;
+        return ()-> (Obj == ColorType.IdentityObject.GREEN || Obj == ColorType.IdentityObject.PURPLE);
     }
 
     public Command sortPurple()
