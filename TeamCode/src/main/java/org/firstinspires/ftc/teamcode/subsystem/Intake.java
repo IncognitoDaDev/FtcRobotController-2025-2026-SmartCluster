@@ -8,7 +8,7 @@ import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
 public class Intake extends Subsystem {
 
     public DcMotorImplEx intakeMotor;
-    public double intakePower = 0.72;
+    public double intakePower = 0.68;
 
     public Intake(OpMode mode)
     {

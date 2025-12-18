@@ -155,7 +155,7 @@ public class MecanumDrive {
                     double boost = (gamepad.right_bumper.get() ? 1 : 0.3);
 
                     double rx = rightStick.x * boost;
-                    double x = leftStick.x * 1.0 * boost;
+                    double x = leftStick.x * 1.15 * boost;
                     double y = -leftStick.y * boost;
 
                     double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);

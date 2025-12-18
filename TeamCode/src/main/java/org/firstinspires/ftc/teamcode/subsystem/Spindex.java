@@ -95,7 +95,6 @@ public class Spindex extends Subsystem {
     public Spindex (OpMode mode)
     {
         super(mode);
-
         servoDexRight = hardwareMap.get(CRServoImplEx.class, "dexRight");
         servoDexLeft = hardwareMap.get(CRServoImplEx.class, "dexLeft");
         servoFlapperRight=hardwareMap.get(ServoImplEx.class,"flapperRight");
@@ -232,6 +231,11 @@ public class Spindex extends Subsystem {
         return ColorType.IdentityObject.EMPTY;
     }
 
+    public Supplier<Boolean> isBall(ColorType.IdentityObject Obj)
+    {
+        return ()-> Obj == ColorType.IdentityObject.GREEN || Obj == ColorType.IdentityObject.PURPLE;
+    }
+
     public Command sortPurple()
     {
         if (cachedSensor.getLeft() == ColorType.IdentityObject.PURPLE)
@@ -324,11 +328,15 @@ public class Spindex extends Subsystem {
             return new SequentialCommand(
                     new InstantCommand(this::FlapperDown),
                     new WaitCommand(200),
-                    new InstantCommand(() -> {setTarget(rotaryTargetPos + ThirdTurn);})
+                    new InstantCommand(() -> {setTarget(rotaryTargetPos + ThirdTurn);}),
+                    new WaitCommand(200)
             );
         }
 
-        return new InstantCommand(() -> {setTarget(rotaryTargetPos + ThirdTurn);});
+        return new  SequentialCommand(
+            new InstantCommand(() -> {setTarget(rotaryTargetPos + ThirdTurn);}),
+            new WaitCommand(200)
+        );
     }
 
     public Command PreviousSpace()
@@ -337,12 +345,16 @@ public class Spindex extends Subsystem {
         {
             return new SequentialCommand(
                     new InstantCommand(this::FlapperDown),
-                    new WaitCommand(150),
-                    new InstantCommand(() -> {setTarget(rotaryTargetPos - ThirdTurn);})
+                    new WaitCommand(200),
+                    new InstantCommand(() -> {setTarget(rotaryTargetPos - ThirdTurn);}),
+                    new WaitCommand(200)
             );
         }
 
-        return new InstantCommand(() -> {setTarget(rotaryTargetPos - ThirdTurn);});
+        return new  SequentialCommand(
+                new InstantCommand(() -> {setTarget(rotaryTargetPos - ThirdTurn);}),
+                new WaitCommand(200)
+        );
     }
 
     public void SwitchMode(int direction){

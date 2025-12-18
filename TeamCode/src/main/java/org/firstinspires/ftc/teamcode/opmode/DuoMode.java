@@ -96,18 +96,27 @@ public class DuoMode extends LinearOpMode {
                 // IDLE -------------------------------------------------------------
             .transition(TeleOpState.IDLE,TeleOpState.INTAKE,driverGamepad.left_bumper.pressed(),
                     new SequentialCommand(
+                            new InstantCommand(()->{
+                                if (robot.spinDex.rotaryTargetPos%robot.spinDex.ThirdTurn == 0)
+                                    robot.spinDex.SwitchMode(-1);
+                            }),
                             new InstantCommand(robot.intake::intake)
                     )
                 )
                 .state(TeleOpState.INTAKE, Command.builder()
                         .update(() -> {
                             robot.spinDex.cachedSensor.setFront(robot.spinDex.IdentifyColor(robot.spinDex.rotaryColorSensorF));
+//                            robot.spinDex.cachedSensor.setLeft(robot.spinDex.IdentifyColor(robot.spinDex.rotaryColorSensorL));
+//                            robot.spinDex.cachedSensor.setRight(robot.spinDex.IdentifyColor(robot.spinDex.rotaryColorSensorR));
+//
+//                            telemetry.addData("dexFrontSensorObj", robot.spinDex.cachedSensor.getFront());
+//                            telemetry.addData("dexLeftSensorObj", robot.spinDex.cachedSensor.getLeft());
+//                            telemetry.addData("dexRightSensorObj", robot.spinDex.cachedSensor.getRight());
                         })
-                        .finished(() -> robot.spinDex.cachedSensor.getFront() != ColorType.IdentityObject.EMPTY)
+//                        .finished(() -> robot.spinDex.cachedSensor.getFront() != ColorType.IdentityObject.EMPTY)
                         .build()
                 )
-                .transition(TeleOpState.INTAKE, TeleOpState.INTAKE, () ->
-                                robot.spinDex.cachedSensor.getFront() != ColorType.IdentityObject.EMPTY && robot.spinDex.cachedSensor.getFront() != ColorType.IdentityObject.WALL,
+                .transition(TeleOpState.INTAKE, TeleOpState.INTAKE, robot.spinDex.isBall(robot.spinDex.cachedSensor.getFront()),
                         new SequentialCommand(
                                 robot.spinDex.NextSpace(),
                                 new InstantCommand(() ->
@@ -115,8 +124,32 @@ public class DuoMode extends LinearOpMode {
                                     robot.spinDex.cachedSensor.reset();
                                     gamepad1.rumble(50);
                                 }),
-                                new WaitCommand(200)
+                                new WaitCommand(100)
                         ))
+//                .transition(TeleOpState.INTAKE, TeleOpState.INTAKE, () ->
+//                        robot.spinDex.isBall(robot.spinDex.cachedSensor.getFront()).get() &&
+//                                !robot.spinDex.isBall(robot.spinDex.cachedSensor.getLeft()).get(),
+//                        new SequentialCommand(
+//                                robot.spinDex.NextSpace(),
+//                                new InstantCommand(() ->
+//                                {
+//                                    robot.spinDex.cachedSensor.reset();
+//                                    gamepad1.rumble(50);
+//                                }),
+//                                new WaitCommand(100)
+//                        ))
+//                .transition(TeleOpState.INTAKE, TeleOpState.INTAKE, () ->
+//                                robot.spinDex.isBall(robot.spinDex.cachedSensor.getFront()).get() &&
+//                                        !robot.spinDex.isBall(robot.spinDex.cachedSensor.getRight()).get(),
+//                        new SequentialCommand(
+//                                robot.spinDex.PreviousSpace(),
+//                                new InstantCommand(() ->
+//                                {
+//                                    robot.spinDex.cachedSensor.reset();
+//                                    gamepad1.rumble(50);
+//                                }),
+//                                new WaitCommand(100)
+//                        ))
             .transition(TeleOpState.INTAKE,TeleOpState.IDLE,driverGamepad.left_bumper.released(),
                     new SequentialCommand(
                     new InstantCommand(robot.intake::reset)
@@ -138,9 +171,9 @@ public class DuoMode extends LinearOpMode {
                     new SequentialCommand(
                             new InstantCommand(robot.spinDex::FlapperDown)
                     ))
-            .transition(TeleOpState.IDLE,TeleOpState.IDLE,operatorGamepad.dpad_right.pressed(),
-                        new InstantCommand(()->robot.turret.setTargetSpeed(5000))
-            )
+//            .transition(TeleOpState.IDLE,TeleOpState.IDLE,operatorGamepad.dpad_right.pressed(),
+//                        new InstantCommand(()->robot.turret.setTargetSpeed(5000))
+//            )
                 .transition(TeleOpState.IDLE,TeleOpState.TRACKING,operatorGamepad.dpad_left.pressed(),
                     new SequentialCommand(
                         new InstantCommand(()->{robot.mecanumDrive.localizer.update();}),
@@ -150,18 +183,27 @@ public class DuoMode extends LinearOpMode {
                     new InstantCommand(()->{robot.turret.setAngle(0);})
                         )
                 .transition(TeleOpState.IDLE, TeleOpState.CHARGING,operatorGamepad.right_bumper.pressed(),
-                        new InstantCommand(()->robot.turret.setTargetSpeed(4000))
+                        new ParallelCommand(
+                                new InstantCommand(()->robot.turret.setTargetSpeed(5400)),
+                                new InstantCommand(()->{
+                                    if (robot.spinDex.rotaryTargetPos%robot.spinDex.ThirdTurn != 0)
+                                        robot.spinDex.SwitchMode(-1);
+                                })
+                        )
               )
 
         //Charge init
             .transition(TeleOpState.IDLE, TeleOpState.CHARGING, operatorGamepad.cross.pressed(),//alex e sigma
                         new SequentialCommand(
-                                new InstantCommand(()->robot.turret.setTargetSpeed(5600)),
+                                new InstantCommand(()->robot.turret.setTargetSpeed(5400)),
                                 new InstantCommand(()->robot.turret.hood.setTarget(10)),
-//                                new InstantCommand(()-> robot.spinDex.SwitchMode(-1)),
                                 new InstantCommand(()->{robot.mecanumDrive.localizer.update();}),
-                                new InstantCommand(()->{robot.turret.ppToAngle(robot.mecanumDrive.localizer.getPose(),"RED");})
-                                ))
+                                new InstantCommand(()->{robot.turret.ppToAngle(robot.mecanumDrive.localizer.getPose(),"RED");}),
+                                new InstantCommand(()->{
+                                    if (robot.spinDex.rotaryTargetPos%robot.spinDex.ThirdTurn != 0)
+                                        robot.spinDex.SwitchMode(-1);
+                                })
+                        ))
 //            .state(TeleOpState.CHARGING,
 //                        Command.builder()
 //                                .init(() ->
@@ -182,10 +224,8 @@ public class DuoMode extends LinearOpMode {
 //                                })
 //                                .build()
 //                        )
-             .transition(TeleOpState.CHARGING, TeleOpState.CHARGING, operatorGamepad.left_bumper.pressed(),//alex e sigma
-                        new InstantCommand(robot.spinDex::NextSpace)
-
-                        )
+                // alex e sigma
+             .transition(TeleOpState.CHARGING, TeleOpState.CHARGING, operatorGamepad.left_bumper.pressed(), robot.spinDex.NextSpace())
                 .transition(TeleOpState.CHARGING, TeleOpState.CHARGING, operatorGamepad.right_bumper.pressed(),//alex e sigma
                         new InstantCommand(()->{robot.turret.ppToAngle(robot.mecanumDrive.localizer.getPose(),"RED");})
 
@@ -196,22 +236,19 @@ public class DuoMode extends LinearOpMode {
                                 new InstantCommand(()->{
                                     robot.turret.ppToAngle(robot.mecanumDrive.localizer.getPose(), "RED");
 
-                                    if (robot.spinDex.rotaryTargetPos%robot.spinDex.ThirdTurn != 0)
-                                        robot.spinDex.SwitchMode(-1);
-
+//                                    if (robot.spinDex.rotaryTargetPos%robot.spinDex.ThirdTurn != 0)
+//                                        robot.spinDex.SwitchMode(-1);
                                 }),
+
                                 new InstantCommand(robot.spinDex::FlapperUp),
-                                new WaitCommand(200),
+                                new WaitCommand(250),
                                 robot.spinDex.NextSpace(),
-                                new WaitCommand(200),
                                 new InstantCommand(robot.spinDex::FlapperUp),
-                                new WaitCommand(200),
+                                new WaitCommand(250),
                                 robot.spinDex.NextSpace(),
-                                new WaitCommand(200),
                                 new InstantCommand(robot.spinDex::FlapperUp),
-                                new WaitCommand(200),
+                                new WaitCommand(250),
                                 robot.spinDex.NextSpace(),
-                                new InstantCommand(() -> {robot.spinDex.SwitchMode(1); }),
                                 new InstantCommand(()->robot.turret.hood.setTarget(0.0))
                         )
                 )
@@ -220,7 +257,6 @@ public class DuoMode extends LinearOpMode {
                             new InstantCommand(robot.spinDex::FlapperDown),
                             new ParallelCommand(
                                     new InstantCommand(()->{robot.turret.setShooterPower(0);})
-
                         )));
 
 
