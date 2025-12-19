@@ -40,11 +40,11 @@ public class TurretSpeed extends LinearOpMode {
                         turret.update()
                 ));
 
-        FSM.FSMBuilder<DuoMode.TeleOpState> fsmBuilder =  FSM.<DuoMode.TeleOpState>builder()
-                .initial(DuoMode.TeleOpState.INIT)
-                .transition(DuoMode.TeleOpState.INIT, DuoMode.TeleOpState.SHOOTING,operatorGamepad.right_bumper.pressed(),
-                        new InstantCommand(()->turret.setTargetSpeed(4000))
-                );
+        FSM.FSMBuilder<DuoMode.TeleOpState> fsmBuilder = FSM.<DuoMode.TeleOpState>builder()
+                .initial(DuoMode.TeleOpState.INIT);
+//                .transition(DuoMode.TeleOpState.INIT, DuoMode.TeleOpState.SHOOTING,operatorGamepad.right_bumper.pressed(),
+//                        new InstantCommand(()->turret.setShooterSpeed(4000))
+//                );
 
         FSM<DuoMode.TeleOpState> fsm = fsmBuilder.build(scheduler);
 

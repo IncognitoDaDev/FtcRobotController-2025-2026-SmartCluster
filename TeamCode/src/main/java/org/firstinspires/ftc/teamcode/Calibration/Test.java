@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicReference;
 @Config
 @TeleOp
 public class Test extends LinearOpMode {
-    public static int position = 0;
+    public static double position = 0;
     public final double MOTOR_TO_TURRET_RATIO = 260.0 / 48;
     public final double ENCODER_TICKS_PER_ROTATION = 384.5 * MOTOR_TO_TURRET_RATIO;
     public final double ENCODER_TICKS_PER_DEGREE = ENCODER_TICKS_PER_ROTATION / 360;
@@ -76,17 +76,16 @@ public class Test extends LinearOpMode {
 
                 ));
 
-        FSM.FSMBuilder<DuoMode.TeleOpState> fsmBuilder =  FSM.<DuoMode.TeleOpState>builder()
-                .initial(DuoMode.TeleOpState.INIT)
-                .transition(DuoMode.TeleOpState.INIT, DuoMode.TeleOpState.SHOOTING,operatorGamepad.right_bumper.pressed(),
-                        new SequentialCommand(
-                                //new InstantCommand(robot.pinpoint::update),
-                                //new InstantCommand(()->robot.turret.ppToAngle(robot.pinpoint.getPose(), "RED"))
-                ));
+//        FSM.FSMBuilder<DuoMode.TeleOpState> fsmBuilder =  FSM.<DuoMode.TeleOpState>builder()
+//                .initial(DuoMode.TeleOpState.INIT)
+//                .transition(DuoMode.TeleOpState.INIT, DuoMode.TeleOpState.SHOOTING,operatorGamepad.right_bumper.pressed(),
+//                                new InstantCommand(()->robot.turret.setAngle(position))
+//                );
 
 
 
-        FSM<DuoMode.TeleOpState> fsm = fsmBuilder.build(scheduler);
+
+//        FSM<DuoMode.TeleOpState> fsm = fsmBuilder.build(scheduler);
         while (opModeIsActive() && !isStopRequested()) {
             for (LynxModule lynxModule : lynxModules)
                 if (lynxModule.getSerialNumber().isEmbedded()) {
@@ -96,9 +95,10 @@ public class Test extends LinearOpMode {
 //            double shootPower = shootController.calculate(0,speed, mp.maxAcceleration);
 
 
-            fsm.update();
+//            fsm.update();
             operatorGamepad.process();
             telemetry.addData("Current position", robot.turret.rotate.getCurrentPosition().get(0));
+            telemetry.addData("Target pose = ",position);
             //telemetry.addData("Current pose", String.valueOf(robot.pinpoint.getPose().position.x),robot.pinpoint.getPose().position.y);
             //telemetry.addData("Current heading", robot.pinpoint.getPose().heading.real);
 

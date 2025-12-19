@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.subsystem;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.smartcluster.oracleftc.commands.Command;
+import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.commands.ParallelCommand;
 
 public class Robot {
@@ -37,9 +38,11 @@ public class Robot {
         return new ParallelCommand(
                 turret.hood.update(),
 //                turret.update(),
-                spindex.flapper.update(),
-                turret.ppUpdate(mecanumDrive.localizer)
-                //spinDex.update()
+
+                turret.ppUpdate(mecanumDrive.localizer),
+
+                spindex.update(),
+                spindex.flapper.update()
         );
     }
 
