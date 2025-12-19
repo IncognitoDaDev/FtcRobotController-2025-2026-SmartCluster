@@ -68,7 +68,8 @@ public class Spindex extends Subsystem {
         }
     }
     public final CRServoImplEx servoDexRight, servoDexLeft;
-    public final ServoImplEx servoFlapperRight, servoFlapperLeft;
+    public final ServoImplEx servoFlapperRight;
+    public final ServoImplEx servoFlapperLeft;
     public final RevColorSensorV3 rotaryColorSensorF;
 
     public final LynxI2cColorRangeSensor rotaryColorSensorR, rotaryColorSensorL;
@@ -80,7 +81,7 @@ public class Spindex extends Subsystem {
     public static TrapezoidalMotionProfile rotmp = new TrapezoidalMotionProfile(100,1000,1000);
     public static double Tolerance = 2;
     public static double ThirdTurn = 120; // 2750 degrees
-    private double RightColorSensorOffset = 2.2;
+    private final double RightColorSensorOffset = 2.2;
     public boolean enabled = true;
     public double currentPosition,target;
     public final ElapsedTime timer = new ElapsedTime();
@@ -88,7 +89,7 @@ public class Spindex extends Subsystem {
     public double rotaryTargetPos = 0;
 
     public final ServoActuator flapper;
-    public static double flapperDownVal = 0.51, flapperUpVal = 1.0;
+    public static double flapperDownVal = 1.0, flapperUpVal = 0.51;
 
     public CachedSensor cachedSensor;
 
@@ -114,7 +115,7 @@ public class Spindex extends Subsystem {
 
         flapper = new ServoActuator(this, "flapper",
                 new TrapezoidalMotionProfile(16, 20, 16),
-                servoFlapperRight, servoFlapperRight)
+                servoFlapperRight,servoFlapperLeft)
         {
             @Override
             public Command reset()
@@ -404,6 +405,7 @@ public class Spindex extends Subsystem {
     public Command reset()
     {
         return new SequentialCommand(
+                new InstantCommand(this::FlapperDown),
                 new InstantCommand(()-> {setRotaryPower(0);}),
                 new InstantCommand(rotaryEncoder::reset));
     }

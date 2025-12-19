@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.opmode;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.InstantAction;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.hardware.lynx.LynxModule;
@@ -23,6 +24,7 @@ import com.smartcluster.oracleftc.utils.Performance;
 import com.smartcluster.oracleftc.utils.ProcessedGamepad;
 
 //import org.firstinspires.ftc.teamcode.subsystem.MecanumDrive;
+import org.firstinspires.ftc.teamcode.roadrunner.Drawing;
 import org.firstinspires.ftc.teamcode.subsystem.ColorType;
 import org.firstinspires.ftc.teamcode.subsystem.Robot;
 
@@ -33,14 +35,19 @@ import java.util.function.Supplier;
 
 
 @Config
-@TeleOp(name="DuoMode")
-public class DuoMode extends LinearOpMode {
+@TeleOp(name="TrackTurret")
+public class TrackTurret extends LinearOpMode {
     private final CommandScheduler scheduler = new CommandScheduler();
     public enum TeleOpState{
         INIT,IDLE,INTAKE,SHOOT,FarShooting,CloseShooting,PARKING,
     }
     private TeleOpState CurrentState = TeleOpState.INIT;
-    private Boolean isEmpty = true;
+
+
+    private Supplier<Boolean> isBall(ColorType.IdentityObject Obj)
+    {
+        return ()-> Obj == ColorType.IdentityObject.GREEN || Obj == ColorType.IdentityObject.PURPLE;
+    }
 
     @Override
     public void runOpMode() throws InterruptedException
@@ -58,7 +65,7 @@ public class DuoMode extends LinearOpMode {
 
         if(!opModeIsActive())return;
 
-        robot.mecanumDrive.localizer.setPose(new Pose2d(-11,-57.5,Math.toRadians(270)));
+        robot.mecanumDrive.localizer.setPose(new Pose2d(-60,12, Math.toRadians(0)));
 
         List<LynxModule> lynxModules = hardwareMap.getAll(LynxModule.class);
         for (LynxModule lynxModule : lynxModules)
@@ -77,8 +84,8 @@ public class DuoMode extends LinearOpMode {
                 new ParallelCommand(
                         robot.mecanumDrive.drive(driverGamepad),
                         new InstantCommand(robot.mecanumDrive.localizer::update),
-//                        robot.turret.ppUpdate(robot.mecanumDrive.localizer),
-                        robot.turret.update(),
+                        robot.turret.ppUpdate(robot.mecanumDrive.localizer),
+//                        robot.turret.update(),
                         robot.spindex.update(),
                         robot.spindex.flapper.update(),
                         robot.turret.hood.update()
@@ -98,52 +105,64 @@ public class DuoMode extends LinearOpMode {
 
                 // IDLE -------------------------------------------------------------
                 .transition(TeleOpState.IDLE,TeleOpState.INTAKE,driverGamepad.left_bumper.pressed(),
-                    new SequentialCommand(
-                            new InstantCommand(()->{
-                                if (robot.spindex.rotaryTargetPos%robot.spindex.ThirdTurn == 0)
-                                    robot.spindex.SwitchMode(-1);
-                            }),
-                            new InstantCommand(robot.intake::intake)
-                    )
+                        new SequentialCommand(
+                                new InstantCommand(()->{
+                                    if (robot.spindex.rotaryTargetPos%robot.spindex.ThirdTurn == 0)
+                                        robot.spindex.SwitchMode(-1);
+                                }),
+                                new InstantCommand(robot.intake::intake)
+                        )
                 )
                 .state(TeleOpState.INTAKE, Command.builder()
-                        .update(() -> {
-                            robot.spindex.cachedSensor.setFront(robot.spindex.IdentifyColor(robot.spindex.rotaryColorSensorF));
-                            robot.spindex.cachedSensor.setLeft(robot.spindex.IdentifyColor(robot.spindex.rotaryColorSensorL));
-                            robot.spindex.cachedSensor.setRight(robot.spindex.IdentifyColor(robot.spindex.rotaryColorSensorR));
-
-                            if ((robot.spindex.cachedSensor.getLeft() == ColorType.IdentityObject.GREEN ||
-                                    robot.spindex.cachedSensor.getLeft() == ColorType.IdentityObject.PURPLE) &&
-                                    (robot.spindex.cachedSensor.getRight() == ColorType.IdentityObject.GREEN ||
-                                            robot.spindex.cachedSensor.getRight() == ColorType.IdentityObject.PURPLE)) isEmpty = false;
-                        })
+                                .update(() -> {
+                                    robot.spindex.cachedSensor.setFront(robot.spindex.IdentifyColor(robot.spindex.rotaryColorSensorF));
+//                            robot.spinDex.cachedSensor.setLeft(robot.spinDex.IdentifyColor(robot.spinDex.rotaryColorSensorL));
+//                            robot.spinDex.cachedSensor.setRight(robot.spinDex.IdentifyColor(robot.spinDex.rotaryColorSensorR));
+//
+//                            telemetry.addData("dexFrontSensorObj", robot.spinDex.cachedSensor.getFront());
+//                            telemetry.addData("dexLeftSensorObj", robot.spinDex.cachedSensor.getLeft());
+//                            telemetry.addData("dexRightSensorObj", robot.spinDex.cachedSensor.getRight());
+                                })
 //                        .finished(() -> robot.spinDex.cachedSensor.getFront() != ColorType.IdentityObject.EMPTY)
-                        .build()
+                                .build()
                 )
-                .transition(TeleOpState.INTAKE, TeleOpState.INTAKE, () -> (robot.spindex.cachedSensor.getFront() == ColorType.IdentityObject.GREEN ||
-                                robot.spindex.cachedSensor.getFront() == ColorType.IdentityObject.PURPLE) && isEmpty,
+                .transition(TeleOpState.INTAKE, TeleOpState.INTAKE, () -> robot.spindex.cachedSensor.getFront() == ColorType.IdentityObject.GREEN ||
+                                robot.spindex.cachedSensor.getFront() == ColorType.IdentityObject.PURPLE,
                         new SequentialCommand(
                                 robot.spindex.NextSpace(),
                                 new InstantCommand(() ->
                                 {
                                     robot.spindex.cachedSensor.reset();
                                     gamepad1.rumble(50);
-                                })
+                                }),
+                                new WaitCommand(100)
                         ))
+//                .transition(TeleOpState.INTAKE, TeleOpState.INTAKE, () ->
+//                                robot.spinDex.isBall(robot.spinDex.cachedSensor.getFront()).get() &&
+//                                        !robot.spinDex.isBall(robot.spinDex.cachedSensor.getRight()).get(),
+//                        new SequentialCommand(
+//                                robot.spinDex.PreviousSpace(),
+//                                new InstantCommand(() ->
+//                                {
+//                                    robot.spinDex.cachedSensor.reset();
+//                                    gamepad1.rumble(50);
+//                                }),
+//                                new WaitCommand(100)
+//                        ))
 
                 .transition(TeleOpState.INTAKE,TeleOpState.IDLE,driverGamepad.left_bumper.released(), new InstantCommand(robot.intake::reset))
                 .transition(TeleOpState.IDLE,TeleOpState.IDLE,driverGamepad.square.pressed(), robot.spindex.NextSpace())
                 .transition(TeleOpState.IDLE,TeleOpState.IDLE,driverGamepad.circle.pressed(), new InstantCommand(()->{robot.spindex.SwitchMode(1);}))
-        //Charge init
+                //Charge init
                 .transition(TeleOpState.IDLE, TeleOpState.FarShooting, driverGamepad.dpad_down.pressed(),
-                                new InstantCommand(()->{
+                        new InstantCommand(()->{
 //                                    robot.mecanumDrive.localizer.update();
 //                                    robot.turret.ppToAngle(robot.mecanumDrive.localizer.getPose(),"RED");
-                                    if (robot.spindex.rotaryTargetPos%robot.spindex.ThirdTurn != 0)
-                                        robot.spindex.SwitchMode(-1);
+                            if (robot.spindex.rotaryTargetPos%robot.spindex.ThirdTurn != 0)
+                                robot.spindex.SwitchMode(-1);
 
-                                })
-                        )
+                        })
+                )
                 .transition(TeleOpState.IDLE,TeleOpState.CloseShooting,driverGamepad.dpad_up.pressed(),
                         new SequentialCommand(
                                 new InstantCommand(()->{
@@ -153,80 +172,67 @@ public class DuoMode extends LinearOpMode {
                                         robot.spindex.SwitchMode(-1);
 
                                 })
-                ))
+                        ))
                 .transition(TeleOpState.FarShooting,TeleOpState.IDLE, driverGamepad.dpad_left.pressed(),
                         new SequentialCommand(
-                                new InstantCommand(()->{
-                                    robot.spindex.SwitchMode(-1);
-                                    isEmpty = true;
-                                })
+                                new InstantCommand(()->{robot.spindex.SwitchMode(-1);})
                         ))
                 .transition(TeleOpState.CloseShooting,TeleOpState.IDLE, driverGamepad.dpad_left.pressed(),
                         new SequentialCommand(
-                                new InstantCommand(()->{
-                                    robot.spindex.SwitchMode(-1);
-                                    isEmpty = true;
-                                })
+                                new InstantCommand(()->{robot.spindex.SwitchMode(-1);})
                         ))
 
                 .transition(TeleOpState.FarShooting,TeleOpState.FarShooting,driverGamepad.dpad_down.pressed(),//👍
                         new SequentialCommand(
                                 new ParallelCommand(
-                                        new InstantCommand(()->robot.turret.setShooterSpeed(5000)),
-                                        new InstantCommand(()->robot.turret.setAngle(0))
-                                        ))
-                        )
+                                        new InstantCommand(()->robot.turret.hood.setTarget(0.7)),
+                                        new InstantCommand(()->{robot.turret.setShooterSpeed(5400);
+//                                            new InstantCommand(()->robot.turret.setAngle(-60));
+                                        }))
 
+                        )
+                )
                 .transition(TeleOpState.FarShooting,TeleOpState.SHOOT,driverGamepad.x.pressed(),
-                        new SequentialCommand(
-                                new InstantCommand(()->robot.turret.hood.setTarget(0.65)),
+                        new SequentialCommand(new InstantCommand(robot.spindex::FlapperUp),
+                                new WaitCommand(250),
+                                robot.spindex.NextSpace(),
                                 new InstantCommand(robot.spindex::FlapperUp),
                                 new WaitCommand(250),
                                 robot.spindex.NextSpace(),
-                                new InstantCommand(()->robot.turret.hood.setTarget(0.67)),
-                                new InstantCommand(robot.spindex::FlapperUp),
-                                new WaitCommand(300),
-                                robot.spindex.NextSpace(),
-                                new InstantCommand(()->robot.turret.hood.setTarget(0.71)),
                                 new InstantCommand(robot.spindex::FlapperUp),
                                 new WaitCommand(250),
-                                robot.spindex.NextSpace()))
+                                robot.spindex.NextSpace(),
+                                new InstantCommand(()->robot.turret.hood.setTarget(0.8))))
                 .transition(TeleOpState.CloseShooting,TeleOpState.CloseShooting,driverGamepad.dpad_up.pressed(),//👍
-                                new ParallelCommand(
-                                        new InstantCommand(()->robot.turret.hood.setTarget(0.9)),
-                                        new InstantCommand(()->{robot.turret.setShooterSpeed(1000);
-                                            new InstantCommand(()->robot.turret.setAngle(0));
-                                        })
-                                ))
+                        new ParallelCommand(
+                                new InstantCommand(()->robot.turret.hood.setTarget(0.6)),
+                                new InstantCommand(()->{robot.turret.setShooterSpeed(3000);
+//                                    new InstantCommand(()->robot.turret.setAngle(0));
+                                })
+                        ))
 
 
 
 
                 .transition(TeleOpState.CloseShooting,TeleOpState.SHOOT,driverGamepad.x.pressed(),
-                        new SequentialCommand(
-                                new InstantCommand(()->robot.turret.hood.setTarget(0.85)),
+                        new SequentialCommand(new InstantCommand(robot.spindex::FlapperUp),
+                                new WaitCommand(250),
+                                robot.spindex.NextSpace(),
                                 new InstantCommand(robot.spindex::FlapperUp),
                                 new WaitCommand(250),
                                 robot.spindex.NextSpace(),
-                                new InstantCommand(()->robot.turret.hood.setTarget(0.9)),
-                                new InstantCommand(robot.spindex::FlapperUp),
-                                new WaitCommand(300),
-                                robot.spindex.NextSpace(),
-                                new InstantCommand(()->robot.turret.hood.setTarget(0.95)),
                                 new InstantCommand(robot.spindex::FlapperUp),
                                 new WaitCommand(250),
-                                robot.spindex.NextSpace()
-                ))
+                                robot.spindex.NextSpace(),
+                                new InstantCommand(()->robot.turret.hood.setTarget(0.8)))
+                )
                 .transition(TeleOpState.SHOOT, TeleOpState.IDLE, () -> CurrentState == TeleOpState.SHOOT,
                         new SequentialCommand(
-                            new InstantCommand(robot.spindex::FlapperDown),
-                            new ParallelCommand(
-                                    new InstantCommand(()->{
-                                        robot.turret.setShooterSpeed(0);
-                                        robot.spindex.SwitchMode(-1);
-                                        isEmpty = true;
-                                    })
-                        )));
+                                new InstantCommand(robot.spindex::FlapperDown),
+                                new ParallelCommand(
+                                        new InstantCommand(()->{robot.turret.setShooterSpeed(0);}),
+                                        new InstantCommand(()->robot.spindex.SwitchMode(-1))
+                                )));
 
 
 
@@ -246,6 +252,12 @@ public class DuoMode extends LinearOpMode {
             telemetry.addData("state", CurrentState);
             telemetry.addData("hz", loopTimeFilter.update(1/(Performance.loopTimeNano()/1E9)));
             telemetry.update();
+
+
+            TelemetryPacket packet = new TelemetryPacket();
+            packet.fieldOverlay().setStroke("#3F51B5");
+            Drawing.drawRobot(packet.fieldOverlay(), robot.mecanumDrive.localizer.getPose());
+            FtcDashboard.getInstance().sendTelemetryPacket(packet);
 
             fsm.update();
             driverGamepad.process();

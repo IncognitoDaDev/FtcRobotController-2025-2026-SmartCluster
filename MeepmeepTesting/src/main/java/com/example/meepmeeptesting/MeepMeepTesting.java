@@ -36,7 +36,7 @@ public class MeepMeepTesting {
         try { img = ImageIO.read(new File("C://Users//minec//Documents//field-2025-juice-dark.jpg/")); }
         catch(IOException e) {}
 
-        meepMeep.setBackground(img)
+        meepMeep.setBackground(MeepMeep.Background.FIELD_DECODE_JUICE_DARK)
             .setDarkMode(true)
             .setBackgroundAlpha(0.95f)
             .addEntity(myBot)

@@ -193,7 +193,11 @@ public class Turret extends Subsystem {
 
         double angleToCorner = Math.toDegrees(Math.atan2(dy, dx));
         double robotHeading = Math.toDegrees(pose.heading.log());
-        double turretAngle = angleToCorner - robotHeading;
+
+        double turretAngle;
+        if (robotHeading <= 180)  turretAngle = -(90 - angleToCorner + robotHeading); // angleToCorner - robotHeading
+        else turretAngle = angleToCorner - robotHeading;
+
         telemetry.addLine("dx: " + dx + " dy: " + dy);
         telemetry.addLine("angleToCorner: " + angleToCorner);
         telemetry.addLine("turretAngle: " + turretAngle);
