@@ -83,11 +83,13 @@ public class FarAuto extends LinearOpMode {
         Action autoAction = new SequentialAction(
             commandToAction(
                     new SequentialCommand(
-                            new ParallelCommand(
-                                    new InstantCommand(()->robot.turret.hood.setTarget(0.7)),
-                                    new InstantCommand(()->{robot.turret.setShooterSpeed(5400);
-                                        new InstantCommand(()->robot.turret.setAngle(0));
-                                    })),
+
+                                    new ParallelCommand(
+                                            new InstantCommand(()->robot.turret.hood.setTarget(0.9)),
+                                            new InstantCommand(()->{robot.turret.setShooterSpeed(1000);}),
+                                                new InstantCommand(()->robot.turret.setAngle(0)))
+
+
                             new WaitCommand(200),
                             new InstantCommand(robot.spindex::FlapperUp),
                             new WaitCommand(250),

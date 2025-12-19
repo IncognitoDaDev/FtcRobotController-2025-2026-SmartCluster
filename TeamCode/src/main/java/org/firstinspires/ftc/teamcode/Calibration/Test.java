@@ -17,6 +17,7 @@ import com.smartcluster.oracleftc.commands.CommandScheduler;
 import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.commands.ParallelCommand;
 import com.smartcluster.oracleftc.commands.SequentialCommand;
+import com.smartcluster.oracleftc.commands.WaitCommand;
 import com.smartcluster.oracleftc.fsm.FSM;
 import com.smartcluster.oracleftc.hardware.wrappers.Encoder;
 import com.smartcluster.oracleftc.hardware.wrappers.RawEncoder;
@@ -25,9 +26,11 @@ import com.smartcluster.oracleftc.math.Time;
 import com.smartcluster.oracleftc.math.control.MotionProfile;
 import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
+import com.smartcluster.oracleftc.math.filters.MovingAverageFilter;
 import com.smartcluster.oracleftc.utils.ProcessedGamepad;
 
 import org.firstinspires.ftc.teamcode.opmode.DuoMode;
+import org.firstinspires.ftc.teamcode.subsystem.ColorType;
 import org.firstinspires.ftc.teamcode.subsystem.Robot;
 import org.firstinspires.ftc.teamcode.subsystem.Spindex;
 import org.firstinspires.ftc.teamcode.subsystem.Turret;
@@ -46,6 +49,10 @@ public class Test extends LinearOpMode {
     public static TrapezoidalMotionProfile mp = new TrapezoidalMotionProfile(6000, 10000, 12000);
     private final CommandScheduler scheduler = new CommandScheduler();
     private static Pose2d currentPose;
+
+    public enum TeleOpState {
+        INIT, Tracking
+    }
 
     public static double Kv = 1.1;
     public static double Ka = 0.2;
@@ -70,37 +77,34 @@ public class Test extends LinearOpMode {
             lynxModule.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
         scheduler.schedule(
                 new ParallelCommand(
-                        robot.turret.update(),
+                        robot.turret.ppUpdate(robot.mecanumDrive.localizer),
                         robot.mecanumDrive.drive(driverGamepad)
 
 
                 ));
+        FSM.FSMBuilder<DuoMode.TeleOpState> fsmBuilder =  FSM.<DuoMode.TeleOpState>builder()
+                .initial(DuoMode.TeleOpState.INIT)
+                .state(DuoMode.TeleOpState.INIT,
+                        Command.builder()
+                                .update(()->{
+                                    robot.mecanumDrive.localizer.update();
+                                    robot.turret.ppToAngle(robot.mecanumDrive.localizer.getPose(),"RED");
 
-//        FSM.FSMBuilder<DuoMode.TeleOpState> fsmBuilder =  FSM.<DuoMode.TeleOpState>builder()
-//                .initial(DuoMode.TeleOpState.INIT)
-//                .transition(DuoMode.TeleOpState.INIT, DuoMode.TeleOpState.SHOOTING,operatorGamepad.right_bumper.pressed(),
-//                                new InstantCommand(()->robot.turret.setAngle(position))
-//                );
 
+                                })
+                                .build()
 
+                );
+        FSM<DuoMode.TeleOpState> fsm = fsmBuilder.build(scheduler);
+        MovingAverageFilter loopTimeFilter=new MovingAverageFilter(50);
 
-
-//        FSM<DuoMode.TeleOpState> fsm = fsmBuilder.build(scheduler);
-        while (opModeIsActive() && !isStopRequested()) {
-            for (LynxModule lynxModule : lynxModules)
-                if (lynxModule.getSerialNumber().isEmbedded()) {
-                    lynxModule.clearBulkCache();
-                    lynxModule.getBulkData();
-                }
-//            double shootPower = shootController.calculate(0,speed, mp.maxAcceleration);
+        while (opModeIsActive()) {
 
 
 //            fsm.update();
             operatorGamepad.process();
             telemetry.addData("Current position", robot.turret.rotate.getCurrentPosition().get(0));
-            telemetry.addData("Target pose = ",position);
-            //telemetry.addData("Current pose", String.valueOf(robot.pinpoint.getPose().position.x),robot.pinpoint.getPose().position.y);
-            //telemetry.addData("Current heading", robot.pinpoint.getPose().heading.real);
+            telemetry.addData("Target pose = ", position);
 
             telemetry.update();
 
