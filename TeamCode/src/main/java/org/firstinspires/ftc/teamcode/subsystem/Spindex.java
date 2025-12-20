@@ -77,7 +77,9 @@ public class Spindex extends Subsystem {
 
     public final OracleLynxVoltageSensor voltageSensor;
 
-    public static PIDController rotaryPID = new PIDController(0.0065, 0.001, 0.00025);
+    public static PIDController rotaryPID = new PIDController(0.007, 0.00005, 0.00025);
+
+    //public static PIDController rotaryPID = new PIDController(0.0065, 0.001, 0.00025);
     public static TrapezoidalMotionProfile rotmp = new TrapezoidalMotionProfile(100,1000,1000);
     public static double Tolerance = 2;
     public static double ThirdTurn = 120; // 2750 degrees
@@ -371,6 +373,17 @@ public class Spindex extends Subsystem {
     {
         return rotaryEncoder.getCurrentPosition().get(0)/8192*360;
     }
+//    public Command input(){
+//        return Command.builder()
+//                .update(()->{
+//                    sortEmpty();
+//                    if(cachedSensor.getFront()!= ColorType.IdentityObject.WALL||cachedSensor.getFront()!= ColorType.IdentityObject.EMPTY)sortEmpty();
+//                    else if(cachedSensor.getFront()==ColorType.IdentityObject.WALL)SwitchMode(1);
+//                    else FixOrientationForIntake();
+//                })
+//                .finished()
+//                .build();
+//    }
 
     public final Command update()
     {

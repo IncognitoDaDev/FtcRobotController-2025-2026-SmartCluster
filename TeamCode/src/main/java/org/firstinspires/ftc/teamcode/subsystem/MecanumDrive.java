@@ -152,7 +152,7 @@ public class MecanumDrive {
                     ProcessedGamepad.Joystick.JoystickData leftStick = gamepad.left_stick.get();
                     ProcessedGamepad.Joystick.JoystickData rightStick = gamepad.right_stick.get();
 
-                    double boost = (gamepad.right_bumper.get() ? 1 : 0.3);//in loc de 1 ar veni mai putin
+                    double boost = (gamepad.right_bumper.get() ? 1 : 0.3);
 
                     double rx = rightStick.x * boost;
                     double x = leftStick.x * 1.15 * boost;

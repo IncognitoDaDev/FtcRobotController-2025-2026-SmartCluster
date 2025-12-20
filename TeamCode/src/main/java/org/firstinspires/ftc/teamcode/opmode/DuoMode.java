@@ -106,27 +106,26 @@ public class DuoMode extends LinearOpMode {
                             new InstantCommand(robot.intake::intake)
                     )
                 )
-                .state(TeleOpState.INTAKE, Command.builder()
-                        .update(() -> {
-                            robot.spindex.cachedSensor.setFront(robot.spindex.IdentifyColor(robot.spindex.rotaryColorSensorF));
-                            robot.spindex.cachedSensor.setLeft(robot.spindex.IdentifyColor(robot.spindex.rotaryColorSensorL));
-                            robot.spindex.cachedSensor.setRight(robot.spindex.IdentifyColor(robot.spindex.rotaryColorSensorR));
-
-                            if ((robot.spindex.cachedSensor.getLeft() == ColorType.IdentityObject.GREEN ||
-                                    robot.spindex.cachedSensor.getLeft() == ColorType.IdentityObject.PURPLE) &&
-                                    (robot.spindex.cachedSensor.getRight() == ColorType.IdentityObject.GREEN ||
-                                            robot.spindex.cachedSensor.getRight() == ColorType.IdentityObject.PURPLE)) isEmpty = false;
-                        })
-//                        .finished(() -> robot.spinDex.cachedSensor.getFront() != ColorType.IdentityObject.EMPTY)
-                        .build()
-                )
-                .transition(TeleOpState.INTAKE, TeleOpState.INTAKE, () -> (robot.spindex.cachedSensor.getFront() == ColorType.IdentityObject.GREEN ||
-                                robot.spindex.cachedSensor.getFront() == ColorType.IdentityObject.PURPLE) && isEmpty,
+//                .state(TeleOpState.INTAKE, Command.builder()
+//                        .update(() -> {
+//                            robot.spindex.cachedSensor.setFront(robot.spindex.IdentifyColor(robot.spindex.rotaryColorSensorF));
+//                            robot.spindex.cachedSensor.setLeft(robot.spindex.IdentifyColor(robot.spindex.rotaryColorSensorL));
+//                            robot.spindex.cachedSensor.setRight(robot.spindex.IdentifyColor(robot.spindex.rotaryColorSensorR));
+//
+//                            if ((robot.spindex.cachedSensor.getLeft() == ColorType.IdentityObject.GREEN ||
+//                                    robot.spindex.cachedSensor.getLeft() == ColorType.IdentityObject.PURPLE) &&
+//                                    (robot.spindex.cachedSensor.getRight() == ColorType.IdentityObject.GREEN ||
+//                                            robot.spindex.cachedSensor.getRight() == ColorType.IdentityObject.PURPLE)) isEmpty = false;
+//                        })
+////                        .finished(() -> robot.spinDex.cachedSensor.getFront() != ColorType.IdentityObject.EMPTY)
+//                        .build()
+//                )
+                .transition(TeleOpState.INTAKE, TeleOpState.INTAKE, driverGamepad.square.pressed(),
                         new SequentialCommand(
                                 robot.spindex.NextSpace(),
                                 new InstantCommand(() ->
                                 {
-                                    robot.spindex.cachedSensor.reset();
+                                    //robot.spindex.cachedSensor.reset();
                                     gamepad1.rumble(50);
                                 })
                         ))
@@ -177,7 +176,7 @@ public class DuoMode extends LinearOpMode {
                                         ))
                         )
 
-                .transition(TeleOpState.FarShooting,TeleOpState.SHOOT,driverGamepad.x.pressed(),
+                .transition(TeleOpState.FarShooting,TeleOpState.SHOOT,driverGamepad.cross.pressed(),
                         new SequentialCommand(
                                 new InstantCommand(()->robot.turret.hood.setTarget(0.65)),
                                 new InstantCommand(robot.spindex::FlapperUp),
