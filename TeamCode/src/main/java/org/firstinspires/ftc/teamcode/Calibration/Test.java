@@ -39,7 +39,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Config
-@TeleOp
+@TeleOp(group="Calibration")
 public class Test extends LinearOpMode {
     public static double position = 0;
     public final double MOTOR_TO_TURRET_RATIO = 260.0 / 48;

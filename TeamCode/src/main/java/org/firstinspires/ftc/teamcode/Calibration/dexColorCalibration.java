@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.Calibration;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -9,8 +10,9 @@ import com.smartcluster.oracleftc.commands.CommandScheduler;
 import org.firstinspires.ftc.teamcode.subsystem.ColorType;
 import org.firstinspires.ftc.teamcode.subsystem.Spindex;
 
-@TeleOp(group="calibration")
-public class dexColorSensorCalibration extends LinearOpMode {
+@Config
+@TeleOp(group="Calibration")
+public class dexColorCalibration extends LinearOpMode {
 
     private final CommandScheduler scheduler = new CommandScheduler();
 
@@ -19,6 +21,10 @@ public class dexColorSensorCalibration extends LinearOpMode {
         telemetry=new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
         Spindex spindex = new Spindex(this);
+
+        //Pre-config
+        spindex.cachedSensor.setting_WALL = true;
+
 
         waitForStart();
         while(opModeIsActive())
@@ -33,23 +39,18 @@ public class dexColorSensorCalibration extends LinearOpMode {
             telemetry.addData("Last Obj F_Sensor",spindex.cachedSensor.getFront());
             telemetry.addData("Last Obj L_Sensor",spindex.cachedSensor.getLeft());
             telemetry.addData("Last Obj R_Sensor",spindex.cachedSensor.getRight());
-            telemetry.addData("Current Obj F_Sensor",spindex.IdentifyColor(spindex.rotaryColorSensorF));
-            telemetry.addData("Current Obj L_Sensor",spindex.IdentifyColor(spindex.rotaryColorSensorR));
-            telemetry.addData("Current Obj R_Sensor",spindex.IdentifyColor(spindex.rotaryColorSensorL));
 
-            telemetry.addData("F_Red", spindex.rotaryColorSensorF.red());
+            //telemetry.addData("F_Red", spindex.rotaryColorSensorF.red());
             telemetry.addData("F_Green", spindex.rotaryColorSensorF.green());
             telemetry.addData("F_Blue", spindex.rotaryColorSensorF.blue());
 
-            telemetry.addData("L_Red", spindex.rotaryColorSensorL.red());
+            //telemetry.addData("L_Red", spindex.rotaryColorSensorL.red());
             telemetry.addData("L_Green", spindex.rotaryColorSensorL.green());
             telemetry.addData("L_Blue", spindex.rotaryColorSensorL.blue());
 
-            telemetry.addData("R_Red", spindex.rotaryColorSensorR.red());
+            //telemetry.addData("R_Red", spindex.rotaryColorSensorR.red());
             telemetry.addData("R_Green", spindex.rotaryColorSensorR.green());
             telemetry.addData("R_Blue", spindex.rotaryColorSensorR.blue());
-
-            telemetry.update();
 
             telemetry.update();
         }

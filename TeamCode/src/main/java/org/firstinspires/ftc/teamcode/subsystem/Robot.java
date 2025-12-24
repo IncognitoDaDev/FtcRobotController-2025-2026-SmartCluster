@@ -36,10 +36,9 @@ public class Robot {
     public Command update()
     {
         return new ParallelCommand(
+                turret.update(),
                 turret.hood.update(),
-//                turret.update(),
-
-                turret.ppUpdate(mecanumDrive.localizer),
+//                turret.ppUpdate(mecanumDrive.localizer),
 
                 spindex.update(),
                 spindex.flapper.update()

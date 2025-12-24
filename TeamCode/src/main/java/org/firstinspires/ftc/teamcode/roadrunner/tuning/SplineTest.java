@@ -4,11 +4,13 @@ import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.roadrunner.TankDrive;
 import org.firstinspires.ftc.teamcode.subsystem.MecanumDrive;
 import org.firstinspires.ftc.teamcode.roadrunner.TankDrive;
 
+@TeleOp(group="Calibration")
 public final class SplineTest extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {

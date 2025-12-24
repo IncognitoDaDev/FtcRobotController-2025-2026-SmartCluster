@@ -23,7 +23,7 @@ import org.firstinspires.ftc.teamcode.subsystem.Robot;
 import java.util.List;
 
 @Config
-@TeleOp(group="calibration")
+@TeleOp(group="Calibration")
 public class localizerCalibration extends LinearOpMode {
     private final CommandScheduler scheduler = new CommandScheduler();
 

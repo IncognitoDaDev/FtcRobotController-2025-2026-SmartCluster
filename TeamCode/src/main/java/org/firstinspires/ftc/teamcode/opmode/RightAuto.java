@@ -123,13 +123,13 @@ public class RightAuto extends LinearOpMode {
                         new SequentialCommand(
                                 new InstantCommand(() -> robot.spindex.FlapperUp()),
                                 new WaitCommand(1000),
-                                robot.spindex.sortPurple(),
+                                new InstantCommand(robot.spindex::sortPurple),
                                 new WaitCommand(500),
-                                robot.spindex.sortPurple(),
+                                new InstantCommand(robot.spindex::sortPurple),
                                 new WaitCommand(500),
-                                robot.spindex.sortGreen(),
+                                new InstantCommand(robot.spindex::sortGreen),
                                 new WaitCommand(500),
-                                robot.spindex.sortAny(),
+                                new InstantCommand(robot.spindex::sortAny), // Pentru ce? Ai """scuipat""" (iti lipseste FlapperUp()) deja 3 bile...
                                 new WaitCommand(1000),
                                 new InstantCommand(() -> robot.intake.reset()),
                                 new WaitCommand(1000)
@@ -158,13 +158,13 @@ public class RightAuto extends LinearOpMode {
                         new SequentialCommand(
                                 new InstantCommand(() -> robot.spindex.FlapperUp()),
                                 new WaitCommand(1000),
-                                robot.spindex.sortPurple(),
+                                new InstantCommand(robot.spindex::sortPurple),
                                 new WaitCommand(500),
-                                robot.spindex.sortPurple(),
+                                new InstantCommand(robot.spindex::sortPurple),
                                 new WaitCommand(500),
-                                robot.spindex.sortGreen(),
+                                new InstantCommand(robot.spindex::sortGreen),
                                 new WaitCommand(500),
-                                robot.spindex.sortAny(),
+                                new InstantCommand(robot.spindex::sortAny),
                                 new WaitCommand(1000),
                                 new InstantCommand(() -> robot.intake.reset()),
                                 new WaitCommand(1000)
@@ -193,13 +193,13 @@ public class RightAuto extends LinearOpMode {
                         new SequentialCommand(
                                 new InstantCommand(() -> robot.spindex.FlapperUp()),
                                 new WaitCommand(1000),
-                                robot.spindex.sortPurple(),
+                                new InstantCommand(robot.spindex::sortPurple),
                                 new WaitCommand(500),
-                                robot.spindex.sortPurple(),
+                                new InstantCommand(robot.spindex::sortPurple),
                                 new WaitCommand(500),
-                                robot.spindex.sortGreen(),
+                                new InstantCommand(robot.spindex::sortGreen),
                                 new WaitCommand(500),
-                                robot.spindex.sortAny(),
+                                new InstantCommand(robot.spindex::sortAny),
                                 new WaitCommand(1000),
                                 new InstantCommand(() -> robot.intake.reset()),
                                 new WaitCommand(1000)

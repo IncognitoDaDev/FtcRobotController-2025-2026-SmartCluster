@@ -15,7 +15,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import java.util.List;
 
 @Config
-@TeleOp(group="calibration")
+@TeleOp(group="Calibration")
 public class HoodnSpeed_calibration extends LinearOpMode {
     public DcMotorEx turretUp,turretDown;
     public Servo hood;
