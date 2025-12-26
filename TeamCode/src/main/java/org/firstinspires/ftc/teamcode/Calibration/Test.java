@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Calibration;
+package org.firstinspires.ftc.teamcode.calibration;
 
 import com.ThermalEquilibrium.homeostasis.Controllers.Feedforward.BasicFeedforward;
 import com.ThermalEquilibrium.homeostasis.Parameters.FeedforwardCoefficients;
@@ -9,34 +9,20 @@ import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.CommandScheduler;
-import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.commands.ParallelCommand;
-import com.smartcluster.oracleftc.commands.SequentialCommand;
-import com.smartcluster.oracleftc.commands.WaitCommand;
 import com.smartcluster.oracleftc.fsm.FSM;
-import com.smartcluster.oracleftc.hardware.wrappers.Encoder;
-import com.smartcluster.oracleftc.hardware.wrappers.RawEncoder;
-import com.smartcluster.oracleftc.math.DualNum;
-import com.smartcluster.oracleftc.math.Time;
-import com.smartcluster.oracleftc.math.control.MotionProfile;
 import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
 import com.smartcluster.oracleftc.math.filters.MovingAverageFilter;
 import com.smartcluster.oracleftc.utils.ProcessedGamepad;
 
-import org.firstinspires.ftc.teamcode.opmode.DuoMode;
-import org.firstinspires.ftc.teamcode.subsystem.ColorType;
+import org.firstinspires.ftc.teamcode.opmode.teleop.BaseTeleOp;
 import org.firstinspires.ftc.teamcode.subsystem.Robot;
-import org.firstinspires.ftc.teamcode.subsystem.Spindex;
-import org.firstinspires.ftc.teamcode.subsystem.Turret;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 @Config
 @TeleOp(group="Calibration")
@@ -77,25 +63,25 @@ public class Test extends LinearOpMode {
             lynxModule.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
         scheduler.schedule(
                 new ParallelCommand(
-                        robot.turret.ppUpdate(robot.mecanumDrive.localizer),
-                        robot.mecanumDrive.drive(driverGamepad)
+                        robot.turret.ppUpdate(robot.drive.localizer),
+                        robot.drive.drive(driverGamepad)
 
 
                 ));
-        FSM.FSMBuilder<DuoMode.TeleOpState> fsmBuilder =  FSM.<DuoMode.TeleOpState>builder()
-                .initial(DuoMode.TeleOpState.INIT)
-                .state(DuoMode.TeleOpState.INIT,
+        FSM.FSMBuilder<BaseTeleOp.TeleOpState> fsmBuilder =  FSM.<BaseTeleOp.TeleOpState>builder()
+                .initial(BaseTeleOp.TeleOpState.INIT)
+                .state(BaseTeleOp.TeleOpState.INIT,
                         Command.builder()
                                 .update(()->{
-                                    robot.mecanumDrive.localizer.update();
-                                    robot.turret.ppToAngle(robot.mecanumDrive.localizer.getPose(),"RED");
+                                    robot.drive.localizer.update();
+                                    robot.turret.ppToAngle(robot.drive.localizer.getPose(),"RED");
 
 
                                 })
                                 .build()
 
                 );
-        FSM<DuoMode.TeleOpState> fsm = fsmBuilder.build(scheduler);
+        FSM<BaseTeleOp.TeleOpState> fsm = fsmBuilder.build(scheduler);
         MovingAverageFilter loopTimeFilter=new MovingAverageFilter(50);
 
         while (opModeIsActive()) {

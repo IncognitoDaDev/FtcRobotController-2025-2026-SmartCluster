@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.opmode;
+package org.firstinspires.ftc.teamcode.opmode.auto;
 
 import androidx.annotation.NonNull;
 
@@ -96,7 +96,7 @@ public class RightAuto extends LinearOpMode {
         Command.run(robot.reset());
         scheduler.schedule(robot.update());
 
-        robot.mecanumDrive.localizer.setPose(startPose);
+        robot.drive.localizer.setPose(startPose);
 
         SequentialCommand autoCommand = new SequentialCommand(
                 // --- INITIAL SHOOT FROM START POSE ---
@@ -107,7 +107,7 @@ public class RightAuto extends LinearOpMode {
                 }),
 
                 // --- STACK 1 ---
-                actionToCommand(robot.mecanumDrive.actionBuilder(startPose)
+                actionToCommand(robot.drive.actionBuilder(startPose)
                         .splineToLinearHeading(stack1, stack1.heading)
                         .build()
                 ),
@@ -116,7 +116,7 @@ public class RightAuto extends LinearOpMode {
                         new WaitCommand(300)
                 ),
                 new ParallelCommand(
-                        actionToCommand(robot.mecanumDrive.actionBuilder(stack1)
+                        actionToCommand(robot.drive.actionBuilder(stack1)
                                 .splineToLinearHeading(startPose, startPose.heading)
                                 .build()
                         ),
@@ -142,7 +142,7 @@ public class RightAuto extends LinearOpMode {
                 }),
 
                 // --- STACK 2 ---
-                actionToCommand(robot.mecanumDrive.actionBuilder(startPose)
+                actionToCommand(robot.drive.actionBuilder(startPose)
                         .splineToLinearHeading(stack2, stack2.heading)
                         .build()
                 ),
@@ -151,7 +151,7 @@ public class RightAuto extends LinearOpMode {
                         new WaitCommand(300)
                 ),
                 new ParallelCommand(
-                        actionToCommand(robot.mecanumDrive.actionBuilder(stack2)
+                        actionToCommand(robot.drive.actionBuilder(stack2)
                                 .splineToLinearHeading(startPose, startPose.heading)
                                 .build()
                         ),
@@ -177,7 +177,7 @@ public class RightAuto extends LinearOpMode {
                 }),
 
                 // --- STACK 3 ---
-                actionToCommand(robot.mecanumDrive.actionBuilder(startPose)
+                actionToCommand(robot.drive.actionBuilder(startPose)
                         .splineToLinearHeading(stack3, stack3.heading)
                         .build()
                 ),
@@ -186,7 +186,7 @@ public class RightAuto extends LinearOpMode {
                         new WaitCommand(300)
                 ),
                 new ParallelCommand(
-                        actionToCommand(robot.mecanumDrive.actionBuilder(stack3)
+                        actionToCommand(robot.drive.actionBuilder(stack3)
                                 .splineToLinearHeading(startPose, startPose.heading)
                                 .build()
                         ),
@@ -228,7 +228,7 @@ public class RightAuto extends LinearOpMode {
         Canvas c = new Canvas();
         ExecutorService pool = Executors.newFixedThreadPool(2);
         List<Callable<Void>> callables = new ArrayList<>();
-        callables.add(() -> { robot.mecanumDrive.localizer.update(); return null; });
+        callables.add(() -> { robot.drive.localizer.update(); return null; });
         for (LynxModule lynxModule : lynxModules) {
             if (lynxModule.getSerialNumber().isEmbedded()) {
                 callables.add(() -> { lynxModule.clearBulkCache(); lynxModule.getBulkData(); return null; });

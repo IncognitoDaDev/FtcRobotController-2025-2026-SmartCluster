@@ -1,14 +1,10 @@
-package org.firstinspires.ftc.teamcode.opmode;
+package org.firstinspires.ftc.teamcode.opmode.teleop;
 
 import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
-import com.acmerobotics.roadrunner.InstantAction;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.hardware.lynx.LynxModule;
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.CommandScheduler;
@@ -23,19 +19,15 @@ import com.smartcluster.oracleftc.utils.Performance;
 import com.smartcluster.oracleftc.utils.ProcessedGamepad;
 
 //import org.firstinspires.ftc.teamcode.subsystem.MecanumDrive;
-import org.firstinspires.ftc.teamcode.subsystem.ColorType;
 import org.firstinspires.ftc.teamcode.subsystem.Robot;
-import org.firstinspires.ftc.teamcode.subsystem.Spindex;
+import org.firstinspires.ftc.teamcode.subsystem.Spindex_OLD;
 
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 
 
-@Config
-@TeleOp(name="DuoMode")
-public class DuoMode extends LinearOpMode {
+public class BaseTeleOp extends LinearOpMode {
+    protected Pose2d cornerCoordinates;
     private final CommandScheduler scheduler = new CommandScheduler();
     public enum TeleOpState{
         INIT,IDLE,INTAKE,SHOOT,FarShooting,CloseShooting,PARKING,
@@ -45,9 +37,9 @@ public class DuoMode extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException
     {
-
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         telemetry.setMsTransmissionInterval(100);
+
         Robot robot = new Robot(this);
         ProcessedGamepad driverGamepad = new ProcessedGamepad(gamepad1),
                 operatorGamepad = new ProcessedGamepad(gamepad2);
@@ -58,7 +50,7 @@ public class DuoMode extends LinearOpMode {
         
         if(!opModeIsActive()) return;
 
-        robot.mecanumDrive.localizer.setPose(new Pose2d(-11,-57.5,Math.toRadians(270)));
+        robot.drive.localizer.setPose(new Pose2d(-11,-57.5,Math.toRadians(270)));
 
         List<LynxModule> lynxModules = hardwareMap.getAll(LynxModule.class);
         for (LynxModule lynxModule : lynxModules)
@@ -74,8 +66,8 @@ public class DuoMode extends LinearOpMode {
         // Adauga comenzi care nu au nevoie de referinte din scriptul asta in Robot.java - R^2-M
         scheduler.schedule(
                 new ParallelCommand(
-                        robot.mecanumDrive.drive(driverGamepad),
-                        new InstantCommand(robot.mecanumDrive.localizer::update),
+                        robot.drive.drive(driverGamepad),
+                        new InstantCommand(robot.drive.localizer::update),
 //                        robot.turret.ppUpdate(robot.mecanumDrive.localizer),
 
                         robot.update()
@@ -97,7 +89,7 @@ public class DuoMode extends LinearOpMode {
                 .transition(TeleOpState.IDLE,TeleOpState.INTAKE,driverGamepad.left_bumper.pressed(),
                     new SequentialCommand(
                             new InstantCommand(()->{
-                                if (robot.spindex.rotaryTargetPos%Spindex.ThirdTurn == 0)
+                                if (robot.spindex.rotaryTargetPos% Spindex_OLD.ThirdTurn == 0)
                                     robot.spindex.SwitchMode(-1);
                             }),
                             new InstantCommand(robot.intake::intake)
@@ -113,8 +105,7 @@ public class DuoMode extends LinearOpMode {
                                 })
                         ))
 
-                .transition(TeleOpState.INTAKE,TeleOpState.IDLE,driverGamepad.left_bumper.released(),
-                        new InstantCommand(robot.intake::reset))
+                .transition(TeleOpState.INTAKE,TeleOpState.IDLE,driverGamepad.left_bumper.released(),robot.intake.stop())
                 .transition(TeleOpState.IDLE,TeleOpState.IDLE,driverGamepad.square.pressed(),
                         robot.spindex.NextSpace())
                 .transition(TeleOpState.IDLE,TeleOpState.IDLE,driverGamepad.circle.pressed(),
@@ -123,7 +114,7 @@ public class DuoMode extends LinearOpMode {
                 //Charge init
                 .transition(TeleOpState.IDLE, TeleOpState.FarShooting, driverGamepad.dpad_down.pressed(),
                                 new InstantCommand(()->{
-                                    if (robot.spindex.rotaryTargetPos%Spindex.ThirdTurn != 0)
+                                    if (robot.spindex.rotaryTargetPos% Spindex_OLD.ThirdTurn != 0)
                                         robot.spindex.SwitchMode(-1);
 
                                 })
@@ -131,7 +122,7 @@ public class DuoMode extends LinearOpMode {
                 .transition(TeleOpState.IDLE,TeleOpState.CloseShooting,driverGamepad.dpad_up.pressed(),
                         new SequentialCommand(
                                 new InstantCommand(()->{
-                                    if (robot.spindex.rotaryTargetPos%Spindex.ThirdTurn != 0)
+                                    if (robot.spindex.rotaryTargetPos% Spindex_OLD.ThirdTurn != 0)
                                         robot.spindex.SwitchMode(-1);
 
                                 })

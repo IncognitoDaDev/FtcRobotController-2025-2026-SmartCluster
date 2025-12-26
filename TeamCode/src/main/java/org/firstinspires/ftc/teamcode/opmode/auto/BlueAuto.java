@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.opmode;
+package org.firstinspires.ftc.teamcode.opmode.auto;
 
 import androidx.annotation.NonNull;
 
@@ -7,23 +7,14 @@ import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
-import com.acmerobotics.roadrunner.InstantAction;
-import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.SequentialAction;
-import com.acmerobotics.roadrunner.Twist2d;
-import com.pedropathing.geometry.Pose;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.RobotLog;
 import com.smartcluster.oracleftc.commands.Command;
-import com.smartcluster.oracleftc.commands.InstantCommand;
-import com.smartcluster.oracleftc.commands.ParallelCommand;
-import com.smartcluster.oracleftc.commands.RaceCommand;
-import com.smartcluster.oracleftc.commands.SequentialCommand;
 import com.smartcluster.oracleftc.commands.ThreadedCommandScheduler;
-import com.smartcluster.oracleftc.commands.WaitCommand;
 import com.smartcluster.oracleftc.hardware.OracleOptimize;
 import com.smartcluster.oracleftc.math.filters.MovingAverageFilter;
 import com.smartcluster.oracleftc.utils.Performance;
@@ -80,10 +71,10 @@ public class BlueAuto extends LinearOpMode {
 
         scheduler.schedule(robot.update());
 
-        robot.mecanumDrive.localizer.setPose(startPose);
+        robot.drive.localizer.setPose(startPose);
         MovingAverageFilter loopTimeFilter=new MovingAverageFilter(50);
         Action autoAction = new SequentialAction(
-                robot.mecanumDrive.actionBuilder(startPose)
+                robot.drive.actionBuilder(startPose)
                         .lineToYConstantHeading(40)
                         .build()
 //                commandToAction(
@@ -147,7 +138,7 @@ public class BlueAuto extends LinearOpMode {
         Canvas c = new com.acmerobotics.dashboard.canvas.Canvas();
         ExecutorService pool = Executors.newFixedThreadPool(2);
         List<Callable<Void>>  callables = new ArrayList<>();
-        callables.add(()->{robot.mecanumDrive.localizer.update(); return null;});
+        callables.add(()->{robot.drive.localizer.update(); return null;});
         for(LynxModule lynxModule: lynxModules)
             if(lynxModule.getSerialNumber().isEmbedded())
             {

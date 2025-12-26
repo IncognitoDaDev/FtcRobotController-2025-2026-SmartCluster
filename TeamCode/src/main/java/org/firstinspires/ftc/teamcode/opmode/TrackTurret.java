@@ -4,10 +4,8 @@ import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
-import com.acmerobotics.roadrunner.InstantAction;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.hardware.lynx.LynxModule;
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -30,7 +28,6 @@ import org.firstinspires.ftc.teamcode.subsystem.Robot;
 
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 
@@ -65,7 +62,7 @@ public class TrackTurret extends LinearOpMode {
 
         if(!opModeIsActive())return;
 
-        robot.mecanumDrive.localizer.setPose(new Pose2d(-60,12, Math.toRadians(0)));
+        robot.drive.localizer.setPose(new Pose2d(-60,12, Math.toRadians(0)));
 
         List<LynxModule> lynxModules = hardwareMap.getAll(LynxModule.class);
         for (LynxModule lynxModule : lynxModules)
@@ -82,9 +79,9 @@ public class TrackTurret extends LinearOpMode {
         // Adauga comenzi care nu au nevoie de referinte din scriptul asta in Robot.java - R^2-M
         scheduler.schedule(
                 new ParallelCommand(
-                        robot.mecanumDrive.drive(driverGamepad),
-                        new InstantCommand(robot.mecanumDrive.localizer::update),
-                        robot.turret.ppUpdate(robot.mecanumDrive.localizer),
+                        robot.drive.drive(driverGamepad),
+                        new InstantCommand(robot.drive.localizer::update),
+                        robot.turret.ppUpdate(robot.drive.localizer),
 //                        robot.turret.update(),
                         robot.spindex.update(),
                         robot.spindex.flapper.update(),
@@ -256,7 +253,7 @@ public class TrackTurret extends LinearOpMode {
 
             TelemetryPacket packet = new TelemetryPacket();
             packet.fieldOverlay().setStroke("#3F51B5");
-            Drawing.drawRobot(packet.fieldOverlay(), robot.mecanumDrive.localizer.getPose());
+            Drawing.drawRobot(packet.fieldOverlay(), robot.drive.localizer.getPose());
             FtcDashboard.getInstance().sendTelemetryPacket(packet);
 
             fsm.update();

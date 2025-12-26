@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Calibration;
+package org.firstinspires.ftc.teamcode.calibration;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.smartcluster.oracleftc.commands.CommandScheduler;
 
 import org.firstinspires.ftc.teamcode.subsystem.ColorType;
-import org.firstinspires.ftc.teamcode.subsystem.Spindex;
+import org.firstinspires.ftc.teamcode.subsystem.Spindex_OLD;
 
 @Config
 @TeleOp(group="Calibration")
@@ -20,7 +20,7 @@ public class dexColorCalibration extends LinearOpMode {
     {
         telemetry=new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
-        Spindex spindex = new Spindex(this);
+        Spindex_OLD spindex = new Spindex_OLD(this);
 
         //Pre-config
         spindex.cachedSensor.setting_WALL = true;
