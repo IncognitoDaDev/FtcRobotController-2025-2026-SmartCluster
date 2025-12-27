@@ -176,14 +176,35 @@ public class Storage extends Subsystem {
     public Command outtakeMode(int Direction)
     {
         storage.OuttakeFacing += Direction;
-
         return Command.builder()
                 .init(()->{
-                    storage.next();
                     spindexer.setTarget(spindexer.getTarget()+ Direction*60);
                 })
                 .finished(()->Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance)
                 .build();
+    }
+
+    public Command sort(ArtifactColor ball) // Assuming you're in outtake mode
+    {
+        if (storage.OuttakeFacing == -1) // Ok the ball in slot 1 is right below the outtake
+        {
+            if (storage.Storage[1] == ball)
+                return outtakeMode(0); // Does nothing...
+            if (storage.Storage[2] == ball)
+                return nextBall();
+            if (storage.Storage[0] == ball)
+                return previousBall();
+        }
+        else // Ok the ball in slot 2 is right below the outtake
+        {
+            if (storage.Storage[2] == ball)
+                return outtakeMode(0); // Does nothing...
+            if (storage.Storage[1] == ball)
+                return nextBall();
+            if (storage.Storage[0] == ball)
+                return previousBall();
+        }
+        return outtakeMode(0); //Oh well, lets do nothing?
     }
 
     public Command update()
