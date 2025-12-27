@@ -5,7 +5,7 @@ repositories {
     // Extras - R.
     maven { url = 'https://maven.brott.dev/' }
     maven { url = "https://mymaven.bylazar.com/releases" }
-    maven { url 'https://jitpack.io' }
+    maven { url = 'https://jitpack.io' }
 
 }
 
@@ -30,6 +30,7 @@ dependencies {
     // Extras - R.
     implementation 'com.acmerobotics.dashboard:dashboard:0.5.1'
     implementation 'com.github.Thermal-Equilibrium:homeostasis-FTC:1.0.8'
+    implementation "com.bylazar:limelightproxy:1.0.4"
 
 }
 

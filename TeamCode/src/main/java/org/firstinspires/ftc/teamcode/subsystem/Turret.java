@@ -25,7 +25,7 @@ public class Turret extends Subsystem {
     private final ServoImplEx rightHood, leftHood;
     private final OracleLynxVoltageSensor voltageSensor;
     public static TrapezoidalMotionProfile hoodMotionProfile = new TrapezoidalMotionProfile(12, 16, 16);
-    public final ServoActuator hood;
+    private final ServoActuator hood;
 
     public Turret(OpMode opMode) {
         super(opMode);
@@ -85,6 +85,10 @@ public class Turret extends Subsystem {
         );
     }
 
+    public Command reset()
+    {
+        return hood.reset();
+    }
 
     @Override
     public SubsystemFlavor flavor() {

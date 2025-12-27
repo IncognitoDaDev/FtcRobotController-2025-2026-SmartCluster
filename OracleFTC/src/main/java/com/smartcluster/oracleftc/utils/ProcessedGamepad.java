@@ -117,8 +117,10 @@ public class ProcessedGamepad {
         public Supplier<Boolean> changed() {
             return () -> state != lastState;
         }
-
-        public Supplier<Boolean> not() {
+        public Supplier<Boolean> down() {
+            return () -> state;
+        }
+        public Supplier<Boolean> up() {
             return () -> !state;
         }
 

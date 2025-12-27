@@ -1,6 +1,8 @@
 package org.firstinspires.ftc.teamcode.subsystem;
 
 import com.acmerobotics.dashboard.config.Config;
+import com.qualcomm.hardware.lynx.LynxI2cColorRangeSensor;
+import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -26,12 +28,15 @@ import java.util.concurrent.atomic.AtomicReference;
 @Config
 public class Storage extends Subsystem {
 
-    public final CRServoImplEx spindexRight, spindexLeft;
-    public final ServoImplEx flapperRight, flapperLeft;
+    private final CRServoImplEx spindexRight, spindexLeft;
+    private final ServoImplEx flapperRight, flapperLeft;
+    private final LynxI2cColorRangeSensor leftColorSensor, rightColorSensor;
+    private final RevColorSensorV3 frontColorSensor;
     public final Encoder spindexEncoder;
     public static TrapezoidalMotionProfile flapperMotionProfile = new TrapezoidalMotionProfile(16, 20, 16);
-    private final ServoActuator flapper;
-    private final CRActuator spindexer;
+    public final ServoActuator flapper;
+    public final CRActuator spindexer;
+
     public static double flapperDownVal = 1.0, flapperUpVal = 0.425;
 
     public static double dexTarget = 0;
@@ -90,7 +95,9 @@ public class Storage extends Subsystem {
         flapperLeft=hardwareMap.get(ServoImplEx.class,"flapperLeft");
         spindexEncoder = new RawEncoder(hardwareMap.get(DcMotorEx.class,"intakeMotor"));
         flapperLeft.setDirection(Servo.Direction.REVERSE);
-
+        frontColorSensor = hardwareMap.get(RevColorSensorV3.class, "rotaryColorSensorF");
+        rightColorSensor = hardwareMap.get(LynxI2cColorRangeSensor.class, "rotaryColorSensorR");
+        leftColorSensor = hardwareMap.get(LynxI2cColorRangeSensor.class, "rotaryColorSensorL");
         flapper = new ServoActuator(this, "flapper", flapperMotionProfile, flapperRight,flapperLeft)
         {
             @Override
@@ -144,13 +151,24 @@ public class Storage extends Subsystem {
 
     public Command nextBall() // Clockwise
     {
-        storage.next();
-        return spindexer.move(new AtomicReference<>(spindexer.getTarget() + 120));
+        return Command.builder()
+                .init(()->{
+                    storage.next();
+                    spindexer.setTarget(spindexer.getTarget()+120);
+                })
+                .finished(()->Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance)
+                .build();
+
     }
     public Command previousBall() //Anticlockwise
     {
-        storage.previous();
-        return spindexer.move(new AtomicReference<>(spindexer.getTarget() - 120));
+        return Command.builder()
+                .init(()->{
+                    storage.previous();
+                    spindexer.setTarget(spindexer.getTarget()-120);
+                })
+                .finished(()->Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance)
+                .build();
     }
 
     // Positive is clockwise? (Negative is anticlockwise?)
@@ -158,7 +176,14 @@ public class Storage extends Subsystem {
     public Command outtakeMode(int Direction)
     {
         storage.OuttakeFacing += Direction;
-        return spindexer.move(new AtomicReference<>(spindexer.getTarget() + 60*Direction));
+
+        return Command.builder()
+                .init(()->{
+                    storage.next();
+                    spindexer.setTarget(spindexer.getTarget()+ Direction*60);
+                })
+                .finished(()->Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance)
+                .build();
     }
 
     public Command update()
@@ -169,8 +194,4 @@ public class Storage extends Subsystem {
         );
     }
 
-    @Override
-    public SubsystemFlavor flavor() {
-        return SubsystemFlavor.Mixed;
-    }
 }
