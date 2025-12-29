@@ -6,11 +6,14 @@ import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.commands.ParallelCommand;
+import com.smartcluster.oracleftc.commands.SequentialCommand;
+import com.smartcluster.oracleftc.commands.WaitCommand;
 import com.smartcluster.oracleftc.hardware.subsystem.Actuator;
 import com.smartcluster.oracleftc.hardware.subsystem.CRActuator;
 import com.smartcluster.oracleftc.hardware.subsystem.ServoActuator;
@@ -24,6 +27,7 @@ import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
 
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 @Config
 public class Storage extends Subsystem {
@@ -49,7 +53,7 @@ public class Storage extends Subsystem {
         PURPLE,
         EMPTY
     }
-    public class StorageState {
+    public static class StorageState {
 
         // Order is F R L, clockwise
         public ArtifactColor[] Storage = {ArtifactColor.EMPTY, ArtifactColor.EMPTY, ArtifactColor.EMPTY};
@@ -68,7 +72,7 @@ public class Storage extends Subsystem {
             if (OuttakeFacing == 1) Storage[2] = ArtifactColor.EMPTY;
         }
 
-        public void next() // Clockwise
+        private void next() // Clockwise
         {
             ArtifactColor Temp = Storage[0];
             Storage[0] = Storage[1];
@@ -82,6 +86,14 @@ public class Storage extends Subsystem {
             Storage[2] = Storage[1];
             Storage[1] = Storage[0];
             Storage[0] = Temp;
+        }
+
+        public Supplier<Boolean> isFull(){
+            for(int i = 0;i<3;i++)
+                if (Storage[i] == ArtifactColor.EMPTY)
+                    return () -> false;
+
+            return () -> true;
         }
     }
 
@@ -135,8 +147,15 @@ public class Storage extends Subsystem {
 
             @Override
             public Command reset() {
-                setTarget(0);
-                return move(new AtomicReference<>(60.0));
+
+                return new InstantCommand(() ->
+                {
+                    spindexEncoder.reset();
+                    setTarget(0);
+                });
+
+//                setTarget(0);
+//                return move(new AtomicReference<>(60));
             }
         };
     }
@@ -147,6 +166,26 @@ public class Storage extends Subsystem {
     public Command flapperDown()
     {
         return flapper.move(new AtomicReference<>(flapperDownVal));
+    }
+
+    public Storage.ArtifactColor identifyObj(RevColorSensorV3 sensor)
+    {
+        NormalizedRGBA data = sensor.getNormalizedColors();
+
+        if (data.alpha*256 > 240) { //Something exists... and it's a ball
+            if (data.green * 256 > 8.5) // Checking if is GREEN
+                return Storage.ArtifactColor.GREEN;
+                //if (data.blue * 256 > 9) // Checking if its
+            else
+                return (Storage.ArtifactColor.PURPLE); // Must be PURPLE then
+        }
+
+        return Storage.ArtifactColor.EMPTY;
+    }
+
+    public Storage.ArtifactColor identifyObjFrontSensor()
+    {
+        return identifyObj(frontColorSensor);
     }
 
     public Command nextBall() // Clockwise
@@ -171,6 +210,16 @@ public class Storage extends Subsystem {
                 .build();
     }
 
+    public Command BallToOuttake()
+    {
+        storage.removeBallOuttake();
+        return new SequentialCommand(
+                flapperUp(),
+                new WaitCommand(100),
+                flapperDown()
+        );
+    }
+
     // Positive is clockwise? (Negative is anticlockwise?)
     // Use -+1 for 60 degrees for outtake (Call twice, once at start to set for outtake, and once at end for intake)
     public Command outtakeMode(int Direction)
@@ -183,6 +232,13 @@ public class Storage extends Subsystem {
                 .finished(()->Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance)
                 .build();
     }
+
+    public Command intakeMode()
+    {
+        // Use only after using outtake mode :pray:
+        return outtakeMode(-storage.OuttakeFacing);
+    }
+
 
     public Command sort(ArtifactColor ball) // Assuming you're in outtake mode
     {

@@ -4,6 +4,7 @@ import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.smartcluster.oracleftc.commands.Command;
+import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.commands.ParallelCommand;
 import com.smartcluster.oracleftc.hardware.OracleLynxVoltageSensor;
 
@@ -36,13 +37,15 @@ public class Robot {
     {
         return new ParallelCommand(
                 turret.reset(),
-                storage.flapper.reset()
+                storage.flapper.reset(),
+                storage.spindexer.reset()
         );
     }
 
     public Command update()
     {
         return new ParallelCommand(
+                new InstantCommand(drive.localizer::update),
                 turret.update(),
                 storage.update()
         );

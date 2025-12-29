@@ -25,7 +25,7 @@ public class Turret extends Subsystem {
     private final ServoImplEx rightHood, leftHood;
     private final OracleLynxVoltageSensor voltageSensor;
     public static TrapezoidalMotionProfile hoodMotionProfile = new TrapezoidalMotionProfile(12, 16, 16);
-    private final ServoActuator hood;
+    public final ServoActuator hood;
 
     public Turret(OpMode opMode) {
         super(opMode);
@@ -39,7 +39,7 @@ public class Turret extends Subsystem {
         hood = new ServoActuator(this, "hood", hoodMotionProfile, rightHood, leftHood) {
             @Override
             public Command reset() {
-                setTarget(0.9);
+                setTarget(0.4);
                 return new InstantCommand(() -> {
                     rightHood.setPosition(this.target.get());
                     leftHood.setPosition(this.target.get());

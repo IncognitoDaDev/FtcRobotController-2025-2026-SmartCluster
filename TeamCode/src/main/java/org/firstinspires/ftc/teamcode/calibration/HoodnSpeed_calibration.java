@@ -60,7 +60,7 @@ public class HoodnSpeed_calibration extends LinearOpMode {
             turretDown.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER,pidfCoefficients);
             if (gamepad1.leftBumperWasPressed()){hood.setPosition(position);position+= 0.1;}
 
-            turretUp.setVelocity(currentVelocity*8192/6000);
+            turretUp.setVelocity(currentVelocity*60/28);
             turretDown.setPower(turretUp.getPower());
 
             double currentSpeed = turretUp.getVelocity();

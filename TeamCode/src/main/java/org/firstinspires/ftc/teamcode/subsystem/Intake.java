@@ -24,6 +24,10 @@ public class Intake extends Subsystem {
     {
         return new InstantCommand(()->intakeMotor.setPower(Robot.nominalVoltage/voltageSensor.getVoltage()));
     }
+    public Command outake()
+    {
+        return new InstantCommand(()->intakeMotor.setPower(-Robot.nominalVoltage/voltageSensor.getVoltage()));
+    }
 
     public Command stop()
     {
