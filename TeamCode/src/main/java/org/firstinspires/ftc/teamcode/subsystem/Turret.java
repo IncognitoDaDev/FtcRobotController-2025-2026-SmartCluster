@@ -39,7 +39,7 @@ public class Turret extends Subsystem {
         hood = new ServoActuator(this, "hood", hoodMotionProfile, rightHood, leftHood) {
             @Override
             public Command reset() {
-                setTarget(0.9);
+                setTarget(0.0);
                 return new InstantCommand(() -> {
                     rightHood.setPosition(this.target.get());
                     leftHood.setPosition(this.target.get());

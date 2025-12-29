@@ -3,6 +3,8 @@ package org.firstinspires.ftc.teamcode.opmode.teleop;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.roadrunner.Pose2d;
+import com.qualcomm.hardware.limelightvision.LLStatus;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -19,14 +21,25 @@ import com.smartcluster.oracleftc.utils.Performance;
 import com.smartcluster.oracleftc.utils.ProcessedGamepad;
 
 //import org.firstinspires.ftc.teamcode.subsystem.MecanumDrive;
+import org.firstinspires.ftc.teamcode.subsystem.CamRecon;
+import org.firstinspires.ftc.teamcode.subsystem.MecanumDrive;
 import org.firstinspires.ftc.teamcode.subsystem.Robot;
 import org.firstinspires.ftc.teamcode.subsystem.Storage;
+
+
+import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.LLResultTypes;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
+
+
+import org.firstinspires.ftc.teamcode.subsystem.CamRecon;
 
 
 import java.util.List;
 
 
-public class BaseTeleOp extends LinearOpMode {
+public class  BaseTeleOp extends LinearOpMode {
+
     protected Pose2d cornerCoordinates;
     private final CommandScheduler scheduler = new CommandScheduler();
     public enum TeleOpState{
@@ -44,8 +57,13 @@ public class BaseTeleOp extends LinearOpMode {
         telemetry.setMsTransmissionInterval(100);
 
         Robot robot = new Robot(this);
+        CamRecon CamRecon = new CamRecon(this);
+
+
         ProcessedGamepad driverGamepad = new ProcessedGamepad(gamepad1),
                 operatorGamepad = new ProcessedGamepad(gamepad2);
+
+
 
         scheduler.schedule(
                 new ParallelCommand(
@@ -152,7 +170,7 @@ public class BaseTeleOp extends LinearOpMode {
             lynxModule.setBulkCachingMode(LynxModule.BulkCachingMode.MANUAL);
 
 
-
+        robot.drive.localizer.setPose(new Pose2d(-6,-64,90));
 
 
         MovingAverageFilter loopTimeFilter=new MovingAverageFilter(50);
@@ -169,6 +187,12 @@ public class BaseTeleOp extends LinearOpMode {
 
             telemetry.addData("state", CurrentState);
             telemetry.addData("hz", loopTimeFilter.update(1/(Performance.loopTimeNano()/1E9)));
+            telemetry.addData(
+                    "monolith",
+                    java.util.Arrays.toString(CamRecon.getAprilTagPattern())
+            );
+            telemetry.addData("loc", robot.drive.localizer.getPose());
+
             telemetry.update();
 
             fsm.update();
