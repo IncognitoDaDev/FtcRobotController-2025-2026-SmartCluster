@@ -4,20 +4,15 @@ import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.roadrunner.Pose2d;
-import com.pedropathing.geometry.Pose;
 import com.qualcomm.hardware.lynx.LynxModule;
-import com.qualcomm.hardware.lynx.Supplier;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.CommandScheduler;
 import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.commands.ParallelCommand;
 import com.smartcluster.oracleftc.commands.SequentialCommand;
-import com.smartcluster.oracleftc.commands.WaitCommand;
 import com.smartcluster.oracleftc.fsm.FSM;
-import com.smartcluster.oracleftc.hardware.OracleLynxVoltageSensor;
 import com.smartcluster.oracleftc.math.filters.MovingAverageFilter;
 import com.smartcluster.oracleftc.utils.Performance;
 import com.smartcluster.oracleftc.utils.ProcessedGamepad;
@@ -70,24 +65,21 @@ public class BaseTeleOp extends LinearOpMode {
                 )
 
                 // IDLE -------------------------------------------------------------
-                .state(TeleOpState.INTAKE, Command.builder()
+                .transition(BaseTeleOp.TeleOpState.IDLE, BaseTeleOp.TeleOpState.INTAKE, driverGamepad.left_bumper.down(),
+                        new SequentialCommand(
+                                robot.storage.intakeMode(),
+                                robot.intake.intake()
+                        ))
+                .state(BaseTeleOp.TeleOpState.INTAKE, Command.builder()
                         .update(()->{
                             Storage.ArtifactColor frontScan = robot.storage.identifyObjFrontSensor();
                             if (frontScan != Storage.ArtifactColor.EMPTY)
                                 robot.storage.storage.appendBallIntake(frontScan);
                         })
                         .build())
-                .transition(BaseTeleOp.TeleOpState.IDLE, BaseTeleOp.TeleOpState.INTAKE,
-                        () -> driverGamepad.left_bumper.down().get() && !robot.storage.storage.isFull().get(),
-                        new SequentialCommand(
-                                robot.storage.intakeMode(),
-                                robot.intake.intake()
-                        ))
-                .transition(TeleOpState.INTAKE, TeleOpState.INTAKE,
-                        () -> driverGamepad.square.get() || !robot.storage.storage.isFull().get(),
+                .transition(TeleOpState.INTAKE, TeleOpState.INTAKE, driverGamepad.square::get,
                                 robot.storage.nextBall())
-                .transition(TeleOpState.INTAKE,TeleOpState.IDLE,
-                        () -> driverGamepad.left_bumper.up().get() || robot.storage.storage.isFull().get(),
+                .transition(TeleOpState.INTAKE,TeleOpState.IDLE, driverGamepad.left_bumper.up(),
                         new SequentialCommand(
                             robot.intake.stop(),
                             robot.storage.outtakeMode(-1)
@@ -105,8 +97,8 @@ public class BaseTeleOp extends LinearOpMode {
 
                 .transition(TeleOpState.CloseShooting,TeleOpState.CloseShooting,driverGamepad.dpad_up.pressed(),
                         new ParallelCommand(
-                                new InstantCommand(()->robot.turret.hood.setTarget(0.9)),
-                                new InstantCommand(()->{robot.turret.setTargetVelocity(1000);
+                                new InstantCommand(()->robot.turret.hood.setTarget(0.2)),
+                                new InstantCommand(()->{robot.turret.setVelocityByDistance(robot.drive.localizer.getPose(), new Pose2d(60,63, -45));
                                 })
                         ))
 
@@ -152,7 +144,10 @@ public class BaseTeleOp extends LinearOpMode {
 
             CurrentState = fsm.getCurrentState();
 
-            telemetry.addData("storageCache", robot.storage.storage.Storage);
+            telemetry.addLine("StorageCache:");
+            telemetry.addData("[0]", robot.storage.storage.Slot[0]);
+            telemetry.addData("[1]", robot.storage.storage.Slot[1]);
+            telemetry.addData("[2]", robot.storage.storage.Slot[2]);
             telemetry.addData("state", CurrentState);
             telemetry.addData("hz", loopTimeFilter.update(1/(Performance.loopTimeNano()/1E9)));
             telemetry.update();

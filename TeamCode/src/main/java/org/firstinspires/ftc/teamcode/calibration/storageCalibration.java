@@ -58,17 +58,14 @@ public class storageCalibration extends LinearOpMode {
                                 robot.storage.storage.appendBallIntake(frontScan);
                         })
                         .build())
-                .transition(BaseTeleOp.TeleOpState.IDLE, BaseTeleOp.TeleOpState.INTAKE,
-                        () -> driverGamepad.left_bumper.down().get() && !robot.storage.storage.isFull().get(),
+                .transition(BaseTeleOp.TeleOpState.IDLE, BaseTeleOp.TeleOpState.INTAKE, driverGamepad.left_bumper.down(),
                         new SequentialCommand(
                                 robot.storage.intakeMode(),
                                 robot.intake.intake()
                         ))
-                .transition(BaseTeleOp.TeleOpState.INTAKE, BaseTeleOp.TeleOpState.INTAKE,
-                        () -> driverGamepad.square.get() || !robot.storage.storage.isFull().get(),
+                .transition(BaseTeleOp.TeleOpState.INTAKE, BaseTeleOp.TeleOpState.INTAKE, () -> driverGamepad.square.get(),
                         robot.storage.nextBall())
-                .transition(BaseTeleOp.TeleOpState.INTAKE, BaseTeleOp.TeleOpState.IDLE,
-                        () -> driverGamepad.left_bumper.up().get() || robot.storage.storage.isFull().get(),
+                .transition(BaseTeleOp.TeleOpState.INTAKE, BaseTeleOp.TeleOpState.IDLE, driverGamepad.left_bumper.up(),
                         new SequentialCommand(
                                 robot.intake.stop(),
                                 robot.storage.outtakeMode(-1)
@@ -103,8 +100,11 @@ public class storageCalibration extends LinearOpMode {
                 lynxModule.getBulkData();
             }
 
-            telemetry.addData("storageCache", robot.storage.storage.Storage);
-            telemetry.addData("state", fsm.getCurrentState());
+            telemetry.addData("StorageState", robot.storage.storage.OuttakeFacing);
+            telemetry.addLine("StorageCache:");
+            telemetry.addData("[0]", robot.storage.storage.Slot[0]);
+            telemetry.addData("[1]", robot.storage.storage.Slot[1]);
+            telemetry.addData("[2]", robot.storage.storage.Slot[2]);            telemetry.addData("state", fsm.getCurrentState());
             telemetry.addData("hz", loopTimeFilter.update(1/(Performance.loopTimeNano()/1E9)));
             telemetry.update();
 

@@ -14,11 +14,9 @@ import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.commands.ParallelCommand;
 import com.smartcluster.oracleftc.commands.SequentialCommand;
 import com.smartcluster.oracleftc.commands.WaitCommand;
-import com.smartcluster.oracleftc.hardware.subsystem.Actuator;
 import com.smartcluster.oracleftc.hardware.subsystem.CRActuator;
 import com.smartcluster.oracleftc.hardware.subsystem.ServoActuator;
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
-import com.smartcluster.oracleftc.hardware.subsystem.SubsystemFlavor;
 import com.smartcluster.oracleftc.hardware.wrappers.Encoder;
 import com.smartcluster.oracleftc.hardware.wrappers.RawEncoder;
 import com.smartcluster.oracleftc.math.DualNum;
@@ -56,41 +54,41 @@ public class Storage extends Subsystem {
     public static class StorageState {
 
         // Order is F R L, clockwise
-        public ArtifactColor[] Storage = {ArtifactColor.EMPTY, ArtifactColor.EMPTY, ArtifactColor.EMPTY};
+        public ArtifactColor[] Slot = {ArtifactColor.EMPTY, ArtifactColor.EMPTY, ArtifactColor.EMPTY};
 
         // 0 for none; 1 for Clockwise, -1 for Anticlockwise
         public int OuttakeFacing = 0;
 
         public void appendBallIntake(ArtifactColor obj)
         {
-            Storage[0] = obj;
+            Slot[0] = obj;
         }
 
         public void removeBallOuttake()
         {
-            if (OuttakeFacing == -1) Storage[1] = ArtifactColor.EMPTY;
-            if (OuttakeFacing == 1) Storage[2] = ArtifactColor.EMPTY;
+            if (OuttakeFacing == -1) Slot[1] = ArtifactColor.EMPTY;
+            if (OuttakeFacing == 1) Slot[2] = ArtifactColor.EMPTY;
         }
 
         private void next() // Clockwise
         {
-            ArtifactColor Temp = Storage[0];
-            Storage[0] = Storage[1];
-            Storage[1] = Storage[2];
-            Storage[2] = Temp;
+            ArtifactColor Temp = Slot[0];
+            Slot[0] = Slot[1];
+            Slot[1] = Slot[2];
+            Slot[2] = Temp;
         }
 
         public void previous() // Anticlockwise
         {
-            ArtifactColor Temp = Storage[2];
-            Storage[2] = Storage[1];
-            Storage[1] = Storage[0];
-            Storage[0] = Temp;
+            ArtifactColor Temp = Slot[2];
+            Slot[2] = Slot[1];
+            Slot[1] = Slot[0];
+            Slot[0] = Temp;
         }
 
         public Supplier<Boolean> isFull(){
             for(int i = 0;i<3;i++)
-                if (Storage[i] == ArtifactColor.EMPTY)
+                if (Slot[i] == ArtifactColor.EMPTY)
                     return () -> false;
 
             return () -> true;
@@ -148,14 +146,9 @@ public class Storage extends Subsystem {
             @Override
             public Command reset() {
 
-                return new InstantCommand(() ->
-                {
-                    spindexEncoder.reset();
-                    setTarget(0);
-                });
-
-//                setTarget(0);
-//                return move(new AtomicReference<>(60));
+                spindexEncoder.reset();
+                setTarget(0);
+                return move(new AtomicReference<>(0.0));
             }
         };
     }
@@ -224,9 +217,9 @@ public class Storage extends Subsystem {
     // Use -+1 for 60 degrees for outtake (Call twice, once at start to set for outtake, and once at end for intake)
     public Command outtakeMode(int Direction)
     {
-        storage.OuttakeFacing += Direction;
         return Command.builder()
                 .init(()->{
+                    storage.OuttakeFacing += Direction;
                     spindexer.setTarget(spindexer.getTarget()+ Direction*60);
                 })
                 .finished(()->Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance)
@@ -236,31 +229,56 @@ public class Storage extends Subsystem {
     public Command intakeMode()
     {
         // Use only after using outtake mode :pray:
-        return outtakeMode(-storage.OuttakeFacing);
+        return Command.builder()
+                .init(()->{
+                    int Direction = 0;
+
+                    if (storage.OuttakeFacing == -1) Direction = 1;
+                    else if (storage.OuttakeFacing == 1) Direction = -1;
+                    storage.OuttakeFacing += Direction;
+
+                    spindexer.setTarget(spindexer.getTarget()+Direction*60);
+                })
+                .finished(()->Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance)
+                .build();
     }
 
 
     public Command sort(ArtifactColor ball) // Assuming you're in outtake mode
     {
-        if (storage.OuttakeFacing == -1) // Ok the ball in slot 1 is right below the outtake
-        {
-            if (storage.Storage[1] == ball)
-                return outtakeMode(0); // Does nothing...
-            if (storage.Storage[2] == ball)
-                return nextBall();
-            if (storage.Storage[0] == ball)
-                return previousBall();
-        }
-        else // Ok the ball in slot 2 is right below the outtake
-        {
-            if (storage.Storage[2] == ball)
-                return outtakeMode(0); // Does nothing...
-            if (storage.Storage[1] == ball)
-                return nextBall();
-            if (storage.Storage[0] == ball)
-                return previousBall();
-        }
-        return outtakeMode(0); //Oh well, lets do nothing?
+        return Command.builder()
+                .init(()->{
+                    if (storage.OuttakeFacing == -1)
+                    {
+                        if (storage.Slot[1] == ball) spindexer.setTarget(spindexer.getTarget()); // Ball is here
+                        else if (storage.Slot[2] == ball)
+                        {
+                            storage.next();
+                            spindexer.setTarget(spindexer.getTarget()+120);
+                        }
+                        else if (storage.Slot[0] == ball)
+                        {
+                            storage.previous();
+                            spindexer.setTarget(spindexer.getTarget()-120);
+                        }
+                    }
+                    else if (storage.OuttakeFacing == 1)
+                    {
+                        if (storage.Slot[2] == ball) spindexer.setTarget(spindexer.getTarget()); // Ball is here
+                        else if (storage.Slot[0] == ball)
+                        {
+                            storage.next();
+                            spindexer.setTarget(spindexer.getTarget()+120);
+                        }
+                        else if (storage.Slot[1] == ball)
+                        {
+                            storage.previous();
+                            spindexer.setTarget(spindexer.getTarget()-120);
+                        }
+                    } else spindexer.setTarget(spindexer.getTarget());
+                })
+                .finished(()->Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance)
+                .build();
     }
 
     public Command update()

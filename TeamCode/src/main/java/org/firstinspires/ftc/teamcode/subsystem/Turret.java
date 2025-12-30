@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.subsystem;
 
 import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotorImplEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -26,6 +27,9 @@ public class Turret extends Subsystem {
     private final OracleLynxVoltageSensor voltageSensor;
     public static TrapezoidalMotionProfile hoodMotionProfile = new TrapezoidalMotionProfile(12, 16, 16);
     public final ServoActuator hood;
+    private final double m = 8.502;
+    private final double x = 1.5;
+
 
     public Turret(OpMode opMode) {
         super(opMode);
@@ -67,6 +71,11 @@ public class Turret extends Subsystem {
         if (velocity < 0) velocity = 0;
         if (velocity > 6000) velocity = 6000;
         targetVelocity = velocity;
+    }
+    public void setVelocityByDistance(Pose2d currentPose, Pose2d corner){
+        double distance = Math.sqrt(Math.pow((corner.position.x-currentPose.position.x),2)+Math.pow((corner.position.y-currentPose.position.y),2));
+        double velocity = m*distance+x;
+        setTargetVelocity(velocity);
     }
 
     public Command update() {
