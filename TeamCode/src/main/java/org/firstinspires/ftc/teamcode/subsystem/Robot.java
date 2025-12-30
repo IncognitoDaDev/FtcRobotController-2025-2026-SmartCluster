@@ -18,6 +18,8 @@ public class Robot {
     public final Storage storage;
     public final Turret turret;
 
+    public final Limelight cam;
+
     public Robot(OpMode mode)
     {
 
@@ -30,6 +32,7 @@ public class Robot {
         this.intake = new Intake(mode);
         this.drive = new MecanumDrive(mode.hardwareMap, new Pose2d(0, 0, 0));
         this.turret = new Turret(mode);
+        this.cam = new Limelight(mode);
 
     }
 

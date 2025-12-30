@@ -16,32 +16,34 @@ public class MeepMeepTesting {
     public static void main(String[] args) {
         MeepMeep meepMeep = new MeepMeep(800);
 
-        RoadRunnerBotEntity myBot = new DefaultBotBuilder(meepMeep)
+        Pose2d StartPose = new Pose2d(-13, -62, Math.toRadians(90));
 
-                
-            // Set bot constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
-            .setConstraints(60, 60, Math.toRadians(180), Math.toRadians(180), 15)
-            .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(0, 0, 0))
-        .forward(30)
-            .turn(Math.toRadians(90))
-            .forward(30)
-            .turn(Math.toRadians(90))
-            .forward(30)
-            .turn(Math.toRadians(90))
-            .forward(30)
-            .turn(Math.toRadians(90))
-            .build());
+
+        RoadRunnerBotEntity myBot = new DefaultBotBuilder(meepMeep)
+                .setDimensions(420/25.4, 432/25.4)
+                .setStartPose(StartPose)
+
+                // Set bot constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
+                .setConstraints(60, 60, Math.toRadians(180), Math.toRadians(180), 15)
+                .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(0, 0, 0))
+                        .forward(30)
+                        .turn(Math.toRadians(90))
+                        .forward(30)
+                        .turn(Math.toRadians(90))
+                        .forward(30)
+                        .turn(Math.toRadians(90))
+                        .forward(30)
+                        .turn(Math.toRadians(90))
+                        .build());
 
         Image img = null;
-        try { img = ImageIO.read(new File("<PATH TO IMAGE>")); }
+        try { img = ImageIO.read(new File("./MeepMeepTesting/field-2025-juice-dark.png/")); }
         catch(IOException e) {}
 
-        meepMeep.setBackground(img);
-
-        meepMeep.setBackground(MeepMeep.Background.GRID_BLUE    )
-            .setDarkMode(true)
-            .setBackgroundAlpha(0.95f)
-            .addEntity(myBot)
-            .start();
+        meepMeep.setBackground(img)
+                .setDarkMode(true)
+                .setBackgroundAlpha(0.95f)
+                .addEntity(myBot)
+                .start();
     }
 }

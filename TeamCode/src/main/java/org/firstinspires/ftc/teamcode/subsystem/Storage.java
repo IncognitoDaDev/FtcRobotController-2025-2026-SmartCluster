@@ -9,6 +9,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.commands.ParallelCommand;
@@ -168,7 +169,6 @@ public class Storage extends Subsystem {
         if (data.alpha*256 > 240) { //Something exists... and it's a ball
             if (data.green * 256 > 8.5) // Checking if is GREEN
                 return Storage.ArtifactColor.GREEN;
-                //if (data.blue * 256 > 9) // Checking if its
             else
                 return (Storage.ArtifactColor.PURPLE); // Must be PURPLE then
         }
@@ -213,8 +213,8 @@ public class Storage extends Subsystem {
         );
     }
 
-    // Positive is clockwise? (Negative is anticlockwise?)
-    // Use -+1 for 60 degrees for outtake (Call twice, once at start to set for outtake, and once at end for intake)
+    // Positive is clockwise (Negative is anticlockwise)
+    // Use -+1 for 60 degrees for outtake
     public Command outtakeMode(int Direction)
     {
         return Command.builder()
@@ -243,6 +243,39 @@ public class Storage extends Subsystem {
                 .build();
     }
 
+    public Command singleSlotCheck()
+    {
+        final ElapsedTime timer = new ElapsedTime();
+        // Does a routine that checks every slot
+        return Command.builder()
+                .init(() ->
+                {
+                   timer.reset();
+                })
+                .update(() ->
+                {
+                    ArtifactColor dataScanned = identifyObjFrontSensor();
+                    if (dataScanned != ArtifactColor.EMPTY);
+                    {
+                        storage.Slot[0] = dataScanned;
+                    }
+                })
+                .finished(() -> storage.Slot[0] != ArtifactColor.EMPTY || timer.seconds() > 1.5)
+                .build();
+    }
+
+    public Command routineBallCheck()
+    {
+        return new SequentialCommand(
+                intakeMode(),
+                singleSlotCheck(),
+                nextBall(),
+                singleSlotCheck(),
+                nextBall(),
+                singleSlotCheck(),
+                outtakeMode(-1)
+        );
+    }
 
     public Command sort(ArtifactColor ball) // Assuming you're in outtake mode
     {
@@ -250,7 +283,7 @@ public class Storage extends Subsystem {
                 .init(()->{
                     if (storage.OuttakeFacing == -1)
                     {
-                        if (storage.Slot[1] == ball) spindexer.setTarget(spindexer.getTarget()); // Ball is here
+                        if (storage.Slot[1] == ball); // Ball is here
                         else if (storage.Slot[2] == ball)
                         {
                             storage.next();
@@ -264,7 +297,7 @@ public class Storage extends Subsystem {
                     }
                     else if (storage.OuttakeFacing == 1)
                     {
-                        if (storage.Slot[2] == ball) spindexer.setTarget(spindexer.getTarget()); // Ball is here
+                        if (storage.Slot[2] == ball); // Ball is here
                         else if (storage.Slot[0] == ball)
                         {
                             storage.next();
@@ -275,7 +308,7 @@ public class Storage extends Subsystem {
                             storage.previous();
                             spindexer.setTarget(spindexer.getTarget()-120);
                         }
-                    } else spindexer.setTarget(spindexer.getTarget());
+                    }
                 })
                 .finished(()->Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance)
                 .build();
