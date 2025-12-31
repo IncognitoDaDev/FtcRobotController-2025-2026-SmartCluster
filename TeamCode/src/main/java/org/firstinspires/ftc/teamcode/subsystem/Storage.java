@@ -277,19 +277,19 @@ public class Storage extends Subsystem {
         );
     }
 
-    public Command sort(ArtifactColor ball) // Assuming you're in outtake mode
+    public Command sort(AtomicReference<ArtifactColor> ball) // Assuming you're in outtake mode
     {
         return Command.builder()
                 .init(()->{
                     if (storage.OuttakeFacing == -1)
                     {
-                        if (storage.Slot[1] == ball); // Ball is here
-                        else if (storage.Slot[2] == ball)
+                        if (storage.Slot[1] == ball.get()); // Ball is here
+                        else if (storage.Slot[2] == ball.get())
                         {
                             storage.next();
                             spindexer.setTarget(spindexer.getTarget()+120);
                         }
-                        else if (storage.Slot[0] == ball)
+                        else if (storage.Slot[0] == ball.get())
                         {
                             storage.previous();
                             spindexer.setTarget(spindexer.getTarget()-120);
@@ -297,13 +297,13 @@ public class Storage extends Subsystem {
                     }
                     else if (storage.OuttakeFacing == 1)
                     {
-                        if (storage.Slot[2] == ball); // Ball is here
-                        else if (storage.Slot[0] == ball)
+                        if (storage.Slot[2] == ball.get()); // Ball is here
+                        else if (storage.Slot[0] == ball.get())
                         {
                             storage.next();
                             spindexer.setTarget(spindexer.getTarget()+120);
                         }
-                        else if (storage.Slot[1] == ball)
+                        else if (storage.Slot[1] == ball.get())
                         {
                             storage.previous();
                             spindexer.setTarget(spindexer.getTarget()-120);

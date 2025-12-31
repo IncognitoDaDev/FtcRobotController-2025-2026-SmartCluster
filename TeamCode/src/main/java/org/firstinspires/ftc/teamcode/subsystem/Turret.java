@@ -6,6 +6,7 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotorImplEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.commands.ParallelCommand;
@@ -63,6 +64,8 @@ public class Turret extends Subsystem {
     public static LowPassFilter velocityFilter = new LowPassFilter(0.5);
     private double targetVelocity = 0; // RPM
 
+    private double Tolerance = 50;
+
     public double getCurrentVelocity() {
         return velocityFilter.update((turretUp.getVelocity() / 28) * 60);
     }
@@ -92,6 +95,15 @@ public class Turret extends Subsystem {
                         .requires(this)
                         .build()
         );
+    }
+
+    public Command WaitForRPM(double maxMinisecond)
+    {
+        ElapsedTime timer = new ElapsedTime();
+        return Command.builder()
+                .init(() -> timer.reset())
+                .finished(() -> Math.abs(targetVelocity-getCurrentVelocity())<Tolerance || timer.milliseconds() > maxMinisecond)
+                .build();
     }
 
     public Command reset()

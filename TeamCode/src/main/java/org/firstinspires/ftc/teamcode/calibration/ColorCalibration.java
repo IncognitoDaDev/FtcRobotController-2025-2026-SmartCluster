@@ -31,16 +31,6 @@ public class ColorCalibration extends LinearOpMode {
         while(opModeIsActive()){
             NormalizedRGBA data = frontColorSensor.getNormalizedColors();
 
-            Storage.ArtifactColor[] order = {Storage.ArtifactColor.PURPLE, Storage.ArtifactColor.PURPLE, Storage.ArtifactColor.GREEN};
-            Storage.ArtifactColor[] order2 = {Storage.ArtifactColor.GREEN, Storage.ArtifactColor.PURPLE, Storage.ArtifactColor.PURPLE};
-
-
-            for(int i = 0; i < 3; i++)
-            {
-                dex.sort(order2[i]);
-                dex.flapperUp();
-            }
-
             telemetry.addData("A", data.alpha*256);
             telemetry.addData("R", data.red*256);
             telemetry.addData("G", data.green*256);

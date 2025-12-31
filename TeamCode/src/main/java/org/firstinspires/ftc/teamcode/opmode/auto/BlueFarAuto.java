@@ -35,6 +35,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReference;
+
 @SuppressWarnings("Convert2MethodRef")
 @Autonomous
     public class BlueFarAuto extends LinearOpMode {
@@ -81,8 +83,10 @@ import java.util.concurrent.Future;
     }
 
     private final Pose2d startPose = new Pose2d(-13, -62, Math.toRadians(270));
-    private final Pose2d endPose = new Pose2d(18, -50.5, Math.toRadians(100));
+    private final Pose2d endPose = new Pose2d(-15, -56, Math.toRadians(295));
     private final Pose2d blueCorner = new Pose2d(60, 63, -45);
+
+    Storage.ArtifactColor[] order = {Storage.ArtifactColor.PURPLE, Storage.ArtifactColor.PURPLE, Storage.ArtifactColor.GREEN};
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -97,36 +101,40 @@ import java.util.concurrent.Future;
         (
                 commandToAction(
                         new SequentialCommand(
-                                //robot.cam.scanOrder(),
+                                robot.cam.scanOrder(),
                                 new InstantCommand(() ->
                                 {
                                     robot.storage.storage.OuttakeFacing = -1;
+                                    order = robot.cam.getOrder();
                                 })
                         )),
 
                 robot.drive.actionBuilder(startPose)
-                        .splineToConstantHeading(new Vector2d(-15, -56), Math.toRadians(270))
+                        .splineToConstantHeading(new Vector2d(-15, -56), Math.toRadians(0))
                         .turnTo(Math.toRadians(270+25))
                         .build(),
 
                 commandToAction(
                         new SequentialCommand(
-                                //robot.storage.routineBallCheck(), // caches the ball into data
+                                robot.storage.routineBallCheck(), // caches the ball into data
 
                                 new InstantCommand(() -> {
-                                    robot.turret.setTargetVelocity(4900);
+                                    robot.turret.setTargetVelocity(4600);
                                     robot.turret.hood.setTarget(0.40);
                                 }),
 
-                                new WaitCommand(700),
-                                robot.storage.nextBall(),
+                                robot.storage.sort(new AtomicReference<Storage.ArtifactColor>(order[0])),
+                                robot.turret.WaitForRPM(800),
                                 robot.storage.BallToOuttake(),
                                 //new InstantCommand(()->robot.turret.hood.setTarget(0.42)),
-                                robot.storage.nextBall(),
+                                robot.storage.sort(new AtomicReference<Storage.ArtifactColor>(order[1])),
+                                robot.turret.WaitForRPM(500),
                                 robot.storage.BallToOuttake(),
                                 //new InstantCommand(()->robot.turret.hood.setTarget(0.44)),
-                                robot.storage.nextBall(),
+                                robot.storage.sort(new AtomicReference<Storage.ArtifactColor>(order[2])),
+                                robot.turret.WaitForRPM(500),
                                 robot.storage.BallToOuttake(),
+
                                 new InstantCommand(() -> robot.turret.setTargetVelocity(0))
                         )
                 ),

@@ -21,6 +21,7 @@ import org.firstinspires.ftc.teamcode.subsystem.Robot;
 import org.firstinspires.ftc.teamcode.subsystem.Storage;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Config
 @TeleOp(group="Calibration")
@@ -77,9 +78,9 @@ public class storageCalibration extends LinearOpMode {
                         robot.storage.previousBall())
 
                 .transition(BaseTeleOp.TeleOpState.IDLE, BaseTeleOp.TeleOpState.IDLE, driverGamepad.triangle.pressed(),
-                        robot.storage.sort(Storage.ArtifactColor.PURPLE))
+                        robot.storage.sort(new AtomicReference<Storage.ArtifactColor>(Storage.ArtifactColor.PURPLE)))
                 .transition(BaseTeleOp.TeleOpState.IDLE, BaseTeleOp.TeleOpState.IDLE, driverGamepad.cross.pressed(),
-                        robot.storage.sort(Storage.ArtifactColor.GREEN));
+                        robot.storage.sort(new AtomicReference<Storage.ArtifactColor>(Storage.ArtifactColor.GREEN)));
 
         FSM<BaseTeleOp.TeleOpState> fsm = fsmBuilder.build(scheduler);
 
@@ -104,7 +105,8 @@ public class storageCalibration extends LinearOpMode {
             telemetry.addLine("StorageCache:");
             telemetry.addData("[0]", robot.storage.storage.Slot[0]);
             telemetry.addData("[1]", robot.storage.storage.Slot[1]);
-            telemetry.addData("[2]", robot.storage.storage.Slot[2]);            telemetry.addData("state", fsm.getCurrentState());
+            telemetry.addData("[2]", robot.storage.storage.Slot[2]);
+            telemetry.addData("state", fsm.getCurrentState());
             telemetry.addData("hz", loopTimeFilter.update(1/(Performance.loopTimeNano()/1E9)));
             telemetry.update();
 
