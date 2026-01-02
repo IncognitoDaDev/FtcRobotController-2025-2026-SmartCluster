@@ -25,6 +25,8 @@ import com.smartcluster.oracleftc.math.Time;
 import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
 
+import org.opencv.ml.EM;
+
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
@@ -56,6 +58,7 @@ public class Storage extends Subsystem {
 
         // Order is F R L, clockwise
         public ArtifactColor[] Slot = {ArtifactColor.EMPTY, ArtifactColor.EMPTY, ArtifactColor.EMPTY};
+        public ArtifactColor[] Order = {ArtifactColor.EMPTY, ArtifactColor.EMPTY, ArtifactColor.EMPTY};
 
         // 0 for none; 1 for Clockwise, -1 for Anticlockwise
         public int OuttakeFacing = 0;
@@ -73,18 +76,18 @@ public class Storage extends Subsystem {
 
         private void next() // Clockwise
         {
-            ArtifactColor Temp = Slot[0];
+            ArtifactColor Slot0 = Slot[0];
             Slot[0] = Slot[1];
             Slot[1] = Slot[2];
-            Slot[2] = Temp;
+            Slot[2] = Slot0;
         }
 
         public void previous() // Anticlockwise
         {
-            ArtifactColor Temp = Slot[2];
+            ArtifactColor Slot0 = Slot[0];
+            Slot[0] = Slot[2];
             Slot[2] = Slot[1];
-            Slot[1] = Slot[0];
-            Slot[0] = Temp;
+            Slot[1] = Slot0;
         }
 
         public Supplier<Boolean> isFull(){
@@ -205,9 +208,9 @@ public class Storage extends Subsystem {
 
     public Command BallToOuttake()
     {
-        storage.removeBallOuttake();
         return new SequentialCommand(
                 flapperUp(),
+                new InstantCommand(() -> storage.removeBallOuttake()),
                 new WaitCommand(100),
                 flapperDown()
         );
@@ -268,28 +271,30 @@ public class Storage extends Subsystem {
     {
         return new SequentialCommand(
                 intakeMode(),
+                new WaitCommand(150),
                 singleSlotCheck(),
                 nextBall(),
+                new WaitCommand(150),
                 singleSlotCheck(),
                 nextBall(),
-                singleSlotCheck(),
-                outtakeMode(-1)
+                new WaitCommand(150),
+                singleSlotCheck()
         );
     }
 
-    public Command sort(AtomicReference<ArtifactColor> ball) // Assuming you're in outtake mode
+    public Command sort(ArtifactColor ball) // Assuming you're in outtake mode
     {
         return Command.builder()
                 .init(()->{
                     if (storage.OuttakeFacing == -1)
                     {
-                        if (storage.Slot[1] == ball.get()); // Ball is here
-                        else if (storage.Slot[2] == ball.get())
+                        if (storage.Slot[1] == ball); // Ball is here
+                        else if (storage.Slot[2] == ball)
                         {
                             storage.next();
                             spindexer.setTarget(spindexer.getTarget()+120);
                         }
-                        else if (storage.Slot[0] == ball.get())
+                        else if (storage.Slot[0] == ball)
                         {
                             storage.previous();
                             spindexer.setTarget(spindexer.getTarget()-120);
@@ -297,19 +302,58 @@ public class Storage extends Subsystem {
                     }
                     else if (storage.OuttakeFacing == 1)
                     {
-                        if (storage.Slot[2] == ball.get()); // Ball is here
-                        else if (storage.Slot[0] == ball.get())
+                        if (storage.Slot[2] == ball); // Ball is here
+                        else if (storage.Slot[0] == ball)
                         {
                             storage.next();
                             spindexer.setTarget(spindexer.getTarget()+120);
                         }
-                        else if (storage.Slot[1] == ball.get())
+                        else if (storage.Slot[1] == ball)
                         {
                             storage.previous();
                             spindexer.setTarget(spindexer.getTarget()-120);
                         }
                     }
                 })
+                .update(() -> telemetry.addData("Looking for", ball))
+                .finished(()->Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance)
+                .build();
+    }
+
+    public Command sort(int order) // Assuming you're in outtake mode
+    {
+        return Command.builder()
+                .init(()->{
+                    if (storage.OuttakeFacing == -1)
+                    {
+                        if (storage.Slot[1] == storage.Order[order]); // Ball is here
+                        else if (storage.Slot[2] == storage.Order[order])
+                        {
+                            storage.next();
+                            spindexer.setTarget(spindexer.getTarget()+120);
+                        }
+                        else if (storage.Slot[0] == storage.Order[order])
+                        {
+                            storage.previous();
+                            spindexer.setTarget(spindexer.getTarget()-120);
+                        }
+                    }
+                    else if (storage.OuttakeFacing == 1)
+                    {
+                        if (storage.Slot[2] == storage.Order[order]); // Ball is here
+                        else if (storage.Slot[0] == storage.Order[order])
+                        {
+                            storage.next();
+                            spindexer.setTarget(spindexer.getTarget()+120);
+                        }
+                        else if (storage.Slot[1] == storage.Order[order])
+                        {
+                            storage.previous();
+                            spindexer.setTarget(spindexer.getTarget()-120);
+                        }
+                    }
+                })
+                .update(() -> telemetry.addData("Looking for", storage.Order[order]))
                 .finished(()->Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance)
                 .build();
     }

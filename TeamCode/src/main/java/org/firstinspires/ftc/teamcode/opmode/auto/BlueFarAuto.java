@@ -38,6 +38,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 
 @SuppressWarnings("Convert2MethodRef")
+
 @Autonomous
     public class BlueFarAuto extends LinearOpMode {
 
@@ -86,8 +87,6 @@ import java.util.concurrent.atomic.AtomicReference;
     private final Pose2d endPose = new Pose2d(-15, -56, Math.toRadians(295));
     private final Pose2d blueCorner = new Pose2d(60, 63, -45);
 
-    Storage.ArtifactColor[] order = {Storage.ArtifactColor.PURPLE, Storage.ArtifactColor.PURPLE, Storage.ArtifactColor.GREEN};
-
     @Override
     public void runOpMode() throws InterruptedException {
 
@@ -105,7 +104,6 @@ import java.util.concurrent.atomic.AtomicReference;
                                 new InstantCommand(() ->
                                 {
                                     robot.storage.storage.OuttakeFacing = -1;
-                                    order = robot.cam.getOrder();
                                 })
                         )),
 
@@ -117,22 +115,23 @@ import java.util.concurrent.atomic.AtomicReference;
                 commandToAction(
                         new SequentialCommand(
                                 robot.storage.routineBallCheck(), // caches the ball into data
+                                robot.storage.outtakeMode(-1),
 
                                 new InstantCommand(() -> {
-                                    robot.turret.setTargetVelocity(4600);
+                                    robot.turret.setTargetVelocity(4400);
                                     robot.turret.hood.setTarget(0.40);
                                 }),
 
-                                robot.storage.sort(new AtomicReference<Storage.ArtifactColor>(order[0])),
-                                robot.turret.WaitForRPM(800),
+                                robot.storage.sort(0),
+                                robot.turret.WaitForRPM(2000),
                                 robot.storage.BallToOuttake(),
                                 //new InstantCommand(()->robot.turret.hood.setTarget(0.42)),
-                                robot.storage.sort(new AtomicReference<Storage.ArtifactColor>(order[1])),
-                                robot.turret.WaitForRPM(500),
+                                robot.storage.sort(1),
+                                robot.turret.WaitForRPM(1000),
                                 robot.storage.BallToOuttake(),
                                 //new InstantCommand(()->robot.turret.hood.setTarget(0.44)),
-                                robot.storage.sort(new AtomicReference<Storage.ArtifactColor>(order[2])),
-                                robot.turret.WaitForRPM(500),
+                                robot.storage.sort(2),
+                                robot.turret.WaitForRPM(1000),
                                 robot.storage.BallToOuttake(),
 
                                 new InstantCommand(() -> robot.turret.setTargetVelocity(0))
@@ -172,16 +171,14 @@ import java.util.concurrent.atomic.AtomicReference;
             running = autoAction.run(p);
             scheduler.update();
 
-            Storage.ArtifactColor[] order = robot.cam.getOrder();
+//            Storage.ArtifactColor[] order = robot.cam.getOrder();
             FtcDashboard.getInstance().sendTelemetryPacket(p);
-//            telemetry.addLine("Order:");
-//            telemetry.addData("[0]", order[0]);
-//            telemetry.addData("[1]", order[1]);
-//            telemetry.addData("[2]", order[2]);
-//            telemetry.addLine("StorageCache:");
-//            telemetry.addData("[0]", robot.storage.storage.Slot[0]);
-//            telemetry.addData("[1]", robot.storage.storage.Slot[1]);
-//            telemetry.addData("[2]", robot.storage.storage.Slot[2]);
+            telemetry.addData("Order [0]", robot.storage.storage.Order[0]);
+            telemetry.addData("Order [1]", robot.storage.storage.Order[1]);
+            telemetry.addData("Order [2]", robot.storage.storage.Order[2]);
+            telemetry.addData("Stock [0]", robot.storage.storage.Slot[0]);
+            telemetry.addData("Stock [1]", robot.storage.storage.Slot[1]);
+            telemetry.addData("Stock [2]", robot.storage.storage.Slot[2]);
 
             telemetry.addData("hz", loopTimeFilter.update(1 / (Performance.loopTimeNano() / 1E9)));
             telemetry.update();

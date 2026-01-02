@@ -64,7 +64,7 @@ public class Turret extends Subsystem {
     public static LowPassFilter velocityFilter = new LowPassFilter(0.5);
     private double targetVelocity = 0; // RPM
 
-    private double Tolerance = 50;
+    private double Tolerance = 100;
 
     public double getCurrentVelocity() {
         return velocityFilter.update((turretUp.getVelocity() / 28) * 60);
@@ -102,6 +102,10 @@ public class Turret extends Subsystem {
         ElapsedTime timer = new ElapsedTime();
         return Command.builder()
                 .init(() -> timer.reset())
+                .update(() ->
+                {
+                    telemetry.addData("VelocityErrDist", Math.abs(targetVelocity-getCurrentVelocity()));
+                })
                 .finished(() -> Math.abs(targetVelocity-getCurrentVelocity())<Tolerance || timer.milliseconds() > maxMinisecond)
                 .build();
     }

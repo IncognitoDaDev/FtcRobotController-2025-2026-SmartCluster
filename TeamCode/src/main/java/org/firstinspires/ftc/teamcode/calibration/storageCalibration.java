@@ -78,9 +78,9 @@ public class storageCalibration extends LinearOpMode {
                         robot.storage.previousBall())
 
                 .transition(BaseTeleOp.TeleOpState.IDLE, BaseTeleOp.TeleOpState.IDLE, driverGamepad.triangle.pressed(),
-                        robot.storage.sort(new AtomicReference<Storage.ArtifactColor>(Storage.ArtifactColor.PURPLE)))
+                        robot.storage.sort(Storage.ArtifactColor.PURPLE))
                 .transition(BaseTeleOp.TeleOpState.IDLE, BaseTeleOp.TeleOpState.IDLE, driverGamepad.cross.pressed(),
-                        robot.storage.sort(new AtomicReference<Storage.ArtifactColor>(Storage.ArtifactColor.GREEN)));
+                        robot.storage.sort(Storage.ArtifactColor.GREEN));
 
         FSM<BaseTeleOp.TeleOpState> fsm = fsmBuilder.build(scheduler);
 

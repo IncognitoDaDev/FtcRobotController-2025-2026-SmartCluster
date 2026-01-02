@@ -67,7 +67,7 @@ public class Limelight extends Subsystem {
                         }
                     }
                 })
-                .finished(() -> timer.seconds() > 1.5 || isFinished)
+                .finished(() -> timer.milliseconds() > 250 || isFinished)
                 .build();
     }
 
