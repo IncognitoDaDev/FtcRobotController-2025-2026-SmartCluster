@@ -135,7 +135,7 @@ public class Storage extends Subsystem {
         };
 
 
-        spindexer = new CRActuator(this, "spindexer",  spindexerPID, spindexerMotionProfile, 10.0, spindexLeft,spindexRight) {
+        spindexer = new CRActuator(this, "spindexer",  spindexerPID, spindexerMotionProfile, 6.0, spindexLeft,spindexRight) {
             @Override
             public boolean setTarget(double target) {
                 this.target.set(target);
@@ -169,8 +169,8 @@ public class Storage extends Subsystem {
     {
         NormalizedRGBA data = sensor.getNormalizedColors();
 
-        if (data.alpha*256 > 240) { //Something exists... and it's a ball
-            if (data.green * 256 > 8.5) // Checking if is GREEN
+        if (data.alpha*256 > 230) { //Something exists... and it's a ball
+            if (data.green * 256 > 8.3) // Checking if is GREEN
                 return Storage.ArtifactColor.GREEN;
             else
                 return (Storage.ArtifactColor.PURPLE); // Must be PURPLE then
@@ -271,13 +271,13 @@ public class Storage extends Subsystem {
     {
         return new SequentialCommand(
                 intakeMode(),
-                new WaitCommand(150),
+                new WaitCommand(50),
                 singleSlotCheck(),
                 nextBall(),
-                new WaitCommand(150),
+                new WaitCommand(50),
                 singleSlotCheck(),
                 nextBall(),
-                new WaitCommand(150),
+                new WaitCommand(50),
                 singleSlotCheck()
         );
     }

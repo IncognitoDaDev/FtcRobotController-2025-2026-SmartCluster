@@ -104,6 +104,7 @@ import java.util.concurrent.atomic.AtomicReference;
                                 new InstantCommand(() ->
                                 {
                                     robot.storage.storage.OuttakeFacing = -1;
+                                    robot.storage.storage.Order = robot.cam.getOrder();
                                 })
                         )),
 
@@ -173,9 +174,12 @@ import java.util.concurrent.atomic.AtomicReference;
 
 //            Storage.ArtifactColor[] order = robot.cam.getOrder();
             FtcDashboard.getInstance().sendTelemetryPacket(p);
-            telemetry.addData("Order [0]", robot.storage.storage.Order[0]);
-            telemetry.addData("Order [1]", robot.storage.storage.Order[1]);
-            telemetry.addData("Order [2]", robot.storage.storage.Order[2]);
+//            telemetry.addData("Order [0]", robot.storage.storage.Order[0]);
+//            telemetry.addData("Order [1]", robot.storage.storage.Order[1]);
+//            telemetry.addData("Order [2]", robot.storage.storage.Order[2]);
+            telemetry.addData("Order [0]", robot.cam.getOrder()[0]);
+            telemetry.addData("Order [1]", robot.cam.getOrder()[1]);
+            telemetry.addData("Order [2]", robot.cam.getOrder()[2]);
             telemetry.addData("Stock [0]", robot.storage.storage.Slot[0]);
             telemetry.addData("Stock [1]", robot.storage.storage.Slot[1]);
             telemetry.addData("Stock [2]", robot.storage.storage.Slot[2]);

@@ -6,6 +6,9 @@ import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.smartcluster.oracleftc.commands.Command;
+import com.smartcluster.oracleftc.commands.InstantCommand;
+import com.smartcluster.oracleftc.commands.SequentialCommand;
+import com.smartcluster.oracleftc.commands.WaitCommand;
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
 
 import java.util.List;
@@ -27,48 +30,57 @@ public class Limelight extends Subsystem {
     {
         return order;
     }
+
+    ElapsedTime timer = new ElapsedTime();
     public Command scanOrder()
     {
-        ElapsedTime timer = new ElapsedTime();
-        return Command.builder()
-                .init(() ->
+        return new SequentialCommand(
+                new InstantCommand(() ->
                 {
-                    isFinished = false;
-                    timer.reset();
                     limelight.start();
-                })
-                .update(() ->
-                {
-                    LLResult result = limelight.getLatestResult();
-                    if (result != null && result.isValid())
-                    {
-                        List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
-                        if (!fiducials.isEmpty())
+                    limelight.getLatestResult();
+                }),
+                new WaitCommand(50),
+                Command.builder()
+                        .init(() ->
                         {
-                            for (LLResultTypes.FiducialResult tag : fiducials) {
-                                switch (tag.getFiducialId()) {
-                                    case 21:
-                                        order = new ArtifactColor[]{ArtifactColor.GREEN, ArtifactColor.PURPLE, ArtifactColor.PURPLE};
-                                        limelight.stop();
-                                        isFinished = true;
-                                        break;
-                                    case 22:
-                                        order = new ArtifactColor[]{ArtifactColor.PURPLE, ArtifactColor.GREEN, ArtifactColor.PURPLE};
-                                        limelight.stop();
-                                        isFinished = true;
-                                        break;
-                                    case 23:
-                                        order = new ArtifactColor[]{ArtifactColor.PURPLE, ArtifactColor.PURPLE, ArtifactColor.GREEN};
-                                        limelight.stop();
-                                        isFinished = true;
-                                        break;
+                            isFinished = false;
+                            timer.reset();
+                        })
+                        .update(() ->
+                        {
+                            LLResult result = limelight.getLatestResult();
+                            if (result != null && result.isValid())
+                            {
+                                List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
+                                if (!fiducials.isEmpty())
+                                {
+                                    for (LLResultTypes.FiducialResult tag : fiducials) {
+                                        switch (tag.getFiducialId()) {
+                                            case 21:
+                                                order = new ArtifactColor[]{ArtifactColor.GREEN, ArtifactColor.PURPLE, ArtifactColor.PURPLE};
+                                                limelight.stop();
+                                                isFinished = true;
+                                                break;
+                                            case 22:
+                                                order = new ArtifactColor[]{ArtifactColor.PURPLE, ArtifactColor.GREEN, ArtifactColor.PURPLE};
+                                                limelight.stop();
+                                                isFinished = true;
+                                                break;
+                                            case 23:
+                                                order = new ArtifactColor[]{ArtifactColor.PURPLE, ArtifactColor.PURPLE, ArtifactColor.GREEN};
+                                                limelight.stop();
+                                                isFinished = true;
+                                                break;
+                                        }
+                                    }
                                 }
                             }
-                        }
-                    }
-                })
-                .finished(() -> timer.milliseconds() > 250 || isFinished)
-                .build();
+                        })
+                        .finished(() -> timer.milliseconds() > 250 || isFinished)
+                        .build()
+        );
+
     }
 
     public void reset() {
