@@ -162,10 +162,10 @@ public class MecanumDrive {
                     double rx = rightStick.x * boost;
                     double y = -leftStick.y * boost;
                     double x = leftStick.x * boost;
-                    double rotX = x * Math.cos(-botHeading) - y * Math.sin(-botHeading);
-                    double rotY = x * Math.sin(-botHeading) + y * Math.cos(-botHeading);
-
-                    rotX = rotX * 1.1;  // Counteract imperfect strafing
+//                    double rotX = x * Math.cos(-botHeading) - y * Math.sin(-botHeading);
+//                    double rotY = x * Math.sin(-botHeading) + y * Math.cos(-botHeading);
+//
+//                    rotX = rotX * 1.1;  // Counteract imperfect strafing
 
                     // Denominator is the largest motor power (absolute value) or 1
                     // This ensures all the powers maintain the same ratio,
@@ -174,17 +174,17 @@ public class MecanumDrive {
                     // Field centric drive try
 
 
-                    double denominator = Math.max(Math.abs(rotY) + Math.abs(rotX) + Math.abs(rx), 1);
-                    double frontLeftPower = (rotY + rotX + rx) / denominator * baseSpeed;
-                    double backLeftPower = (rotY - rotX + rx) / denominator * baseSpeed;
-                    double frontRightPower = (rotY - rotX - rx) / denominator * baseSpeed;
-                    double backRightPower = (rotY + rotX - rx) / denominator * baseSpeed;
+//                    double denominator = Math.max(Math.abs(rotY) + Math.abs(rotX) + Math.abs(rx), 1);
+//                    double frontLeftPower = (rotY + rotX + rx) / denominator * baseSpeed;
+//                    double backLeftPower = (rotY - rotX + rx) / denominator * baseSpeed;
+//                    double frontRightPower = (rotY - rotX - rx) / denominator * baseSpeed;
+//                    double backRightPower = (rotY + rotX - rx) / denominator * baseSpeed;
 
-//                    double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
-//                    double frontLeftPower = (y + x + rx) / denominator * baseSpeed;
-//                    double backLeftPower = (y - x + rx) / denominator * baseSpeed;
-//                    double frontRightPower = (y - x - rx) / denominator * baseSpeed;
-//                    double backRightPower = (y + x - rx) / denominator * baseSpeed;
+                    double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
+                    double frontLeftPower = (y + x + rx) / denominator * baseSpeed;
+                    double backLeftPower = (y - x + rx) / denominator * baseSpeed;
+                    double frontRightPower = (y - x - rx) / denominator * baseSpeed;
+                    double backRightPower = (y + x - rx) / denominator * baseSpeed;
 
                     setMotorPowers(frontRightPower, backRightPower, frontLeftPower, backLeftPower);
                 })

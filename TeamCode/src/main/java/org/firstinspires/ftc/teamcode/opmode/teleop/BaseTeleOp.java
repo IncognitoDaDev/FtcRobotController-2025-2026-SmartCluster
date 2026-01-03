@@ -97,20 +97,20 @@ public class BaseTeleOp extends LinearOpMode {
 
                 .transition(TeleOpState.CloseShooting,TeleOpState.CloseShooting,driverGamepad.dpad_up.pressed(),
                         new ParallelCommand(
-                                new InstantCommand(()->robot.turret.hood.setTarget(0.2)),
+                                new InstantCommand(()->robot.turret.hood.setTarget(0.46)),
                                 new InstantCommand(()->{robot.turret.setVelocityByDistance(robot.drive.localizer.getPose(), new Pose2d(60,63, -45));
                                 })
                         ))
 
                 .transition(TeleOpState.FarShooting,TeleOpState.SHOOT,driverGamepad.x.pressed(),
                         new SequentialCommand(
-                                new InstantCommand(()->robot.turret.hood.setTarget(0.38)),
-                                robot.storage.BallToOuttake(),
-                                robot.storage.nextBall(),
-                                new InstantCommand(()->robot.turret.hood.setTarget(0.42)),
-                                robot.storage.BallToOuttake(),
-                                robot.storage.nextBall(),
                                 new InstantCommand(()->robot.turret.hood.setTarget(0.45)),
+                                robot.storage.BallToOuttake(),
+                                robot.storage.nextBall(),
+                                new InstantCommand(()->robot.turret.hood.setTarget(0.48)),
+                                robot.storage.BallToOuttake(),
+                                robot.storage.nextBall(),
+                                new InstantCommand(()->robot.turret.hood.setTarget(0.48)),
                                 robot.storage.BallToOuttake()
                                 ))
 

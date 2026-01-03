@@ -101,7 +101,7 @@ public class Turret extends Subsystem {
     {
         ElapsedTime timer = new ElapsedTime();
         return Command.builder()
-                .init(() -> timer.reset())
+                .init(timer::reset)
                 .update(() ->
                 {
                     telemetry.addData("VelocityErrDist", Math.abs(targetVelocity-getCurrentVelocity()));

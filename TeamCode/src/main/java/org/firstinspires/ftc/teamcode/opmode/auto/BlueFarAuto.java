@@ -7,9 +7,11 @@ import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
+import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.Vector2d;
+import com.pedropathing.geometry.Pose;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -84,8 +86,9 @@ import java.util.concurrent.atomic.AtomicReference;
     }
 
     private final Pose2d startPose = new Pose2d(-13, -62, Math.toRadians(270));
+    private final Pose2d shootPose = new Pose2d(-15, -56,Math.toRadians(300));
     private final Pose2d endPose = new Pose2d(-15, -56, Math.toRadians(295));
-    private final Pose2d blueCorner = new Pose2d(60, 63, -45);
+    private final Pose2d blueCorner = new Pose2d(60, 63, Math.toRadians(-45));
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -102,15 +105,16 @@ import java.util.concurrent.atomic.AtomicReference;
                         new SequentialCommand(
                                 robot.cam.scanOrder(),
                                 new InstantCommand(() ->
-                                {
+                                                                        {
                                     robot.storage.storage.OuttakeFacing = -1;
                                     robot.storage.storage.Order = robot.cam.getOrder();
                                 })
                         )),
 
                 robot.drive.actionBuilder(startPose)
-                        .splineToConstantHeading(new Vector2d(-15, -56), Math.toRadians(0))
-                        .turnTo(Math.toRadians(270+25))
+                        .setTangent(Math.toRadians(270))
+                        .splineToLinearHeading(shootPose, Math.toRadians(270))
+//                        .turnTo(Math.toRadians(270+30))
                         .build(),
 
                 commandToAction(
@@ -119,12 +123,12 @@ import java.util.concurrent.atomic.AtomicReference;
                                 robot.storage.outtakeMode(-1),
 
                                 new InstantCommand(() -> {
-                                    robot.turret.setTargetVelocity(4400);
-                                    robot.turret.hood.setTarget(0.40);
+                                    robot.turret.setTargetVelocity(3900);
+                                    robot.turret.hood.setTarget(0.52);
                                 }),
 
                                 robot.storage.sort(0),
-                                robot.turret.WaitForRPM(2000),
+                                robot.turret.WaitForRPM(1000),
                                 robot.storage.BallToOuttake(),
                                 //new InstantCommand(()->robot.turret.hood.setTarget(0.42)),
                                 robot.storage.sort(1),
@@ -138,7 +142,16 @@ import java.util.concurrent.atomic.AtomicReference;
                                 new InstantCommand(() -> robot.turret.setTargetVelocity(0))
                         )
                 ),
-
+                new ParallelAction(
+                    robot.drive.actionBuilder(shootPose)
+                            .setTangent(Math.toRadians(300))
+                            .splineToLinearHeading(new Pose2d(-33,-34,Math.toRadians(180)),Math.toRadians(0))
+                            .build(),
+                    commandToAction(robot.storage.intakeMode())
+                        ),
+                new ParallelAction(
+                    robot.drive.actionBuilder(new)
+                ),
                 commandToAction(robot.reset())
         );
 
