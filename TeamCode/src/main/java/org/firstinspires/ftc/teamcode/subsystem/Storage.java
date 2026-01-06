@@ -13,6 +13,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.commands.ParallelCommand;
+import com.smartcluster.oracleftc.commands.RaceCommand;
 import com.smartcluster.oracleftc.commands.SequentialCommand;
 import com.smartcluster.oracleftc.commands.WaitCommand;
 import com.smartcluster.oracleftc.hardware.subsystem.CRActuator;
@@ -24,8 +25,6 @@ import com.smartcluster.oracleftc.math.DualNum;
 import com.smartcluster.oracleftc.math.Time;
 import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
-
-import org.opencv.ml.EM;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -117,7 +116,6 @@ public class Storage extends Subsystem {
             @Override
             public Command reset()
             {
-
                 return new InstantCommand(() ->
                 {
                     setTarget(flapperDownVal);
@@ -129,7 +127,7 @@ public class Storage extends Subsystem {
             @Override
             public boolean setTarget(double target)
             {
-                if(target>flapperDownVal || target<flapperUpVal) return false;
+//                if(target >= flapperDownVal || target <= flapperUpVal) return false;
                 this.target.set(target);
                 return true;
             }
@@ -157,14 +155,8 @@ public class Storage extends Subsystem {
             }
         };
     }
-    public Command flapperUp()
-    {
-        return flapper.move(new AtomicReference<>(flapperUpVal));
-    }
-    public Command flapperDown()
-    {
-        return flapper.move(new AtomicReference<>(flapperDownVal));
-    }
+    public Command flapperUp() { return flapper.move(new AtomicReference<>(flapperUpVal)); }
+    public Command flapperDown() { return flapper.move(new AtomicReference<>(flapperDownVal)); }
 
     public Storage.ArtifactColor identifyObj(RevColorSensorV3 sensor)
     {
@@ -247,37 +239,91 @@ public class Storage extends Subsystem {
                 .build();
     }
 
-    public Command singleSlotCheck()
+    private double originalPos = 0;
+
+    public Command Shake(double duration, double distanceFromOriginalPos)
     {
         final ElapsedTime timer = new ElapsedTime();
-        // Does a routine that checks every slot
         return Command.builder()
-                .init(timer::reset)
+                .init(() ->
+                {
+                    timer.reset();
+                    originalPos = spindexer.getPosition().get(0);
+                })
                 .update(() ->
                 {
-                    ArtifactColor dataScanned = identifyObjFrontSensor();
-                    if (dataScanned != ArtifactColor.EMPTY);
+                    if (Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<1.0)
                     {
-                        storage.Slot[0] = dataScanned;
+                        if (spindexer.getTarget() > originalPos)
+                            spindexer.setTarget(originalPos + distanceFromOriginalPos);
+                        else
+                            spindexer.setTarget(originalPos - distanceFromOriginalPos);
                     }
                 })
-                .finished(() -> storage.Slot[0] != ArtifactColor.EMPTY || timer.seconds() > 1.5)
+                .finished(() -> timer.milliseconds() > duration)
                 .build();
     }
 
+
+    private int greenCount = 0, purpleCount = 0;
+    public Command SlotCheck(double minDurationScan)
+    {
+        final ElapsedTime timer = new ElapsedTime();
+        return Command.builder()
+                .init(() ->
+                {
+                    timer.reset();
+                    greenCount = 0;
+                    purpleCount = 0;
+                })
+                .update(() ->
+                {
+                    ArtifactColor dataScanned = identifyObjFrontSensor();
+                    if (dataScanned != ArtifactColor.EMPTY)
+                    {
+                        if (dataScanned == ArtifactColor.PURPLE) purpleCount++;
+                        else greenCount ++;
+
+                        storage.Slot[0] = dataScanned;
+                    }
+                })
+                .finished(() ->
+                {
+                    if (storage.Slot[0] != ArtifactColor.EMPTY && timer.milliseconds() > minDurationScan)
+                    {
+                        if (greenCount > purpleCount) storage.Slot[0] = ArtifactColor.GREEN;
+                        else storage.Slot[0] = ArtifactColor.PURPLE;
+                        return true;
+                    }
+
+                    else if (timer.milliseconds() > 600)
+                        return true; // You're taking too long...
+
+                    return false; //Keep going
+                })
+                .build();
+    }
+
+    public Command SingleSlotCheck()
+    {
+        return new SequentialCommand(
+                new ParallelCommand(
+                        Shake(300, 8),
+                        SlotCheck(100)
+                ),
+                new InstantCommand(() -> spindexer.setTarget(originalPos))
+        );
+    }
     public Command routineBallInspection()
     {
         return new SequentialCommand(
 
                 intakeMode(),
-                new WaitCommand(50),
-                singleSlotCheck(),
+                SingleSlotCheck(),
                 nextBall(),
-                new WaitCommand(50),
-                singleSlotCheck(),
+                SingleSlotCheck(),
                 nextBall(),
-                new WaitCommand(50),
-                singleSlotCheck()
+                SingleSlotCheck()
         );
     }
 

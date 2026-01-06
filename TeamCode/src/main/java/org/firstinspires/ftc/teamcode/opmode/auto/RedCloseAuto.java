@@ -8,15 +8,11 @@ import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
-import com.acmerobotics.roadrunner.Arclength;
 import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
-import com.acmerobotics.roadrunner.Pose2dDual;
-import com.acmerobotics.roadrunner.PosePath;
 import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.VelConstraint;
-import com.pedropathing.geometry.Pose;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -32,7 +28,6 @@ import com.smartcluster.oracleftc.math.filters.MovingAverageFilter;
 import com.smartcluster.oracleftc.utils.Performance;
 
 import org.firstinspires.ftc.teamcode.subsystem.Robot;
-import org.firstinspires.ftc.teamcode.subsystem.Storage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +37,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicReference;
 
 @SuppressWarnings("Convert2MethodRef")
 @Config
@@ -172,11 +166,11 @@ public class RedCloseAuto extends LinearOpMode {
                                 commandToAction(
                                         new SequentialCommand(
                                                 robot.intake.intake(),
-                                                robot.storage.singleSlotCheck(),
+                                                robot.storage.SlotCheck(50),
                                                 robot.storage.nextBall(),
-                                                robot.storage.singleSlotCheck(),
+                                                robot.storage.SlotCheck(50),
                                                 robot.storage.nextBall(),
-                                                robot.storage.singleSlotCheck(),
+                                                robot.storage.SlotCheck(50),
                                                 robot.storage.nextBall(),
                                                 robot.intake.stop()
 
