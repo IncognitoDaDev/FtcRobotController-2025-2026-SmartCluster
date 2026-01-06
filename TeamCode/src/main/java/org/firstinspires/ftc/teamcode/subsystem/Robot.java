@@ -10,7 +10,7 @@ import com.smartcluster.oracleftc.hardware.OracleLynxVoltageSensor;
 
 @Config
 public class Robot {
-    public static double nominalVoltage=12.0;
+    public static double nominalVoltage=10.0;
     private final OpMode opMode;
     public final Turret flywheel;
     public final MecanumDrive drive;

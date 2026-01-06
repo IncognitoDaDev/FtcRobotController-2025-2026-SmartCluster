@@ -42,7 +42,7 @@ public class Storage extends Subsystem {
     public final ServoActuator flapper;
     public final CRActuator spindexer;
 
-    public static double flapperDownVal = 1.0, flapperUpVal = 0.425;
+    public static double flapperDownVal = 0.92, flapperUpVal = 0.44;
 
     public static double dexTarget = 0;
 
@@ -117,9 +117,10 @@ public class Storage extends Subsystem {
             @Override
             public Command reset()
             {
-                setTarget(flapperDownVal);
+
                 return new InstantCommand(() ->
                 {
+                    setTarget(flapperDownVal);
                     flapperRight.setPosition(this.target.get());
                     flapperLeft.setPosition(this.target.get());
                 });
@@ -251,10 +252,7 @@ public class Storage extends Subsystem {
         final ElapsedTime timer = new ElapsedTime();
         // Does a routine that checks every slot
         return Command.builder()
-                .init(() ->
-                {
-                   timer.reset();
-                })
+                .init(timer::reset)
                 .update(() ->
                 {
                     ArtifactColor dataScanned = identifyObjFrontSensor();
@@ -267,9 +265,10 @@ public class Storage extends Subsystem {
                 .build();
     }
 
-    public Command routineBallCheck()
+    public Command routineBallInspection()
     {
         return new SequentialCommand(
+
                 intakeMode(),
                 new WaitCommand(50),
                 singleSlotCheck(),

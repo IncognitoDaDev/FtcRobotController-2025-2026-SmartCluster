@@ -19,6 +19,8 @@ import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
 import com.smartcluster.oracleftc.math.filters.LowPassFilter;
 
+import org.firstinspires.ftc.teamcode.roadrunner.Localizer;
+
 @Config
 public class Turret extends Subsystem {
 
@@ -30,6 +32,8 @@ public class Turret extends Subsystem {
     public final ServoActuator hood;
     private final double m = 8.502;
     private final double x = 1.5;
+    private boolean inZone;
+
 
 
     public Turret(OpMode opMode) {
@@ -44,8 +48,9 @@ public class Turret extends Subsystem {
         hood = new ServoActuator(this, "hood", hoodMotionProfile, rightHood, leftHood) {
             @Override
             public Command reset() {
-                setTarget(0.4);
+
                 return new InstantCommand(() -> {
+                    setTarget(0.4);
                     rightHood.setPosition(this.target.get());
                     leftHood.setPosition(this.target.get());
                 });
@@ -59,7 +64,7 @@ public class Turret extends Subsystem {
         };
     }
 
-    public static MotorFeedforward flywheelFeedforward = new MotorFeedforward(0.1, 0.00019, 0);
+    public static MotorFeedforward flywheelFeedforward = new MotorFeedforward(0.1, 0.00024, 0);
     public static PIDController flywheelPID = new PIDController(0.0012, 0, 0, 0.5);
     public static LowPassFilter velocityFilter = new LowPassFilter(0.5);
     private double targetVelocity = 0; // RPM
@@ -75,10 +80,23 @@ public class Turret extends Subsystem {
         if (velocity > 6000) velocity = 6000;
         targetVelocity = velocity;
     }
-    public void setVelocityByDistance(Pose2d currentPose, Pose2d corner){
-        double distance = Math.sqrt(Math.pow((corner.position.x-currentPose.position.x),2)+Math.pow((corner.position.y-currentPose.position.y),2));
-        double velocity = m*distance+x;
-        setTargetVelocity(velocity);
+    public Command setVelocityByDistance(Localizer localizer, Pose2d corner){
+        return Command.builder()
+                .init(()-> {
+                    inZone = true;
+                })
+                .update(()-> {
+                    Pose2d currentPose = localizer.getPose();
+                    double currentX = currentPose.position.x;
+                    double currentY = currentPose.position.y;
+                    double distance = (Math.sqrt(Math.pow((corner.position.x - currentX), 2)
+                                    + Math.pow((corner.position.y - currentY), 2)))*2.54;
+                    double velocity = m * distance + x;
+                    setTargetVelocity(velocity);
+                    if(currentY>=Math.abs(currentX)+9*1.41 || (currentY>-46+9*1.41 && Math.abs(currentX)<23+9*1.41))inZone = false;
+                })
+                .finished(()->!inZone)
+                .build();
     }
 
     public Command update() {

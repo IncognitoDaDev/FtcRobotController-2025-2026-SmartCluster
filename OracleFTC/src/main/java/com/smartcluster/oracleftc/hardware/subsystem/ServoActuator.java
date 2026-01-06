@@ -73,8 +73,8 @@ public abstract class ServoActuator{
                         servo.setPosition(position);
                     }
 
-                    subsystem.telemetry.addData(String.format("%s.position", name), position);
-                    subsystem.telemetry.addData(String.format("%s.target", name), getTarget());
+//                    subsystem.telemetry.addData(String.format("%s.position", name), position);
+//                    subsystem.telemetry.addData(String.format("%s.target", name), getTarget());
 
                 })
                 .build();

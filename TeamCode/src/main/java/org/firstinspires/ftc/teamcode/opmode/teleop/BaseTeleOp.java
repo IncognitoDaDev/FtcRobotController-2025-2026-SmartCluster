@@ -4,6 +4,7 @@ import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -12,6 +13,7 @@ import com.smartcluster.oracleftc.commands.CommandScheduler;
 import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.commands.ParallelCommand;
 import com.smartcluster.oracleftc.commands.SequentialCommand;
+import com.smartcluster.oracleftc.commands.WaitCommand;
 import com.smartcluster.oracleftc.fsm.FSM;
 import com.smartcluster.oracleftc.math.filters.MovingAverageFilter;
 import com.smartcluster.oracleftc.utils.Performance;
@@ -28,6 +30,8 @@ import java.util.List;
 @TeleOp(group = "TeleOp")
 public class BaseTeleOp extends LinearOpMode {
     protected Pose2d cornerCoordinates;
+    protected Pose2d endPose;
+
     private final CommandScheduler scheduler = new CommandScheduler();
     public enum TeleOpState{
         INIT,
@@ -60,7 +64,8 @@ public class BaseTeleOp extends LinearOpMode {
                 .transition(TeleOpState.INIT, TeleOpState.IDLE, this::opModeIsActive,
                         new SequentialCommand(
                                 robot.reset(),
-                                new InstantCommand(() -> robot.storage.storage.OuttakeFacing = -1)
+                                new InstantCommand(() -> robot.storage.storage.OuttakeFacing = -1),
+                                new InstantCommand(()->robot.drive.localizer.setPose(endPose))
                         )
                 )
 
@@ -81,6 +86,8 @@ public class BaseTeleOp extends LinearOpMode {
                                 robot.storage.nextBall())
                 .transition(TeleOpState.INTAKE,TeleOpState.IDLE, driverGamepad.left_bumper.up(),
                         new SequentialCommand(
+                            robot.intake.outake(),
+                            new WaitCommand(200),
                             robot.intake.stop(),
                             robot.storage.outtakeMode(-1)
                 ))
@@ -92,24 +99,27 @@ public class BaseTeleOp extends LinearOpMode {
                 //Charge init
                 .transition(TeleOpState.IDLE,TeleOpState.FarShooting,driverGamepad.dpad_down.pressed(),//👍
                         new ParallelCommand(
-                                new InstantCommand(()->robot.turret.setTargetVelocity(5000))
+                                new InstantCommand(()->robot.turret.setTargetVelocity(4600))
                         ))
 
-                .transition(TeleOpState.CloseShooting,TeleOpState.CloseShooting,driverGamepad.dpad_up.pressed(),
+                .transition(TeleOpState.IDLE,TeleOpState.FarShooting,driverGamepad.dpad_up.pressed(),
                         new ParallelCommand(
                                 new InstantCommand(()->robot.turret.hood.setTarget(0.46)),
-                                new InstantCommand(()->{robot.turret.setVelocityByDistance(robot.drive.localizer.getPose(), new Pose2d(60,63, -45));
+                                new InstantCommand(()->{robot.turret.setVelocityByDistance(robot.drive.localizer, cornerCoordinates);
                                 })
                         ))
 
                 .transition(TeleOpState.FarShooting,TeleOpState.SHOOT,driverGamepad.x.pressed(),
                         new SequentialCommand(
+                                robot.turret.WaitForRPM(100),
                                 new InstantCommand(()->robot.turret.hood.setTarget(0.45)),
                                 robot.storage.BallToOuttake(),
                                 robot.storage.nextBall(),
+                                robot.turret.WaitForRPM(100),
                                 new InstantCommand(()->robot.turret.hood.setTarget(0.48)),
                                 robot.storage.BallToOuttake(),
                                 robot.storage.nextBall(),
+                                robot.turret.WaitForRPM(100),
                                 new InstantCommand(()->robot.turret.hood.setTarget(0.48)),
                                 robot.storage.BallToOuttake()
                                 ))
@@ -140,6 +150,14 @@ public class BaseTeleOp extends LinearOpMode {
             {
                 lynxModule.clearBulkCache();
                 lynxModule.getBulkData();
+            }
+            if (gamepad1.ps) {
+                Actions.runBlocking(
+                        robot.drive.actionBuilder(robot.drive.localizer.getPose())
+                                .setTangent(Math.toRadians(90))
+                                .splineToLinearHeading(new Pose2d(12, 12,Math.toRadians(90)),Math.toRadians(55))
+                                .build()
+                );
             }
 
             CurrentState = fsm.getCurrentState();

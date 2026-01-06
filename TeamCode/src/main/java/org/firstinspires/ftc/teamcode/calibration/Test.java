@@ -73,8 +73,10 @@ public class Test extends LinearOpMode {
                                 robot.turret.reset()
                         ))
                 .transition(BaseTeleOp.TeleOpState.IDLE, BaseTeleOp.TeleOpState.IDLE,driverGamepad.cross.pressed(),
+                            new SequentialCommand(
+                            robot.turret.WaitForRPM(1000),
                             robot.storage.flapperUp()
-                )
+                ))
                 .transition(BaseTeleOp.TeleOpState.IDLE, BaseTeleOp.TeleOpState.IDLE,driverGamepad.cross.released(),
                         robot.storage.flapperDown()
                 )

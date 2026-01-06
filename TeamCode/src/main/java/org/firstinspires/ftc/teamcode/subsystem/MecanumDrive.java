@@ -581,4 +581,21 @@ public class MecanumDrive {
                 defaultVelConstraint, defaultAccelConstraint
         );
     }
+    public Action turnToFace(Pose2d target) {
+        Pose2d current = localizer.getPose();
+        double dx = target.position.x - current.position.x;
+        double dy = target.position.y - current.position.y;
+        double targetHeading = Math.atan2(dy, dx);
+
+        double currentHeading = current.heading.toDouble();
+        double delta = targetHeading - currentHeading;
+        delta = Math.atan2(Math.sin(delta), Math.cos(delta));
+
+        TimeTurn turn = new TimeTurn(
+                current,
+                delta,
+                defaultTurnConstraints
+        );
+        return new TurnAction(turn);
+    }
 }

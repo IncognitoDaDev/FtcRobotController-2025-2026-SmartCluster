@@ -109,10 +109,10 @@ public abstract class CRActuator {
                             crservos) {
                         if(enabled) motor.setPower(power);
                     }
-                    subsystem.telemetry.addData(String.format("%s.position", name), getPosition().get(0));
-                    subsystem.telemetry.addData(String.format("%s.power", name), power);
-                    subsystem.telemetry.addData(String.format("%s.target", name), getTarget());
-                    subsystem.telemetry.addData(String.format("%s.mp", name), mp.get(1));
+//                    subsystem.telemetry.addData(String.format("%s.position", name), getPosition().get(0));
+//                    subsystem.telemetry.addData(String.format("%s.power", name), power);
+//                    subsystem.telemetry.addData(String.format("%s.target", name), getTarget());
+//                    subsystem.telemetry.addData(String.format("%s.mp", name), mp.get(1));
                 })
                 .build();
     }

@@ -36,6 +36,7 @@ public class FlywheelCalibration extends LinearOpMode {
         while(opModeIsActive())
         {
             telemetry.addData("targetVelocity", targetVelocity);
+            telemetry.addData("Current velocity", flywheel.getCurrentVelocity());
             flywheel.setTargetVelocity(targetVelocity);
             scheduler.update();
             telemetry.update();
