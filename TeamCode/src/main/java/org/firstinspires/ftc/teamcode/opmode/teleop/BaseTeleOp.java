@@ -240,6 +240,7 @@ public class BaseTeleOp extends LinearOpMode {
             telemetry.addData("heading (deg)", Math.toDegrees(robot.drive.localizer.getPose().heading.toDouble()));
             telemetry.addData("state", CurrentState);
             telemetry.addData("hz", loopTimeFilter.update(1/(Performance.loopTimeNano()/1E9)));
+            telemetry.addData("Heading", Math.toDegrees(robot.drive.localizer.getPose().heading.toDouble()));
             telemetry.update();
 
             fsm.update();
