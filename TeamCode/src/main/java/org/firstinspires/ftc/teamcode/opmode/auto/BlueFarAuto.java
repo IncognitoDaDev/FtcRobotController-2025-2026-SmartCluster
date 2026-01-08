@@ -92,9 +92,9 @@ import java.util.concurrent.atomic.AtomicReference;
 
     private final Pose2d startPose = new Pose2d(-13, -62, Math.toRadians(270));
     private final Pose2d shootPose = new Pose2d(-15, -56,Math.toRadians(298));
-    private final Pose2d stack1 = new Pose2d(-28,-35,Math.toRadians(180));
+    private final Pose2d stack1 = new Pose2d(-25,-35,Math.toRadians(180));
     private final Pose2d stack2 = new Pose2d(-28,-10.5,Math.toRadians(180));
-    private final Pose2d endPose = new Pose2d(-24, -15, Math.toRadians(0));
+    private final Pose2d endPose = new Pose2d(-25, -62, Math.toRadians(270));
     private final Pose2d blueCorner = new Pose2d(60, 63, Math.toRadians(-45));
     public static double hoodAngle = 0.57;
     public VelConstraint slow = (pose2dDual, posePath, v) -> 20;
@@ -121,8 +121,8 @@ import java.util.concurrent.atomic.AtomicReference;
                         )),
 
                 robot.drive.actionBuilder(startPose)
-                        .setTangent(Math.toRadians(270))
-                        .splineToLinearHeading(shootPose, Math.toRadians(270))
+                        .setTangent(Math.toRadians(90))
+                        .splineToLinearHeading(shootPose, Math.toRadians(90))
 //                        .turnTo(Math.toRadians(270+30))
                         .build(),
 
@@ -152,8 +152,8 @@ import java.util.concurrent.atomic.AtomicReference;
                 ),
                 new ParallelAction(
                     robot.drive.actionBuilder(shootPose)
-                            .setTangent(Math.toRadians(300))
-                            .splineToLinearHeading(stack1,Math.toRadians(0))
+                            .setTangent(Math.toRadians(180))
+                            .splineToLinearHeading(stack1,Math.toRadians(135))
                             .build(),
                     commandToAction(robot.storage.intakeMode())
                         ),
@@ -165,11 +165,11 @@ import java.util.concurrent.atomic.AtomicReference;
                     commandToAction(
                             new SequentialCommand(
                                     robot.intake.intake(),
-                                    robot.storage.singleSlotCheck(),
+                                    robot.storage.SlotCheck(),
                                     robot.storage.nextBall(),
-                                    robot.storage.singleSlotCheck(),
+                                    robot.storage.SlotCheck(),
                                     robot.storage.nextBall(),
-                                    robot.storage.singleSlotCheck(),
+                                    robot.storage.SlotCheck(),
                                     robot.storage.nextBall(),
                                     robot.intake.stop()
 
@@ -209,7 +209,7 @@ import java.util.concurrent.atomic.AtomicReference;
                         .build(),
 
 
-                commandToAction(robot.reset())
+                commandToAction(robot.storage.outtakeMode(-1))
         );
 
         waitForStart();

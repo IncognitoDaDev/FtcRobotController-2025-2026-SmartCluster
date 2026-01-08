@@ -31,6 +31,8 @@ import java.util.List;
 public class BaseTeleOp extends LinearOpMode {
     protected Pose2d cornerCoordinates;
     protected Pose2d endPose;
+    protected  Pose2d closeShoot;
+    protected Pose2d farShoot;
 
     private final CommandScheduler scheduler = new CommandScheduler();
     public enum TeleOpState{
@@ -63,13 +65,19 @@ public class BaseTeleOp extends LinearOpMode {
                 .initial(TeleOpState.INIT)
                 .transition(TeleOpState.INIT, TeleOpState.IDLE, this::opModeIsActive,
                         new SequentialCommand(
-                                robot.reset(),
-                                new InstantCommand(() -> robot.storage.storage.OuttakeFacing = -1),
-                                new InstantCommand(()->robot.drive.localizer.setPose(endPose))
-                        )
-                )
+                                robot.storage.flapperDown(),
+                                new InstantCommand(() -> robot.storage.storage.OuttakeFacing = -1)
+
+                ))
+
+
 
                 // IDLE -------------------------------------------------------------
+                .transition(TeleOpState.IDLE,TeleOpState.IDLE,driverGamepad.touchpad.pressed(),
+                        new SequentialCommand(
+                                new InstantCommand(()->robot.drive.localizer.setPose(new Pose2d(-60,-60,0)))
+                        )
+                )
                 .transition(BaseTeleOp.TeleOpState.IDLE, BaseTeleOp.TeleOpState.INTAKE, driverGamepad.left_bumper.down(),
                         new SequentialCommand(
                                 robot.storage.intakeMode(),
@@ -99,17 +107,16 @@ public class BaseTeleOp extends LinearOpMode {
                 //Charge init
                 .transition(TeleOpState.IDLE,TeleOpState.FarShooting,driverGamepad.dpad_down.pressed(),//👍
                         new ParallelCommand(
-                                new InstantCommand(()->robot.turret.setTargetVelocity(4600))
+                                new InstantCommand(()->robot.turret.setTargetVelocity(4400)),
+                                new InstantCommand(()->Actions.runBlocking(robot.drive.actionBuilder(robot.drive.localizer.getPose())
+                                        .setTangent(Math.toRadians(90))
+                                        .splineToLinearHeading(farShoot,Math.toRadians(55))
+                                        .build()))
+
                         ))
 
-                .transition(TeleOpState.IDLE,TeleOpState.FarShooting,driverGamepad.dpad_up.pressed(),
-                        new ParallelCommand(
-                                new InstantCommand(()->robot.turret.hood.setTarget(0.46)),
-                                new InstantCommand(()->{robot.turret.setVelocityByDistance(robot.drive.localizer, cornerCoordinates);
-                                })
-                        ))
 
-                .transition(TeleOpState.FarShooting,TeleOpState.SHOOT,driverGamepad.x.pressed(),
+                .transition(TeleOpState.FarShooting,TeleOpState.SHOOT,driverGamepad.cross.pressed(),
                         new SequentialCommand(
                                 robot.turret.WaitForRPM(100),
                                 new InstantCommand(()->robot.turret.hood.setTarget(0.45)),
@@ -120,9 +127,68 @@ public class BaseTeleOp extends LinearOpMode {
                                 robot.storage.BallToOuttake(),
                                 robot.storage.nextBall(),
                                 robot.turret.WaitForRPM(100),
-                                new InstantCommand(()->robot.turret.hood.setTarget(0.48)),
+                                new InstantCommand(()->robot.turret.hood.setTarget(0.49)),
                                 robot.storage.BallToOuttake()
                                 ))
+                .transition(TeleOpState.FarShooting,TeleOpState.SHOOT,driverGamepad.square.pressed(),
+                        new SequentialCommand(
+                                robot.storage.sort(0),
+                                new InstantCommand(()->robot.turret.hood.setTarget(0.45)),
+                                robot.turret.WaitForRPM(250),
+                                robot.storage.BallToOuttake(),
+                                robot.storage.sort(1),
+                                new InstantCommand(()->robot.turret.hood.setTarget(0.48)),
+                                robot.turret.WaitForRPM(250),
+                                robot.storage.BallToOuttake(),
+                                robot.storage.sort(2),
+                                new InstantCommand(()->robot.turret.hood.setTarget(0.49)),
+                                robot.turret.WaitForRPM(250),
+                                robot.storage.BallToOuttake(),
+
+                                new InstantCommand(() -> robot.turret.setTargetVelocity(0))
+                        ))
+
+
+                .transition(TeleOpState.IDLE,TeleOpState.CloseShooting,driverGamepad.dpad_up.pressed(),
+                        new ParallelCommand(
+                                new InstantCommand(()->robot.turret.hood.setTarget(0.46)),
+                                new InstantCommand(()->{robot.turret.setTargetVelocity(2800);}),
+                                new InstantCommand(()->Actions.runBlocking(robot.drive.actionBuilder(robot.drive.localizer.getPose())
+                                        .setTangent(Math.toRadians(90))
+                                        .splineToLinearHeading(closeShoot,Math.toRadians(90))
+                                        .build()))
+                                //Experimental auto-positioning
+                        )
+                )
+
+                .transition(TeleOpState.CloseShooting,TeleOpState.SHOOT,driverGamepad.cross.pressed(),
+                        new SequentialCommand(
+                                robot.turret.WaitForRPM(100),
+                                new InstantCommand(()->robot.turret.hood.setTarget(0.45)),
+                                robot.storage.BallToOuttake(),
+                                robot.storage.nextBall(),
+                                robot.turret.WaitForRPM(100),
+                                new InstantCommand(()->robot.turret.hood.setTarget(0.48)),
+                                robot.storage.BallToOuttake(),
+                                robot.storage.nextBall(),
+                                robot.turret.WaitForRPM(100),
+                                new InstantCommand(()->robot.turret.hood.setTarget(0.49)),
+                                robot.storage.BallToOuttake()
+                        ))
+                .transition(TeleOpState.CloseShooting,TeleOpState.SHOOT,driverGamepad.square.pressed(),
+                        new SequentialCommand(
+                                robot.storage.sort(0),
+                                robot.turret.WaitForRPM(250),
+                                robot.storage.BallToOuttake(),
+                                new InstantCommand(()->robot.turret.hood.setTarget(0.48)),
+                                robot.storage.sort(1),
+                                robot.turret.WaitForRPM(250),
+                                robot.storage.BallToOuttake(),
+                                new InstantCommand(()->robot.turret.hood.setTarget(0.5)),
+                                robot.storage.sort(2),
+                                robot.turret.WaitForRPM(250),
+                                robot.storage.BallToOuttake()
+                        ))
 
                 .transition(TeleOpState.SHOOT, TeleOpState.IDLE, () -> CurrentState == TeleOpState.SHOOT,
                         new SequentialCommand(
@@ -155,7 +221,7 @@ public class BaseTeleOp extends LinearOpMode {
                 Actions.runBlocking(
                         robot.drive.actionBuilder(robot.drive.localizer.getPose())
                                 .setTangent(Math.toRadians(90))
-                                .splineToLinearHeading(new Pose2d(12, 12,Math.toRadians(90)),Math.toRadians(55))
+                                .splineToLinearHeading(new Pose2d(12, 12,Math.toRadians(-135)),Math.toRadians(55))
                                 .build()
                 );
             }
@@ -163,9 +229,15 @@ public class BaseTeleOp extends LinearOpMode {
             CurrentState = fsm.getCurrentState();
 
             telemetry.addLine("StorageCache:");
+            telemetry.addData("Order [0]", robot.cam.getOrder()[0]);
+            telemetry.addData("Order [1]", robot.cam.getOrder()[1]);
+            telemetry.addData("Order [2]", robot.cam.getOrder()[2]);
             telemetry.addData("[0]", robot.storage.storage.Slot[0]);
             telemetry.addData("[1]", robot.storage.storage.Slot[1]);
             telemetry.addData("[2]", robot.storage.storage.Slot[2]);
+            telemetry.addData("x", robot.drive.localizer.getPose().position.x);
+            telemetry.addData("y", robot.drive.localizer.getPose().position.y);
+            telemetry.addData("heading (deg)", Math.toDegrees(robot.drive.localizer.getPose().heading.toDouble()));
             telemetry.addData("state", CurrentState);
             telemetry.addData("hz", loopTimeFilter.update(1/(Performance.loopTimeNano()/1E9)));
             telemetry.update();

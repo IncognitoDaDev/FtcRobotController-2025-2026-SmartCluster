@@ -47,7 +47,7 @@ import java.util.concurrent.atomic.AtomicReference;
 @SuppressWarnings("Convert2MethodRef")
 @Config
 @Autonomous
-public class RedCloseAuto extends LinearOpMode {
+public class RedFarAuto extends LinearOpMode {
 
     private final ThreadedCommandScheduler scheduler = new ThreadedCommandScheduler();
     private final MovingAverageFilter loopTimeFilter = new MovingAverageFilter(50);
@@ -90,15 +90,14 @@ public class RedCloseAuto extends LinearOpMode {
         };
     }
 
-    private final Pose2d startPose = new Pose2d(48.4, 48.4, Math.toRadians(-45));
-    private final Pose2d shootPose = new Pose2d(12, 12,Math.toRadians(-145));
-    private final Pose2d stack1 = new Pose2d(28,-35,Math.toRadians(0));
+    private final Pose2d startPose = new Pose2d(13,-62, Math.toRadians(-90));
+    private final Pose2d shootPose = new Pose2d(15,-56,Math.toRadians(-115));
+    private final Pose2d stack1 = new Pose2d(25,-35,Math.toRadians(0));
     private final Pose2d stack2 = new Pose2d(28,-10.5,Math.toRadians(0));
-    private final Pose2d stack3 = new Pose2d(28,7,Math.toRadians(0));
     private final Pose2d endPose = new Pose2d(24, -15, Math.toRadians(-90));
-    public static double hoodAngle = 0.48;
+    public static double hoodAngle = 0.57;
     public VelConstraint slow = (pose2dDual, posePath, v) -> 20;
-    public VelConstraint normal = (pose2dDual, posePath, v) -> 300;
+    public VelConstraint normal = (pose2dDual, posePath, v) -> 200;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -110,26 +109,19 @@ public class RedCloseAuto extends LinearOpMode {
 
         SequentialAction autoAction = new SequentialAction
                 (
-                        new ParallelAction(
-                        robot.drive.actionBuilder(startPose)
-                                .setTangent(Math.toRadians(-135))
-                                .splineToConstantHeading(new Vector2d(18,18), Math.toRadians(-135))
-//                        .turnTo(Math.toRadians(270+30))
-                                .build(),
                         commandToAction(
                                 new SequentialCommand(
-                                        new WaitCommand(1000),
                                         robot.cam.scanOrder(),
                                         new InstantCommand(() ->
                                         {
                                             robot.storage.storage.OuttakeFacing = -1;
-                                            robot.storage.storage.Order = robot.cam.getOrder();
+                                            Storage.StorageState.Order = robot.cam.getOrder();
                                         })
-                                ))),
+                                )),
 
-                        robot.drive.actionBuilder(new Pose2d(18,18,Math.toRadians(-50)))
-                                .setTangent(Math.toRadians(135))
-                                .splineToLinearHeading(shootPose, Math.toRadians(135))
+                        robot.drive.actionBuilder(startPose)
+                                .setTangent(Math.toRadians(90))
+                                .splineToLinearHeading(shootPose, Math.toRadians(90))
 //                        .turnTo(Math.toRadians(270+30))
                                 .build(),
 
@@ -139,19 +131,19 @@ public class RedCloseAuto extends LinearOpMode {
                                         robot.storage.outtakeMode(-1),
 
                                         new InstantCommand(() -> {
-                                            robot.turret.setTargetVelocity(2900);
+                                            robot.turret.setTargetVelocity(3700);
                                             robot.turret.hood.setTarget(hoodAngle);
                                         }),
 
                                         robot.storage.sort(0),
-                                        robot.turret.WaitForRPM(250),
+                                        robot.turret.WaitForRPM(1000),
                                         robot.storage.BallToOuttake(),
                                         new InstantCommand(()->robot.turret.hood.setTarget(hoodAngle+0.008)),
                                         robot.storage.sort(1),
-                                        robot.turret.WaitForRPM(250),
+                                        robot.turret.WaitForRPM(1000),
                                         robot.storage.BallToOuttake(),
                                         robot.storage.sort(2),
-                                        robot.turret.WaitForRPM(250),
+                                        robot.turret.WaitForRPM(1000),
                                         robot.storage.BallToOuttake(),
 
                                         new InstantCommand(() -> robot.turret.setTargetVelocity(0))
@@ -160,59 +152,60 @@ public class RedCloseAuto extends LinearOpMode {
                         new ParallelAction(
                                 robot.drive.actionBuilder(shootPose)
                                         .setTangent(Math.toRadians(0))
-                                        .splineToLinearHeading(stack3,Math.toRadians(0))
+                                        .splineToLinearHeading(stack1,Math.toRadians(135))
                                         .build(),
                                 commandToAction(robot.storage.intakeMode())
                         ),
                         new ParallelAction(
-                                robot.drive.actionBuilder(stack3)
+                                robot.drive.actionBuilder(stack1)
                                         .setTangent(Math.toRadians(0))
-                                        .splineToConstantHeading(new Vector2d(56, 7), Math.toRadians(0),slow)
+                                        .splineToConstantHeading(new Vector2d(-63, -34), Math.toRadians(0),slow)
                                         .build(),
                                 commandToAction(
                                         new SequentialCommand(
                                                 robot.intake.intake(),
-                                                robot.storage.SlotCheck(),
-                                                robot.storage.nextBall(),
-                                                robot.storage.SlotCheck(),
-                                                robot.storage.nextBall(),
-                                                robot.storage.SlotCheck(),
-                                                robot.storage.nextBall(),
+                                                robot.storage.WaitForBall(3,2000),
+//                                                robot.storage.SlotCheck(),
+//                                                robot.storage.nextBall(),
+//                                                robot.storage.SlotCheck(),
+//                                                robot.storage.nextBall(),
+//                                                robot.storage.SlotCheck(),
+//                                                robot.storage.nextBall(),
                                                 robot.intake.stop()
 
                                         )
                                 )
                         ),
-                        robot.drive.actionBuilder(new Pose2d(53, 7, Math.toRadians(0)))
-                                .setTangent(Math.toRadians(180))
-                                .splineToLinearHeading(shootPose, Math.toRadians(180),normal)
+                        robot.drive.actionBuilder(new Pose2d(-59, -34, Math.toRadians(180)))
+                                .setTangent(Math.toRadians(-120))
+                                .splineToLinearHeading(shootPose, Math.toRadians(-140),normal)
                                 .build(),
                         commandToAction(
                                 new SequentialCommand(
                                         robot.storage.outtakeMode(-1),
 
                                         new InstantCommand(() -> {
-                                            robot.turret.setTargetVelocity(2900);
+                                            robot.turret.setTargetVelocity(3700);
                                             robot.turret.hood.setTarget(hoodAngle);
                                         }),
 
                                         robot.storage.sort(0),
-                                        robot.turret.WaitForRPM(250),
+                                        robot.turret.WaitForRPM(1000),
                                         robot.storage.BallToOuttake(),
                                         new InstantCommand(()->robot.turret.hood.setTarget(hoodAngle+0.008)),
                                         robot.storage.sort(1),
-                                        robot.turret.WaitForRPM(250),
+                                        robot.turret.WaitForRPM(1000),
                                         robot.storage.BallToOuttake(),
                                         robot.storage.sort(2),
-                                        robot.turret.WaitForRPM(250),
+                                        robot.turret.WaitForRPM(1000),
                                         robot.storage.BallToOuttake(),
 
                                         new InstantCommand(() -> robot.turret.setTargetVelocity(0))
                                 )
                         ),
                         robot.drive.actionBuilder(shootPose)
-                                .setTangent(Math.toRadians(-45))
-                                .splineToLinearHeading(endPose,Math.toRadians(-45))
+                                .setTangent(Math.toRadians(-135))
+                                .splineToLinearHeading(endPose,Math.toRadians(-135))
                                 .build(),
 
 
@@ -251,9 +244,9 @@ public class RedCloseAuto extends LinearOpMode {
 
 //            Storage.ArtifactColor[] order = robot.cam.getOrder();
             FtcDashboard.getInstance().sendTelemetryPacket(p);
-            telemetry.addData("Order [0]", robot.cam.getOrder()[0]);
-            telemetry.addData("Order [1]", robot.cam.getOrder()[1]);
-            telemetry.addData("Order [2]", robot.cam.getOrder()[2]);
+//            telemetry.addData("Order [0]", robot.cam.getOrder()[0]);
+//            telemetry.addData("Order [1]", robot.cam.getOrder()[1]);
+//            telemetry.addData("Order [2]", robot.cam.getOrder()[2]);
             telemetry.addData("Stock [0]", robot.storage.storage.Slot[0]);
             telemetry.addData("Stock [1]", robot.storage.storage.Slot[1]);
             telemetry.addData("Stock [2]", robot.storage.storage.Slot[2]);

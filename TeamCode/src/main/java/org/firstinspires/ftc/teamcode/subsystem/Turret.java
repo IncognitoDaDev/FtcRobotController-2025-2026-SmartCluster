@@ -31,7 +31,7 @@ public class Turret extends Subsystem {
     public static TrapezoidalMotionProfile hoodMotionProfile = new TrapezoidalMotionProfile(12, 16, 16);
     public final ServoActuator hood;
     private final double m = 8.502;
-    private final double x = 1.5;
+    private final double x = 1300.98;
     private boolean inZone;
 
 
@@ -69,7 +69,7 @@ public class Turret extends Subsystem {
     public static LowPassFilter velocityFilter = new LowPassFilter(0.5);
     private double targetVelocity = 0; // RPM
 
-    private double Tolerance = 100;
+    private final double Tolerance = 100;
 
     public double getCurrentVelocity() {
         return velocityFilter.update((turretUp.getVelocity() / 28) * 60);
@@ -86,13 +86,18 @@ public class Turret extends Subsystem {
                     inZone = true;
                 })
                 .update(()-> {
+                    localizer.update();
                     Pose2d currentPose = localizer.getPose();
                     double currentX = currentPose.position.x;
                     double currentY = currentPose.position.y;
                     double distance = (Math.sqrt(Math.pow((corner.position.x - currentX), 2)
                                     + Math.pow((corner.position.y - currentY), 2)))*2.54;
                     double velocity = m * distance + x;
-                    setTargetVelocity(velocity);
+                    double currentVelocity = getCurrentVelocity(); //RPM
+                    double power = flywheelPID.update(velocity, currentVelocity) + flywheelFeedforward.update(velocity, 0);
+                    power = power * (Robot.nominalVoltage / voltageSensor.getVoltage());
+                    turretUp.setPower(power);
+                    turretDown.setPower(power);
                     if(currentY>=Math.abs(currentX)+9*1.41 || (currentY>-46+9*1.41 && Math.abs(currentX)<23+9*1.41))inZone = false;
                 })
                 .finished(()->!inZone)

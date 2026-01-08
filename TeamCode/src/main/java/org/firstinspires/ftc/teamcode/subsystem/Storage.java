@@ -25,10 +25,9 @@ import com.smartcluster.oracleftc.math.Time;
 import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
 
-import org.opencv.ml.EM;
-
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 
 @Config
 public class Storage extends Subsystem {
@@ -58,7 +57,7 @@ public class Storage extends Subsystem {
 
         // Order is F R L, clockwise
         public ArtifactColor[] Slot = {ArtifactColor.EMPTY, ArtifactColor.EMPTY, ArtifactColor.EMPTY};
-        public ArtifactColor[] Order = {ArtifactColor.EMPTY, ArtifactColor.EMPTY, ArtifactColor.EMPTY};
+        public static ArtifactColor[] Order = {ArtifactColor.EMPTY, ArtifactColor.EMPTY, ArtifactColor.EMPTY};
 
         // 0 for none; 1 for Clockwise, -1 for Anticlockwise
         public int OuttakeFacing = 0;
@@ -90,12 +89,13 @@ public class Storage extends Subsystem {
             Slot[1] = Slot0;
         }
 
-        public Supplier<Boolean> isFull(){
-            for(int i = 0;i<3;i++)
+        public boolean isFull()
+        {
+            for(int i = 0; i<3; i++)
                 if (Slot[i] == ArtifactColor.EMPTY)
-                    return () -> false;
+                    return false;
 
-            return () -> true;
+            return true;
         }
     }
 
@@ -117,7 +117,6 @@ public class Storage extends Subsystem {
             @Override
             public Command reset()
             {
-
                 return new InstantCommand(() ->
                 {
                     setTarget(flapperDownVal);
@@ -129,7 +128,7 @@ public class Storage extends Subsystem {
             @Override
             public boolean setTarget(double target)
             {
-                if(target>flapperDownVal || target<flapperUpVal) return false;
+//                if(target >= flapperDownVal || target <= flapperUpVal) return false;
                 this.target.set(target);
                 return true;
             }
@@ -157,21 +156,19 @@ public class Storage extends Subsystem {
             }
         };
     }
-    public Command flapperUp()
-    {
-        return flapper.move(new AtomicReference<>(flapperUpVal));
-    }
-    public Command flapperDown()
-    {
-        return flapper.move(new AtomicReference<>(flapperDownVal));
-    }
+    public Command flapperUp() { return flapper.move(new AtomicReference<>(flapperUpVal)); }
+    public Command flapperDown() { return flapper.move(new AtomicReference<>(flapperDownVal)); }
 
     public Storage.ArtifactColor identifyObj(RevColorSensorV3 sensor)
     {
         NormalizedRGBA data = sensor.getNormalizedColors();
 
-        if (data.alpha*256 > 230) { //Something exists... and it's a ball
-            if (data.green * 256 > 8.3) // Checking if is GREEN
+        if (data.alpha*256 > 220) { //Something exists... and it's a ball
+            /*
+             * Am observat ca o minge mov are tot timpu nuanta albastru mai prominent decat nuanta verde
+             * si viceversa pentru o minge verde
+             */
+            if (data.green > data.blue)
                 return Storage.ArtifactColor.GREEN;
             else
                 return (Storage.ArtifactColor.PURPLE); // Must be PURPLE then
@@ -247,21 +244,18 @@ public class Storage extends Subsystem {
                 .build();
     }
 
-    public Command singleSlotCheck()
+    public Command SlotCheck()
     {
         final ElapsedTime timer = new ElapsedTime();
-        // Does a routine that checks every slot
         return Command.builder()
                 .init(timer::reset)
                 .update(() ->
                 {
                     ArtifactColor dataScanned = identifyObjFrontSensor();
-                    if (dataScanned != ArtifactColor.EMPTY);
-                    {
+                    if (dataScanned != ArtifactColor.EMPTY)
                         storage.Slot[0] = dataScanned;
-                    }
                 })
-                .finished(() -> storage.Slot[0] != ArtifactColor.EMPTY || timer.seconds() > 1.5)
+                .finished(() -> storage.Slot[0] != ArtifactColor.EMPTY || timer.milliseconds() > 500)
                 .build();
     }
 
@@ -270,15 +264,42 @@ public class Storage extends Subsystem {
         return new SequentialCommand(
 
                 intakeMode(),
-                new WaitCommand(50),
-                singleSlotCheck(),
+                SlotCheck(),
                 nextBall(),
-                new WaitCommand(50),
-                singleSlotCheck(),
+                SlotCheck(),
                 nextBall(),
-                new WaitCommand(50),
-                singleSlotCheck()
+                SlotCheck()
         );
+    }
+
+    public Command WaitForBall(int maxBall, double maxDuration)
+    {
+        final ElapsedTime timer = new ElapsedTime();
+
+        AtomicBoolean isSpin = new AtomicBoolean(false);
+        AtomicInteger ballCount = new AtomicInteger(0);
+        return Command.builder()
+                .init(timer::reset)
+                .update(() -> {
+
+                    if (isSpin.get())
+                    {
+                        if (Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance)
+                            isSpin.set(false);
+                    } else { // Spindexer doesn't need to move, so scan all you can!
+                        ArtifactColor dataScanned = identifyObjFrontSensor();
+                        if (dataScanned != ArtifactColor.EMPTY) {
+                            ballCount.getAndIncrement();
+                            storage.Slot[0] = dataScanned;
+                            spindexer.setTarget(spindexer.getPosition().get(0)+120);
+                            isSpin.set(true);
+                        }
+                    }
+                })
+                .finished(() -> storage.isFull()
+                        || timer.milliseconds() > maxDuration
+                        || ballCount.get() >= maxBall)
+                .build();
     }
 
     public Command sort(ArtifactColor ball) // Assuming you're in outtake mode
