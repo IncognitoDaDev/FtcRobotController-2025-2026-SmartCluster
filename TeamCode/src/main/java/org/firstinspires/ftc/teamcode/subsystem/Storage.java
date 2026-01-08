@@ -13,7 +13,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.commands.ParallelCommand;
-import com.smartcluster.oracleftc.commands.RaceCommand;
 import com.smartcluster.oracleftc.commands.SequentialCommand;
 import com.smartcluster.oracleftc.commands.WaitCommand;
 import com.smartcluster.oracleftc.hardware.subsystem.CRActuator;
@@ -26,8 +25,9 @@ import com.smartcluster.oracleftc.math.Time;
 import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 
 @Config
 public class Storage extends Subsystem {
@@ -89,12 +89,13 @@ public class Storage extends Subsystem {
             Slot[1] = Slot0;
         }
 
-        public Supplier<Boolean> isFull(){
-            for(int i = 0;i<3;i++)
+        public boolean isFull()
+        {
+            for(int i = 0; i<3; i++)
                 if (Slot[i] == ArtifactColor.EMPTY)
-                    return () -> false;
+                    return false;
 
-            return () -> true;
+            return true;
         }
     }
 
@@ -162,8 +163,12 @@ public class Storage extends Subsystem {
     {
         NormalizedRGBA data = sensor.getNormalizedColors();
 
-        if (data.alpha*256 > 230) { //Something exists... and it's a ball
-            if (data.green * 256 > 8.3) // Checking if is GREEN
+        if (data.alpha*256 > 220) { //Something exists... and it's a ball
+            /*
+            * Am observat ca o minge mov are tot timpu nuanta albastru mai prominent decat nuanta verde
+            * si viceversa pentru o minge verde
+            */
+            if (data.green > data.blue)
                 return Storage.ArtifactColor.GREEN;
             else
                 return (Storage.ArtifactColor.PURPLE); // Must be PURPLE then
@@ -239,92 +244,64 @@ public class Storage extends Subsystem {
                 .build();
     }
 
-    private double originalPos = 0;
-
-    public Command Shake(double duration, double distanceFromOriginalPos)
+    public Command SlotCheck()
     {
         final ElapsedTime timer = new ElapsedTime();
         return Command.builder()
-                .init(() ->
-                {
-                    timer.reset();
-                    originalPos = spindexer.getPosition().get(0);
-                })
-                .update(() ->
-                {
-                    if (Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<1.0)
-                    {
-                        if (spindexer.getTarget() > originalPos)
-                            spindexer.setTarget(originalPos + distanceFromOriginalPos);
-                        else
-                            spindexer.setTarget(originalPos - distanceFromOriginalPos);
-                    }
-                })
-                .finished(() -> timer.milliseconds() > duration)
-                .build();
-    }
-
-
-    private int greenCount = 0, purpleCount = 0;
-    public Command SlotCheck(double minDurationScan)
-    {
-        final ElapsedTime timer = new ElapsedTime();
-        return Command.builder()
-                .init(() ->
-                {
-                    timer.reset();
-                    greenCount = 0;
-                    purpleCount = 0;
-                })
+                .init(timer::reset)
                 .update(() ->
                 {
                     ArtifactColor dataScanned = identifyObjFrontSensor();
                     if (dataScanned != ArtifactColor.EMPTY)
-                    {
-                        if (dataScanned == ArtifactColor.PURPLE) purpleCount++;
-                        else greenCount ++;
-
                         storage.Slot[0] = dataScanned;
-                    }
                 })
-                .finished(() ->
-                {
-                    if (storage.Slot[0] != ArtifactColor.EMPTY && timer.milliseconds() > minDurationScan)
-                    {
-                        if (greenCount > purpleCount) storage.Slot[0] = ArtifactColor.GREEN;
-                        else storage.Slot[0] = ArtifactColor.PURPLE;
-                        return true;
-                    }
-
-                    else if (timer.milliseconds() > 600)
-                        return true; // You're taking too long...
-
-                    return false; //Keep going
-                })
+                .finished(() -> storage.Slot[0] != ArtifactColor.EMPTY || timer.milliseconds() > 500)
                 .build();
     }
 
-    public Command SingleSlotCheck()
-    {
-        return new SequentialCommand(
-                new ParallelCommand(
-                        Shake(300, 8),
-                        SlotCheck(100)
-                ),
-                new InstantCommand(() -> spindexer.setTarget(originalPos))
-        );
-    }
     public Command routineBallInspection()
     {
         return new SequentialCommand(
 
                 intakeMode(),
-                SingleSlotCheck(),
+                SlotCheck(),
                 nextBall(),
-                SingleSlotCheck(),
+                SlotCheck(),
                 nextBall(),
-                SingleSlotCheck()
+                SlotCheck()
         );
+    }
+
+    public Command WaitForBall(int maxBall, double maxDuration)
+    {
+        final ElapsedTime timer = new ElapsedTime();
+
+        AtomicBoolean isSpin = new AtomicBoolean(false);
+        AtomicInteger ballCount = new AtomicInteger(0);
+        return Command.builder()
+                .init(() -> {
+                    timer.reset();
+                })
+                .update(() -> {
+
+                    if (isSpin.get())
+                    {
+                        if (Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance)
+                            isSpin.set(false);
+                    } else { // Spindexer doesn't need to move, so scan all you can!
+                        ArtifactColor dataScanned = identifyObjFrontSensor();
+                        if (dataScanned != ArtifactColor.EMPTY) {
+                            ballCount.getAndIncrement();
+                            storage.Slot[0] = dataScanned;
+                            spindexer.setTarget(spindexer.getPosition().get(0)+120);
+                            isSpin.set(true);
+                        }
+                    }
+                })
+                .finished(() -> storage.isFull()
+                        || timer.milliseconds() > maxDuration
+                        || ballCount.get() >= maxBall)
+                .build();
     }
 
     public Command sort(ArtifactColor ball) // Assuming you're in outtake mode

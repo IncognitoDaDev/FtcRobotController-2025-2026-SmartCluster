@@ -166,11 +166,11 @@ public class RedCloseAuto extends LinearOpMode {
                                 commandToAction(
                                         new SequentialCommand(
                                                 robot.intake.intake(),
-                                                robot.storage.SlotCheck(50),
+                                                robot.storage.SlotCheck(),
                                                 robot.storage.nextBall(),
-                                                robot.storage.SlotCheck(50),
+                                                robot.storage.SlotCheck(),
                                                 robot.storage.nextBall(),
-                                                robot.storage.SlotCheck(50),
+                                                robot.storage.SlotCheck(),
                                                 robot.storage.nextBall(),
                                                 robot.intake.stop()
 

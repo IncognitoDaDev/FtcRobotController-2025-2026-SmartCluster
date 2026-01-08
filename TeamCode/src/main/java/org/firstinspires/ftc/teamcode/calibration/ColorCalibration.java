@@ -36,6 +36,7 @@ public class ColorCalibration extends LinearOpMode {
             telemetry.addData("G", data.green*256);
             telemetry.addData("B", data.blue*256);
             telemetry.addData("ARGB", data.toColor());
+            telemetry.addData("IdentifyObj", dex.identifyObjFrontSensor());
 
             telemetry.update();
 
