@@ -46,7 +46,7 @@ public class Storage extends Subsystem {
     public static double dexTarget = 0;
 
 
-    public static PIDController spindexerPID = new PIDController(0.009, 0.000001, 0.00031);
+    public static PIDController spindexerPID = new PIDController(0.007, 0.000001, 0.00031);
     public static TrapezoidalMotionProfile spindexerMotionProfile = new TrapezoidalMotionProfile(100,1000,1000);
     public enum ArtifactColor{
         GREEN,
@@ -97,6 +97,15 @@ public class Storage extends Subsystem {
 
             return true;
         }
+
+        public boolean isEmpty()
+        {
+            for(int i = 0; i<3; i++)
+                if (Slot[i] == ArtifactColor.EMPTY)
+                    return false;
+
+            return true;
+        }
     }
 
     public StorageState storage = new StorageState();
@@ -108,11 +117,12 @@ public class Storage extends Subsystem {
         flapperRight=hardwareMap.get(ServoImplEx.class,"flapperRight");
         flapperLeft=hardwareMap.get(ServoImplEx.class,"flapperLeft");
         spindexEncoder = new RawEncoder(hardwareMap.get(DcMotorEx.class,"intakeMotor"));
+
         flapperLeft.setDirection(Servo.Direction.REVERSE);
         frontColorSensor = hardwareMap.get(RevColorSensorV3.class, "rotaryColorSensorF");
         rightColorSensor = hardwareMap.get(LynxI2cColorRangeSensor.class, "rotaryColorSensorR");
         leftColorSensor = hardwareMap.get(LynxI2cColorRangeSensor.class, "rotaryColorSensorL");
-        flapper = new ServoActuator(this, "flapper", flapperMotionProfile, flapperRight,flapperLeft)
+        flapper = new ServoActuator(this, "flapper", flapperMotionProfile,flapperLeft,flapperRight)
         {
             @Override
             public Command reset()
@@ -150,15 +160,15 @@ public class Storage extends Subsystem {
             @Override
             public Command reset() {
 
-                spindexEncoder.reset();
-                setTarget(0);
                 return move(new AtomicReference<>(0.0));
             }
         };
     }
     public Command flapperUp() { return flapper.move(new AtomicReference<>(flapperUpVal)); }
     public Command flapperDown() { return flapper.move(new AtomicReference<>(flapperDownVal)); }
-
+    public Command resetEncoder() {
+        return new InstantCommand(spindexEncoder::reset);
+    }
     public Storage.ArtifactColor identifyObj(RevColorSensorV3 sensor)
     {
         NormalizedRGBA data = sensor.getNormalizedColors();
@@ -208,9 +218,9 @@ public class Storage extends Subsystem {
     {
         return new SequentialCommand(
                 flapperUp(),
-                new InstantCommand(() -> storage.removeBallOuttake()),
                 new WaitCommand(100),
-                flapperDown()
+                flapperDown(),
+                new InstantCommand(() -> storage.removeBallOuttake())
         );
     }
 
@@ -244,7 +254,14 @@ public class Storage extends Subsystem {
                 .build();
     }
 
-    public Command SlotCheck()
+    public Command BroPleaseStopItsEmpty()
+    {
+        return Command.builder()
+                .finished(() -> storage.isEmpty())
+                .build();
+    }
+
+    public Command SlotCheck(double maxDuration)
     {
         final ElapsedTime timer = new ElapsedTime();
         return Command.builder()
@@ -255,20 +272,20 @@ public class Storage extends Subsystem {
                     if (dataScanned != ArtifactColor.EMPTY)
                         storage.Slot[0] = dataScanned;
                 })
-                .finished(() -> storage.Slot[0] != ArtifactColor.EMPTY || timer.milliseconds() > 500)
+                .finished(() -> storage.Slot[0] != ArtifactColor.EMPTY || timer.milliseconds() > maxDuration)
                 .build();
     }
 
-    public Command routineBallInspection()
+    public Command routineBallInspection(double maxDurationPerBallScan)
     {
         return new SequentialCommand(
 
                 intakeMode(),
-                SlotCheck(),
+                SlotCheck(maxDurationPerBallScan),
                 nextBall(),
-                SlotCheck(),
+                SlotCheck(maxDurationPerBallScan),
                 nextBall(),
-                SlotCheck()
+                SlotCheck(maxDurationPerBallScan)
         );
     }
 
@@ -281,7 +298,6 @@ public class Storage extends Subsystem {
         return Command.builder()
                 .init(timer::reset)
                 .update(() -> {
-
                     if (isSpin.get())
                     {
                         if (Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance)
@@ -291,8 +307,13 @@ public class Storage extends Subsystem {
                         if (dataScanned != ArtifactColor.EMPTY) {
                             ballCount.getAndIncrement();
                             storage.Slot[0] = dataScanned;
-                            spindexer.setTarget(spindexer.getPosition().get(0)+120);
-                            isSpin.set(true);
+
+                            if (!storage.isFull())
+                            {
+                                isSpin.set(true);
+                                spindexer.setTarget(spindexer.getPosition().get(0)+120);
+                                storage.next();
+                            }
                         }
                     }
                 })

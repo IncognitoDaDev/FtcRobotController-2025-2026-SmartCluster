@@ -23,7 +23,9 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.RobotLog;
 
 import com.smartcluster.oracleftc.commands.Command;
+import com.smartcluster.oracleftc.commands.CommandScheduler;
 import com.smartcluster.oracleftc.commands.InstantCommand;
+import com.smartcluster.oracleftc.commands.ParallelCommand;
 import com.smartcluster.oracleftc.commands.SequentialCommand;
 import com.smartcluster.oracleftc.commands.ThreadedCommandScheduler;
 import com.smartcluster.oracleftc.commands.WaitCommand;
@@ -49,7 +51,7 @@ import java.util.concurrent.atomic.AtomicReference;
 @Autonomous
 public class BlueCloseAuto extends LinearOpMode {
 
-    private final ThreadedCommandScheduler scheduler = new ThreadedCommandScheduler();
+    private final CommandScheduler scheduler = new CommandScheduler();
     private final MovingAverageFilter loopTimeFilter = new MovingAverageFilter(50);
 
     private static Action commandToAction(Command c) {
@@ -90,15 +92,16 @@ public class BlueCloseAuto extends LinearOpMode {
         };
     }
 
-    private final Pose2d startPose = new Pose2d(-48.4, 48.4, Math.toRadians(-135));
-    private final Pose2d shootPose = new Pose2d(-12, 12,Math.toRadians(-45));
+    private final Pose2d startPose = new Pose2d(-46.5, 55.5, Math.toRadians(-125));
+    private final Pose2d shootPose = new Pose2d(-12, 12,Math.toRadians(-40));
     private final Pose2d stack1 = new Pose2d(-28,-35,Math.toRadians(180));
-    private final Pose2d stack2 = new Pose2d(-28,-10.5,Math.toRadians(180));
-    private final Pose2d stack3 = new Pose2d(-28,7,Math.toRadians(180));
+    private final Pose2d stack2 = new Pose2d(-28,-11.5,Math.toRadians(180));
+    private final Pose2d stack3 = new Pose2d(-28,12.5,Math.toRadians(180));
+
     private final Pose2d endPose = new Pose2d(-24, -15, Math.toRadians(-90));
-    public static double hoodAngle = 0.48;
+    public static double hoodAngle = 0.4;
     public VelConstraint slow = (pose2dDual, posePath, v) -> 20;
-    public VelConstraint normal = (pose2dDual, posePath, v) -> 300;
+    public VelConstraint normal = (pose2dDual, posePath, v) -> 50;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -107,149 +110,189 @@ public class BlueCloseAuto extends LinearOpMode {
         Robot robot = new Robot(this);
 
         scheduler.schedule(robot.update());
-
+        Command.run(new SequentialCommand(
+                robot.storage.resetEncoder(),
+                robot.reset()
+        ));
         SequentialAction autoAction = new SequentialAction
                 (
-                        new ParallelAction(
+                        //FIRST SHOOT
+                        new ParallelAction( // Move to a better pos for obelisk scan
                                 robot.drive.actionBuilder(startPose)
                                         .setTangent(Math.toRadians(-45))
-                                        .splineToConstantHeading(new Vector2d(-18,18), Math.toRadians(-45))
-//                        .turnTo(Math.toRadians(270+30))
+                                        .splineToConstantHeading(new Vector2d(-35,35), Math.toRadians(-45))
                                         .build(),
-                                commandToAction(
-                                        new SequentialCommand(
-                                                new WaitCommand(1000),
-                                                robot.cam.scanOrder(),
-                                                new InstantCommand(() ->
-                                                {
-                                                    robot.storage.storage.OuttakeFacing = -1;
-                                                    Storage.StorageState.Order = robot.cam.getOrder();
-                                                })
-                                        ))),
 
-                        robot.drive.actionBuilder(new Pose2d(-18,18,Math.toRadians(-135)))
+                                commandToAction( new SequentialCommand( // Scans the obelisk
+                                        new WaitCommand(1500),
+                                        robot.cam.scanOrder(),
+                                        new InstantCommand(() ->
+                                        {
+                                            robot.storage.storage.OuttakeFacing = -1;
+                                            Storage.StorageState.Order = robot.cam.getOrder();
+                                        })
+                                ))),
+
+
+                        robot.drive.actionBuilder(new Pose2d(-35,35, Math.toRadians(-125)))
                                 .setTangent(Math.toRadians(-45))
-                                .splineToLinearHeading(shootPose, Math.toRadians(-45))
-//                        .turnTo(Math.toRadians(270+30))
+                                .splineToLinearHeading(shootPose, Math.toRadians(-40))
                                 .build(),
 
-                        commandToAction(
-                                new SequentialCommand(
-                                        robot.storage.routineBallInspection(), // caches the ball into data
-                                        robot.storage.outtakeMode(-1),
+                        commandToAction( new SequentialCommand(
+                                robot.storage.routineBallInspection(500), // caches the ball into data
+                                robot.storage.outtakeMode(-1),
 
-                                        new InstantCommand(() -> {
-                                            robot.turret.setTargetVelocity(2900);
-                                            robot.turret.hood.setTarget(hoodAngle);
-                                        }),
+                                new InstantCommand(() -> {
+                                    robot.turret.setTargetVelocity(2900);
+                                    robot.turret.hood.setTarget(hoodAngle);
+                                }),
 
-                                        robot.storage.sort(0),
-                                        robot.turret.WaitForRPM(1050),
-                                        robot.storage.BallToOuttake(),
-                                        new InstantCommand(()->robot.turret.hood.setTarget(hoodAngle+0.008)),
-                                        robot.storage.sort(1),
-                                        robot.turret.WaitForRPM(250),
-                                        robot.storage.BallToOuttake(),
-                                        robot.storage.sort(2),
-                                        robot.turret.WaitForRPM(250),
-                                        robot.storage.BallToOuttake(),
+                                robot.storage.sort(0),
+                                robot.turret.WaitForRPM(2000),
+                                robot.storage.BallToOuttake(),
+                                robot.storage.sort(1),
+                                robot.turret.WaitForRPM(1000),
+                                robot.storage.BallToOuttake(),
+                                robot.storage.sort(2),
+                                robot.turret.WaitForRPM(1000),
+                                robot.storage.BallToOuttake(),
 
-                                        new InstantCommand(() -> robot.turret.setTargetVelocity(0))
-                                )
-                        ),
-                        new ParallelAction(
+                                new InstantCommand(() -> robot.turret.setTargetVelocity(0))
+                        )),
+                        //STACK 3 INTAKE
+                        new ParallelAction( //Heads to stack3 pos
                                 robot.drive.actionBuilder(shootPose)
                                         .setTangent(Math.toRadians(180))
-                                        .splineToLinearHeading(stack3,Math.toRadians(180))
+                                        .splineToLinearHeading(stack3, Math.toRadians(180))
                                         .build(),
                                 commandToAction(robot.storage.intakeMode())
                         ),
-                        new ParallelAction(
+
+                        new ParallelAction( // Intakes stack3
                                 robot.drive.actionBuilder(stack3)
                                         .setTangent(Math.toRadians(180))
-                                        .splineToConstantHeading(new Vector2d(-56, 7), Math.toRadians(180),slow)
+                                        .splineToConstantHeading(new Vector2d(-54, stack3.position.y), Math.toRadians(180), slow)
                                         .build(),
-                                commandToAction(
-                                        new SequentialCommand(
-                                                robot.intake.intake(),
-                                                robot.storage.SlotCheck(),
-                                                robot.storage.nextBall(),
-                                                robot.storage.SlotCheck(),
-                                                robot.storage.nextBall(),
-                                                robot.storage.SlotCheck(),
-                                                robot.storage.nextBall(),
-                                                robot.intake.stop()
 
-                                        )
-                                )
+                                commandToAction(new SequentialCommand(
+                                        robot.intake.intake(),
+                                        robot.storage.WaitForBall(3,3500),
+                                        robot.intake.stop()
+                                ))
                         ),
-                        robot.drive.actionBuilder(new Pose2d(53, 7, Math.toRadians(0)))
-                                .setTangent(Math.toRadians(0))
-                                .splineToLinearHeading(shootPose, Math.toRadians(0),normal)
+                        //SECOND SHOOT
+                        new ParallelAction( //Heads to shooting pos (from stack3)
+                                robot.drive.actionBuilder(new Pose2d(-54, stack3.position.y, Math.toRadians(0)))
+                                        .setTangent(Math.toRadians(0))
+                                        .splineToLinearHeading(shootPose, Math.toRadians(0), normal)
+                                        .build(),
+                                commandToAction(robot.storage.outtakeMode(-1))
+                        ),
+
+                        commandToAction( new SequentialCommand(
+                                new InstantCommand(() -> {
+                                    robot.turret.setTargetVelocity(2900);
+                                    robot.turret.hood.setTarget(hoodAngle);
+                                }),
+
+                                robot.storage.sort(0),
+                                robot.turret.WaitForRPM(2000),
+                                robot.storage.BallToOuttake(),
+                                robot.storage.sort(1),
+                                robot.turret.WaitForRPM(1000),
+                                robot.storage.BallToOuttake(),
+                                robot.storage.sort(2),
+                                robot.turret.WaitForRPM(1000),
+                                robot.storage.BallToOuttake(),
+
+                                new InstantCommand(() -> robot.turret.setTargetVelocity(0))
+                        )),
+
+                        //SECOND STACK
+                        new ParallelAction(
+                        robot.drive.actionBuilder(shootPose)
+                                .setTangent(Math.toRadians(-130))
+                                .splineToLinearHeading(stack2, Math.toRadians(-130))
                                 .build(),
-                        commandToAction(
-                                new SequentialCommand(
-                                        robot.storage.outtakeMode(-1),
-
-                                        new InstantCommand(() -> {
-                                            robot.turret.setTargetVelocity(2900);
-                                            robot.turret.hood.setTarget(hoodAngle);
-                                        }),
-
-                                        robot.storage.sort(0),
-                                        robot.turret.WaitForRPM(250),
-                                        robot.storage.BallToOuttake(),
-                                        new InstantCommand(()->robot.turret.hood.setTarget(hoodAngle+0.008)),
-                                        robot.storage.sort(1),
-                                        robot.turret.WaitForRPM(250),
-                                        robot.storage.BallToOuttake(),
-                                        robot.storage.sort(2),
-                                        robot.turret.WaitForRPM(250),
-                                        robot.storage.BallToOuttake(),
-
-                                        new InstantCommand(() -> robot.turret.setTargetVelocity(0))
-                                )
+                        commandToAction(robot.storage.intakeMode())
                         ),
+
+                        new ParallelAction(
+                                robot.drive.actionBuilder(stack2)
+                                        .setTangent(Math.toRadians(180))
+                                        .splineToConstantHeading(new Vector2d(-52, stack2.position.y), Math.toRadians(180), slow)
+                                        .build(),
+
+                                commandToAction(new SequentialCommand(
+                                        robot.intake.intake(),
+                                        robot.storage.WaitForBall(3,3500),
+                                        robot.intake.stop()
+                                ))
+                        ),
+                        //THIRD SHOOT
+                        new ParallelAction(
+                                robot.drive.actionBuilder(new Pose2d(-54, stack2.position.y, Math.toRadians(0)))
+                                        .setTangent(Math.toRadians(0))
+                                        .splineToLinearHeading(shootPose, Math.toRadians(45), normal)
+                                        .build(),
+                                commandToAction(robot.storage.outtakeMode(-1))
+                        ),
+
+                        commandToAction( new SequentialCommand(
+                                new InstantCommand(() -> {
+                                    robot.turret.setTargetVelocity(2900);
+                                    robot.turret.hood.setTarget(hoodAngle);
+                                }),
+
+                                robot.storage.sort(0),
+                                robot.turret.WaitForRPM(2000),
+                                robot.storage.BallToOuttake(),
+                                robot.storage.sort(1),
+                                robot.turret.WaitForRPM(1000),
+                                robot.storage.BallToOuttake(),
+                                robot.storage.sort(2),
+                                robot.turret.WaitForRPM(1000),
+                                robot.storage.BallToOuttake(),
+
+                                new InstantCommand(() -> robot.turret.setTargetVelocity(0))
+                        )),
+
                         robot.drive.actionBuilder(shootPose)
                                 .setTangent(Math.toRadians(-45))
-                                .splineToLinearHeading(endPose,Math.toRadians(-45))
-                                .build(),
-
-
-                        commandToAction(robot.storage.outtakeMode(-1))
+                                .splineToLinearHeading(endPose, Math.toRadians(-45))
+                                .build()
                 );
 
         waitForStart();
 
-        Command.run(robot.reset());
+
         robot.drive.localizer.setPose(startPose);
-        Thread.sleep(100);
 
         List<LynxModule> lynxModules = hardwareMap.getAll(LynxModule.class);
         for (LynxModule lynxModule : lynxModules)
             lynxModule.setBulkCachingMode(LynxModule.BulkCachingMode.MANUAL);
 
         Canvas c = new Canvas();
-        ExecutorService pool = Executors.newFixedThreadPool(2);
-        List<Callable<Void>> callables = new ArrayList<>();
-        callables.add(() -> { robot.drive.localizer.update(); return null; });
-        for (LynxModule lynxModule : lynxModules) {
-            callables.add(() -> { lynxModule.clearBulkCache(); lynxModule.getBulkData(); return null; });
-        }
+
 
         autoAction.preview(c);
 
         boolean running = true;
-        while (running && !Thread.currentThread().isInterrupted()) {
-            for (Future<Void> future : pool.invokeAll(callables)) {
-                try { future.get(); } catch (ExecutionException e) { RobotLog.logStackTrace(e); }
+        while (running && !isStopRequested()) {
+            for (LynxModule lynxModule : lynxModules)
+            {
+                lynxModule.clearBulkCache();
+                lynxModule.getBulkData();
             }
+
             TelemetryPacket p = new TelemetryPacket();
             p.fieldOverlay().getOperations().addAll(c.getOperations());
+            robot.drive.updatePoseEstimate();
             running = autoAction.run(p);
             scheduler.update();
 
-//            Storage.ArtifactColor[] order = robot.cam.getOrder();
+
             FtcDashboard.getInstance().sendTelemetryPacket(p);
             telemetry.addData("Order [0]", robot.cam.getOrder()[0]);
             telemetry.addData("Order [1]", robot.cam.getOrder()[1]);

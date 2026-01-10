@@ -31,19 +31,15 @@ public class Limelight extends Subsystem {
         return order;
     }
 
+
     ElapsedTime timer = new ElapsedTime();
     public Command scanOrder()
     {
         return new SequentialCommand(
-                new InstantCommand(() ->
-                {
-                    limelight.start();
-                    limelight.getLatestResult();
-                }),
-                new WaitCommand(50),
                 Command.builder()
                         .init(() ->
                         {
+                            limelight.start();
                             isFinished = false;
                             timer.reset();
                         })

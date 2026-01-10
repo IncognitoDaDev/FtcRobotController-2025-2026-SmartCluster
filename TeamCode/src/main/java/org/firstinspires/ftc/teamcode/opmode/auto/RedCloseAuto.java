@@ -19,6 +19,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.RobotLog;
 
 import com.smartcluster.oracleftc.commands.Command;
+import com.smartcluster.oracleftc.commands.CommandScheduler;
 import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.commands.SequentialCommand;
 import com.smartcluster.oracleftc.commands.ThreadedCommandScheduler;
@@ -43,7 +44,7 @@ import java.util.concurrent.Future;
 @Autonomous
 public class RedCloseAuto extends LinearOpMode {
 
-    private final ThreadedCommandScheduler scheduler = new ThreadedCommandScheduler();
+    private final CommandScheduler scheduler = new CommandScheduler();
     private final MovingAverageFilter loopTimeFilter = new MovingAverageFilter(50);
 
     private static Action commandToAction(Command c) {
@@ -101,6 +102,10 @@ public class RedCloseAuto extends LinearOpMode {
         Robot robot = new Robot(this);
 
         scheduler.schedule(robot.update());
+        Command.run(new SequentialCommand(
+                robot.storage.resetEncoder(),
+                robot.reset()
+        ));
 
         SequentialAction autoAction = new SequentialAction
                 (
@@ -129,7 +134,7 @@ public class RedCloseAuto extends LinearOpMode {
 
                         commandToAction(
                                 new SequentialCommand(
-                                        robot.storage.routineBallInspection(), // caches the ball into data
+                                        robot.storage.routineBallInspection(500), // caches the ball into data
                                         robot.storage.outtakeMode(-1),
 
                                         new InstantCommand(() -> {
@@ -166,11 +171,11 @@ public class RedCloseAuto extends LinearOpMode {
                                 commandToAction(
                                         new SequentialCommand(
                                                 robot.intake.intake(),
-                                                robot.storage.SlotCheck(),
+                                                robot.storage.SlotCheck(500),
                                                 robot.storage.nextBall(),
-                                                robot.storage.SlotCheck(),
+                                                robot.storage.SlotCheck(500),
                                                 robot.storage.nextBall(),
-                                                robot.storage.SlotCheck(),
+                                                robot.storage.SlotCheck(500),
                                                 robot.storage.nextBall(),
                                                 robot.intake.stop()
 
@@ -210,37 +215,34 @@ public class RedCloseAuto extends LinearOpMode {
                                 .build(),
 
 
-                        commandToAction(robot.storage.outtakeMode(-1))
+                        commandToAction(robot.storage.intakeMode())
                 );
 
         waitForStart();
 
-        Command.run(robot.reset());
         robot.drive.localizer.setPose(startPose);
-        Thread.sleep(100);
 
         List<LynxModule> lynxModules = hardwareMap.getAll(LynxModule.class);
         for (LynxModule lynxModule : lynxModules)
             lynxModule.setBulkCachingMode(LynxModule.BulkCachingMode.MANUAL);
 
         Canvas c = new Canvas();
-        ExecutorService pool = Executors.newFixedThreadPool(2);
-        List<Callable<Void>> callables = new ArrayList<>();
-        callables.add(() -> { robot.drive.localizer.update(); return null; });
-        for (LynxModule lynxModule : lynxModules) {
-            callables.add(() -> { lynxModule.clearBulkCache(); lynxModule.getBulkData(); return null; });
-        }
+
 
         autoAction.preview(c);
 
         boolean running = true;
-        while (running && !Thread.currentThread().isInterrupted()) {
-            for (Future<Void> future : pool.invokeAll(callables)) {
-                try { future.get(); } catch (ExecutionException e) { RobotLog.logStackTrace(e); }
+        while (running && !isStopRequested()) {
+            for (LynxModule lynxModule : lynxModules)
+            {
+                lynxModule.clearBulkCache();
+                lynxModule.getBulkData();
             }
+
             TelemetryPacket p = new TelemetryPacket();
             p.fieldOverlay().getOperations().addAll(c.getOperations());
             running = autoAction.run(p);
+            robot.drive.updatePoseEstimate();
             scheduler.update();
 
 //            Storage.ArtifactColor[] order = robot.cam.getOrder();

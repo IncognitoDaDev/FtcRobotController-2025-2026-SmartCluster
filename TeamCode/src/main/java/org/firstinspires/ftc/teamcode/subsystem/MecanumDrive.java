@@ -38,6 +38,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.hardware.OracleLynxVoltageSensor;
+import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.utils.ProcessedGamepad;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -54,6 +55,8 @@ import java.lang.Math;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Config
 public class MecanumDrive {
@@ -96,7 +99,8 @@ public class MecanumDrive {
     }
 
     public static Params PARAMS = new Params();
-
+    public static Pose2d currentPose = new Pose2d(0,0,0);
+    public static boolean lockedIn = false;
     public final MecanumKinematics kinematics = new MecanumKinematics(
             PARAMS.inPerTick * PARAMS.trackWidthTicks, PARAMS.inPerTick / PARAMS.lateralInPerTick);
 
@@ -151,16 +155,85 @@ public class MecanumDrive {
                 .update(()->{
                     ProcessedGamepad.Joystick.JoystickData leftStick = gamepad.left_stick.get();
                     ProcessedGamepad.Joystick.JoystickData rightStick = gamepad.right_stick.get();
-                    if (gamepad.touchpad.get()) {
-                        localizer.setPose(new Pose2d(0,0, 0));
-                    }
+//                    if (gamepad.touchpad.get()) {
+//                        localizer.setPose(new Pose2d(localizer.getPose().position.x,localizer.getPose().position.y, 0));
+//                    }
+//
+//                    double botHeading = Math.toRadians(localizer.getPose().heading.toDouble());
+                    double boost = (gamepad.right_bumper.get() ? 1 : 0.4);
 
-                    double botHeading = localizer.getPose().heading.toDouble();
-                    double boost = (gamepad.right_bumper.get() ? 1 : 0.3);
-
-                    double rx = rightStick.x * boost;
+                    double rx = rightStick.x * 1.15 * boost;
                     double y = -leftStick.y * boost;
                     double x = leftStick.x * boost;
+//                    double rotX = x * Math.cos(-botHeading) - y * Math.sin(-botHeading);
+//                    double rotY = x * Math.sin(-botHeading) + y * Math.cos(-botHeading);
+//
+//                    rotX = rotX * 1.1;  // Counteract imperfect strafing
+
+                    // Denominator is the largest motor power (absolute value) or 1
+                    // This ensures all the powers maintain the same ratio,
+                    // but only if at least one is out of the range [-1, 1]
+
+                    // Field centric drive try
+
+
+//                    double denominator = Math.max(Math.abs(rotY) + Math.abs(rotX) + Math.abs(rx), 1);
+//                    double frontLeftPower = (rotY + rotX + rx) / denominator * baseSpeed;
+//                    double backLeftPower = (rotY - rotX + rx) / denominator * baseSpeed;
+//                    double frontRightPower = (rotY - rotX - rx) / denominator * baseSpeed;
+//                    double backRightPower = (rotY + rotX - rx) / denominator * baseSpeed;
+
+                    double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
+                    double frontLeftPower = (y + x + rx) / denominator * baseSpeed;
+                    double backLeftPower = (y - x + rx) / denominator * baseSpeed;
+                    double frontRightPower = (y - x - rx) / denominator * baseSpeed;
+                    double backRightPower = (y + x - rx) / denominator * baseSpeed;
+
+                    setMotorPowers(frontRightPower, backRightPower, frontLeftPower, backLeftPower);
+                })
+                .build();
+    }
+    public static PIDController rotationPID = new PIDController(3.5,0, 0.09);
+    public Command driveFieldCentric(ProcessedGamepad gamepad, boolean flipRed, Pose2d corner)
+    {
+
+        AtomicBoolean lockedMode=new AtomicBoolean();
+        lockedMode.set(lockedIn);
+        return new Command.CommandBuilder()
+                .update(()->{
+                    ProcessedGamepad.Joystick.JoystickData leftStick = gamepad.left_stick.get();
+                    ProcessedGamepad.Joystick.JoystickData rightStick = gamepad.right_stick.get();
+                    if (gamepad.touchpad.pressed().get()) {
+                        currentPose=new Pose2d(0,0, Math.toRadians(90));
+                        localizer.setPose(new Pose2d(0,0, Math.toRadians(90)));
+                    }
+
+                    if(gamepad.triangle.pressed().get())
+                    {
+                        lockedMode.set(!lockedMode.get());
+                    }
+
+                    double botHeading = localizer.getPose().heading.log();
+                    double boost = (gamepad.right_bumper.get() ? 1 : 0.4);
+
+                    double rx;
+
+                    if(lockedMode.get())
+                    {
+                        Vector2d dir= currentPose.position.minus(corner.position);
+                        dir=dir.div(dir.norm());
+                        double angle = Math.atan2(dir.y, dir.x);
+
+
+                        rx = rotationPID.update(0, AngleUnit.normalizeRadians(angle-botHeading));
+                    }else {
+                        rx = rightStick.x * boost;
+                    }
+                    double y,x;
+                    if(!flipRed)y=-leftStick.y * boost;
+                    else y=leftStick.y*boost;
+                    if(!flipRed)x = leftStick.x * boost;
+                    else x=-leftStick.x*boost;
                     double rotX = x * Math.cos(-botHeading) - y * Math.sin(-botHeading);
                     double rotY = x * Math.sin(-botHeading) + y * Math.cos(-botHeading);
 
@@ -203,102 +276,6 @@ public class MecanumDrive {
     // Odometry stuff past this --------------------------------------------------------
     // ---------------------------------------------------------------------------------
 
-    public class DriveLocalizer implements Localizer {
-        public final Encoder leftFront, leftBack, rightBack, rightFront;
-        public final IMU imu;
-
-        private int lastLeftFrontPos, lastLeftBackPos, lastRightBackPos, lastRightFrontPos;
-        private Rotation2d lastHeading;
-        private boolean initialized;
-        private Pose2d pose;
-
-        public DriveLocalizer(Pose2d pose) {
-            leftFront = new OverflowEncoder(new RawEncoder(MecanumDrive.this.frontLeft));
-            leftBack = new OverflowEncoder(new RawEncoder(MecanumDrive.this.backLeft));
-            rightBack = new OverflowEncoder(new RawEncoder(MecanumDrive.this.backRight));
-            rightFront = new OverflowEncoder(new RawEncoder(MecanumDrive.this.frontRight));
-
-            imu = lazyImu.get();
-
-            // TODO: reverse encoders if needed
-            //   leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
-
-            this.pose = pose;
-        }
-
-        @Override
-        public void setPose(Pose2d pose) {
-            this.pose = pose;
-        }
-
-        @Override
-        public Pose2d getPose() {
-            return pose;
-        }
-
-        @Override
-        public PoseVelocity2d update() {
-            PositionVelocityPair leftFrontPosVel = leftFront.getPositionAndVelocity();
-            PositionVelocityPair leftBackPosVel = leftBack.getPositionAndVelocity();
-            PositionVelocityPair rightBackPosVel = rightBack.getPositionAndVelocity();
-            PositionVelocityPair rightFrontPosVel = rightFront.getPositionAndVelocity();
-
-            YawPitchRollAngles angles = imu.getRobotYawPitchRollAngles();
-
-            FlightRecorder.write("MECANUM_LOCALIZER_INPUTS", new MecanumLocalizerInputsMessage(
-                    leftFrontPosVel, leftBackPosVel, rightBackPosVel, rightFrontPosVel, angles));
-
-            Rotation2d heading = Rotation2d.exp(angles.getYaw(AngleUnit.RADIANS));
-
-            if (!initialized) {
-                initialized = true;
-
-                lastLeftFrontPos = leftFrontPosVel.position;
-                lastLeftBackPos = leftBackPosVel.position;
-                lastRightBackPos = rightBackPosVel.position;
-                lastRightFrontPos = rightFrontPosVel.position;
-
-                lastHeading = heading;
-
-                return new PoseVelocity2d(new Vector2d(0.0, 0.0), 0.0);
-            }
-
-            double headingDelta = heading.minus(lastHeading);
-            Twist2dDual<Time> twist = kinematics.forward(new MecanumKinematics.WheelIncrements<>(
-                    new DualNum<Time>(new double[]{
-                            (leftFrontPosVel.position - lastLeftFrontPos),
-                            leftFrontPosVel.velocity,
-                    }).times(PARAMS.inPerTick),
-                    new DualNum<Time>(new double[]{
-                            (leftBackPosVel.position - lastLeftBackPos),
-                            leftBackPosVel.velocity,
-                    }).times(PARAMS.inPerTick),
-                    new DualNum<Time>(new double[]{
-                            (rightBackPosVel.position - lastRightBackPos),
-                            rightBackPosVel.velocity,
-                    }).times(PARAMS.inPerTick),
-                    new DualNum<Time>(new double[]{
-                            (rightFrontPosVel.position - lastRightFrontPos),
-                            rightFrontPosVel.velocity,
-                    }).times(PARAMS.inPerTick)
-            ));
-
-            lastLeftFrontPos = leftFrontPosVel.position;
-            lastLeftBackPos = leftBackPosVel.position;
-            lastRightBackPos = rightBackPosVel.position;
-            lastRightFrontPos = rightFrontPosVel.position;
-
-            lastHeading = heading;
-
-            pose = pose.plus(new Twist2d(
-                    twist.line.value(),
-                    headingDelta
-            ));
-
-            return twist.velocity().value();
-        }
-    }
-
     public MecanumDrive(HardwareMap hardwareMap, Pose2d pose) {
         LynxFirmware.throwIfModulesAreOutdated(hardwareMap);
 
@@ -328,9 +305,6 @@ public class MecanumDrive {
                 PARAMS.logoFacingDirection, PARAMS.usbFacingDirection));
 
         voltageSensor = hardwareMap.getAll(OracleLynxVoltageSensor.class).iterator().next();
-        voltageSensor.setPolicy(OracleLynxVoltageSensor.OracleLynxVoltageSensorPolicy.CACHED);
-        voltageSensor.setVoltageCacheFreshness(300);
-
 
 
         localizer = new PinpointLocalizer(hardwareMap, pose, PARAMS.inPerTick);
@@ -395,7 +369,7 @@ public class MecanumDrive {
             Pose2dDual<Time> txWorldTarget = timeTrajectory.get(t);
             targetPoseWriter.write(new PoseMessage(txWorldTarget.value()));
 
-            PoseVelocity2d robotVelRobot = updatePoseEstimate();
+            PoseVelocity2d robotVelRobot = velocity.get();
 
             PoseVelocity2dDual<Time> command = new HolonomicController(
                     PARAMS.axialGain, PARAMS.lateralGain, PARAMS.headingGain,
@@ -487,7 +461,7 @@ public class MecanumDrive {
             Pose2dDual<Time> txWorldTarget = turn.get(t);
             targetPoseWriter.write(new PoseMessage(txWorldTarget.value()));
 
-            PoseVelocity2d robotVelRobot = updatePoseEstimate();
+            PoseVelocity2d robotVelRobot = velocity.get();
 
             PoseVelocity2dDual<Time> command = new HolonomicController(
                     PARAMS.axialGain, PARAMS.lateralGain, PARAMS.headingGain,
@@ -534,19 +508,18 @@ public class MecanumDrive {
             c.fillCircle(turn.beginPose.position.x, turn.beginPose.position.y, 2);
         }
     }
+    private AtomicReference<PoseVelocity2d> velocity=new AtomicReference<>();
+    public void updatePoseEstimate() {
 
-    public PoseVelocity2d updatePoseEstimate() {
-        PoseVelocity2d vel = localizer.update();
+        velocity.set(localizer.update());
         poseHistory.add(localizer.getPose());
-
+        currentPose=localizer.getPose();
         while (poseHistory.size() > 100) {
             poseHistory.removeFirst();
         }
 
         estimatedPoseWriter.write(new PoseMessage(localizer.getPose()));
 
-
-        return vel;
     }
 
     private void drawPoseHistory(Canvas c) {

@@ -6,6 +6,7 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.commands.ParallelCommand;
+import com.smartcluster.oracleftc.commands.SequentialCommand;
 import com.smartcluster.oracleftc.hardware.OracleLynxVoltageSensor;
 
 @Config
@@ -38,9 +39,11 @@ public class Robot {
 
     public Command reset()
     {
-        return new ParallelCommand(
-                turret.reset(),
-                storage.flapper.reset(),
+        return new SequentialCommand(
+                new ParallelCommand(
+                        turret.reset(),
+                        storage.flapper.reset()
+                ),
                 storage.spindexer.reset()
         );
     }
@@ -48,7 +51,7 @@ public class Robot {
     public Command update()
     {
         return new ParallelCommand(
-                new InstantCommand(drive.localizer::update),
+//                Command.builder().update(drive::updatePoseEstimate).build(),
                 turret.update(),
                 storage.update()
         );

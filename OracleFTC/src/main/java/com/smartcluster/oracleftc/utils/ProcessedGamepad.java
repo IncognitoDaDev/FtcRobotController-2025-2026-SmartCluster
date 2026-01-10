@@ -15,7 +15,7 @@ import java.util.function.Supplier;
 public class ProcessedGamepad {
     public final Button a, b, x, y, cross, square, circle, triangle, dpad_up, dpad_down, dpad_left,
         dpad_right, left_bumper, right_bumper, touchpad,
-        share, options;
+        share, options, ps;
     public final Trigger left_trigger, right_trigger;
     public final Joystick left_stick, right_stick;
 
@@ -50,6 +50,7 @@ public class ProcessedGamepad {
         touchpad=new Button(()->gamepad.touchpad);
         options=new Button(()->gamepad.options);
         share=new Button(()->gamepad.share);
+        ps=new Button(()->gamepad.ps);
     }
 
     /**
@@ -74,8 +75,10 @@ public class ProcessedGamepad {
         right_trigger.process();
         left_stick.process();
         right_stick.process();
+        touchpad.process();
         options.process();
         share.process();
+        ps.process();
     }
 
     /**

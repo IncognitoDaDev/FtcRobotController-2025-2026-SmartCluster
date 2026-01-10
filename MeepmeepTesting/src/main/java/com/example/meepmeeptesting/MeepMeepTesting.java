@@ -16,24 +16,24 @@ import javax.imageio.ImageIO;
 
 public class MeepMeepTesting {
     public static void main(String[] args) {
-         final Pose2d startPose = new Pose2d(-61.25, -61.25, Math.toRadians(0));
+         final Pose2d startPose = new Pose2d(-46.5, 55.5, Math.toRadians(-125));
          final Pose2d shootPose = new Pose2d(-12, 12,Math.toRadians(-45));
-         final Pose2d stack1 = new Pose2d(-28,-35,Math.toRadians(180));
-         final Pose2d stack2 = new Pose2d(-28,-10.5,Math.toRadians(180));
-         final Pose2d stack3 = new Pose2d(-28,12,Math.toRadians(180));
+         final Pose2d stack1 = new Pose2d(28,-35,Math.toRadians(180));
+         final Pose2d stack2 = new Pose2d(-51.5,-10.5,Math.toRadians(180));
+         final Pose2d stack3 = new Pose2d(-28,12.5,Math.toRadians(180));
          final Pose2d endPose = new Pose2d(-24, -15, Math.toRadians(-90));
+         final Pose2d testPos = new Pose2d(25,-35.5,Math.toRadians(0));
         MeepMeep meepMeep = new MeepMeep(800);
-
-        Pose2d StartPose = new Pose2d(-59, -34, Math.toRadians(90));
 
 
         RoadRunnerBotEntity myBot = new DefaultBotBuilder(meepMeep)
                 .setDimensions(420/25.4, 432/25.4)
-                .setStartPose(StartPose)
-
+                .setStartPose(testPos)
                 // Set bot constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
-                .setConstraints(60, 60, Math.toRadians(180), Math.toRadians(180), 15)
-                .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(startPose)
+                .setConstraints(60, 60, Math.toRadians(180), java.lang.Math.toRadians(180),   15)
+                .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(15,-56,Math.toRadians(-120)))
+                        .setTangent(Math.toRadians(90))
+                        .splineToLinearHeading(stack1,Math.toRadians(0))
 //                        .setTangent(Math.toRadians(-45))
 //                        .splineToLinearHeading(shootPose, Math.toRadians(-45))
 //                        .setTangent(Math.toRadians(0))
@@ -47,8 +47,8 @@ public class MeepMeepTesting {
 //                        .splineToConstantHeading(new Vector2d(-63, -10.5), Math.toRadians(0))
 //                        .setTangent(Math.toRadians(-120))
 //                        .splineToLinearHeading(shootPose, Math.toRadians(-140))
-                        .setTangent(Math.toRadians(45))
-                        .splineToLinearHeading(endPose,Math.toRadians(45))
+//                        .setTangent(Math.toRadians(45))
+//                        .splineToLinearHeading(endPose,Math.toRadians(45))
                         .build());
 
         Image img = null;
