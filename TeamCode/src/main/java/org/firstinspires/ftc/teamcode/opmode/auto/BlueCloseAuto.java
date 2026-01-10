@@ -208,55 +208,55 @@ public class BlueCloseAuto extends LinearOpMode {
 
                                 new InstantCommand(() -> robot.turret.setTargetVelocity(0))
                         )),
-
-                        //SECOND STACK
-                        new ParallelAction(
-                        robot.drive.actionBuilder(shootPose)
-                                .setTangent(Math.toRadians(-130))
-                                .splineToLinearHeading(stack2, Math.toRadians(-130))
-                                .build(),
-                        commandToAction(robot.storage.intakeMode())
-                        ),
-
-                        new ParallelAction(
-                                robot.drive.actionBuilder(stack2)
-                                        .setTangent(Math.toRadians(180))
-                                        .splineToConstantHeading(new Vector2d(-52, stack2.position.y), Math.toRadians(180), slow)
-                                        .build(),
-
-                                commandToAction(new SequentialCommand(
-                                        robot.intake.intake(),
-                                        robot.storage.WaitForBall(3,3500),
-                                        robot.intake.stop()
-                                ))
-                        ),
-                        //THIRD SHOOT
-                        new ParallelAction(
-                                robot.drive.actionBuilder(new Pose2d(-54, stack2.position.y, Math.toRadians(0)))
-                                        .setTangent(Math.toRadians(0))
-                                        .splineToLinearHeading(shootPose, Math.toRadians(45), normal)
-                                        .build(),
-                                commandToAction(robot.storage.outtakeMode(-1))
-                        ),
-
-                        commandToAction( new SequentialCommand(
-                                new InstantCommand(() -> {
-                                    robot.turret.setTargetVelocity(2900);
-                                    robot.turret.hood.setTarget(hoodAngle);
-                                }),
-
-                                robot.storage.sort(0),
-                                robot.turret.WaitForRPM(2000),
-                                robot.storage.BallToOuttake(),
-                                robot.storage.sort(1),
-                                robot.turret.WaitForRPM(1000),
-                                robot.storage.BallToOuttake(),
-                                robot.storage.sort(2),
-                                robot.turret.WaitForRPM(1000),
-                                robot.storage.BallToOuttake(),
-
-                                new InstantCommand(() -> robot.turret.setTargetVelocity(0))
-                        )),
+//
+//                        //SECOND STACK
+//                        new ParallelAction(
+//                        robot.drive.actionBuilder(shootPose)
+//                                .setTangent(Math.toRadians(-130))
+//                                .splineToLinearHeading(stack2, Math.toRadians(-130))
+//                                .build(),
+//                        commandToAction(robot.storage.intakeMode())
+//                        ),
+//
+//                        new ParallelAction(
+//                                robot.drive.actionBuilder(stack2)
+//                                        .setTangent(Math.toRadians(180))
+//                                        .splineToConstantHeading(new Vector2d(-52, stack2.position.y), Math.toRadians(180), slow)
+//                                        .build(),
+//
+//                                commandToAction(new SequentialCommand(
+//                                        robot.intake.intake(),
+//                                        robot.storage.WaitForBall(3,3500),
+//                                        robot.intake.stop()
+//                                ))
+//                        ),
+//                        //THIRD SHOOT
+//                        new ParallelAction(
+//                                robot.drive.actionBuilder(new Pose2d(-54, stack2.position.y, Math.toRadians(0)))
+//                                        .setTangent(Math.toRadians(0))
+//                                        .splineToLinearHeading(shootPose, Math.toRadians(45), normal)
+//                                        .build(),
+//                                commandToAction(robot.storage.outtakeMode(-1))
+//                        ),
+//
+//                        commandToAction( new SequentialCommand(
+//                                new InstantCommand(() -> {
+//                                    robot.turret.setTargetVelocity(2900);
+//                                    robot.turret.hood.setTarget(hoodAngle);
+//                                }),
+//
+//                                robot.storage.sort(0),
+//                                robot.turret.WaitForRPM(2000),
+//                                robot.storage.BallToOuttake(),
+//                                robot.storage.sort(1),
+//                                robot.turret.WaitForRPM(1000),
+//                                robot.storage.BallToOuttake(),
+//                                robot.storage.sort(2),
+//                                robot.turret.WaitForRPM(1000),
+//                                robot.storage.BallToOuttake(),
+//
+//                                new InstantCommand(() -> robot.turret.setTargetVelocity(0))
+//                        )),
 
                         robot.drive.actionBuilder(shootPose)
                                 .setTangent(Math.toRadians(-45))
