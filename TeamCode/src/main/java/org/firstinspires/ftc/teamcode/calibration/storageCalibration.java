@@ -33,7 +33,7 @@ public class storageCalibration extends LinearOpMode {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         telemetry.setMsTransmissionInterval(100);
 
-        Robot robot = new Robot(this);
+        Robot robot = new Robot(this,true);
         ProcessedGamepad driverGamepad = new ProcessedGamepad(gamepad1),
                 operatorGamepad = new ProcessedGamepad(gamepad2);
 

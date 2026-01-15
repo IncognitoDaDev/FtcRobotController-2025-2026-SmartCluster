@@ -15,6 +15,7 @@ import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
 import java.util.List;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.teamcode.roadrunner.Localizer;
 import org.firstinspires.ftc.teamcode.subsystem.Storage.ArtifactColor;
 
 public class Limelight extends Subsystem {
@@ -25,6 +26,7 @@ public class Limelight extends Subsystem {
     public Limelight(OpMode opMode) {
         super(opMode);
         limelight = hardwareMap.get(Limelight3A.class, "Webcam Turret");
+        limelight.setPollRateHz(100);
     }
 
     boolean isFinished = false;
@@ -58,6 +60,7 @@ public class Limelight extends Subsystem {
                                         switch (tag.getFiducialId()) {
                                             case 21:
                                                 order = new ArtifactColor[]{ArtifactColor.GREEN, ArtifactColor.PURPLE, ArtifactColor.PURPLE};
+
                                                 isFinished = true;
                                                 break;
                                             case 22:
@@ -81,7 +84,7 @@ public class Limelight extends Subsystem {
         );
 
     }
-    public Command getPose(boolean color){
+    public Command getPose(boolean color,Localizer localizer){
         return Command.builder()
                 .init(()->{
                     timer.reset();
@@ -89,17 +92,24 @@ public class Limelight extends Subsystem {
                 .update(()->{LLResult result = limelight.getLatestResult();
         if (result != null && result.isValid())
         {
+            localizer.update();
             List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
+            limelight.updateRobotOrientation(localizer.getPose().heading.log());
             if (!fiducials.isEmpty())
             {
                 for (LLResultTypes.FiducialResult tag : fiducials) {
                     switch (tag.getFiducialId()) {
                         case 20:
-                            if(color)limelightPose = new Pose2d(result.getBotpose().getPosition().x,result.getBotpose().getPosition().y,result.getBotpose().getOrientation().getYaw(AngleUnit.RADIANS));
+                            if(color)limelightPose = new Pose2d(result.getBotpose_MT2().getPosition().x,result.getBotpose_MT2().getPosition().y,result.getBotpose_MT2().getOrientation().getYaw(AngleUnit.RADIANS));
+                            double x = result.getBotpose_MT2().getPosition().x;
+                            double y = result.getBotpose_MT2().getPosition().y;
+                            telemetry.addData("MT2 Location:", "(" + x + ", " + y + ")");
                             break;
                         case 24:
                             if(!color)limelightPose = new Pose2d(result.getBotpose().getPosition().x,result.getBotpose().getPosition().y,result.getBotpose().getOrientation().getYaw(AngleUnit.RADIANS));
-
+                            double X = result.getBotpose_MT2().getPosition().x;
+                            double Y = result.getBotpose_MT2().getPosition().y;
+                            telemetry.addData("MT2 Location:", "(" + X + ", " + Y + ")");
                     }
                 }
             }
@@ -107,6 +117,15 @@ public class Limelight extends Subsystem {
                 })
                 .build();
 
+    }
+
+    public Pose2d avgPose(Pose2d a, Pose2d b){
+        telemetry.addData("Limelight Pose estimate",limelightPose);
+        return new Pose2d((a.position.x+b.position.x)/2,(a.position.y+b.position.y)/2,Math.toRadians((a.heading.log()+b.heading.log())/2));
+    }
+    public Pose2d getPose(){
+        telemetry.addData("Limelight Pose estimate",limelightPose);
+        return limelightPose;
     }
 
     public void reset() {

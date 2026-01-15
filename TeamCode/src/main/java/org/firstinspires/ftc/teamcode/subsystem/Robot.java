@@ -13,6 +13,7 @@ import com.smartcluster.oracleftc.hardware.OracleLynxVoltageSensor;
 public class Robot {
     public static double nominalVoltage=10.0;
     private final OpMode opMode;
+    private final boolean color;
     public final Turret flywheel;
     public final MecanumDrive drive;
     public final Intake intake;
@@ -21,7 +22,7 @@ public class Robot {
 
     public final Limelight cam;
 
-    public Robot(OpMode mode)
+    public Robot(OpMode mode,boolean color)
     {
 
         this.opMode = mode;
@@ -34,6 +35,8 @@ public class Robot {
         this.drive = new MecanumDrive(mode.hardwareMap, new Pose2d(0, 0, 0));
         this.turret = new Turret(mode);
         this.cam = new Limelight(mode);
+        this.color = color;
+
 
     }
 
@@ -51,6 +54,7 @@ public class Robot {
     public Command update()
     {
         return new ParallelCommand(
+                cam.getPose(color,drive.localizer),
 //                Command.builder().update(drive::updatePoseEstimate).build(),
                 turret.update(),
                 storage.update()

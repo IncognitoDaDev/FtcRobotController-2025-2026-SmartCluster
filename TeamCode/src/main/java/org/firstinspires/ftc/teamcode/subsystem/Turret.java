@@ -125,18 +125,16 @@ public class Turret extends Subsystem {
                     double worldAngle = Math.toDegrees(Math.atan2(dy, dx));
 
                     // Robot heading in degrees
-                    double robotAngle = Math.toDegrees(robotPose.heading.toDouble());
+                    double robotAngle = Math.toDegrees(robotPose.heading.log());
 
                     // Target turret angle relative to robot
-                    double targetAngle = worldAngle - robotAngle;
+                    double targetAngle =180-(worldAngle - robotAngle);
 
                     // Normalize the angle to -180 to 180 (shortest path)
-                    // This prevents the turret from "taking the long way around"
-                    // which might be why it wasn't turning a full 360 or seemed stuck.
-                    while (targetAngle > 180) targetAngle -= 360;
-                    while (targetAngle <= -180) targetAngle += 360;
+                    while (targetAngle > 180) targetAngle -= 180;
+                    while (targetAngle <= -180) targetAngle += 180;
 
-                    turret.setTarget(180+targetAngle);
+                    turret.setTarget(targetAngle);
                    if(currentY>=Math.abs(currentX)+9*1.41 || (currentY>-46+9*1.41 && Math.abs(currentX)<23+9*1.41))inZone = false;
 
                })

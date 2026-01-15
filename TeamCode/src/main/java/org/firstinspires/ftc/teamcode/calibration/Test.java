@@ -52,7 +52,7 @@ public class Test extends LinearOpMode {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         ElapsedTime resetTime = new ElapsedTime();
 
-        Robot robot = new Robot(this);
+        Robot robot = new Robot(this,true);
         ProcessedGamepad driverGamepad = new ProcessedGamepad(gamepad1),
                 operatorGamepad = new ProcessedGamepad(gamepad2);
         waitForStart();
