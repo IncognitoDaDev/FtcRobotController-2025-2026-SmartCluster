@@ -116,7 +116,7 @@ public class Storage extends Subsystem {
         spindexLeft = hardwareMap.get(CRServoImplEx.class, "dexLeft");
         flapperRight=hardwareMap.get(ServoImplEx.class,"flapperRight");
         flapperLeft=hardwareMap.get(ServoImplEx.class,"flapperLeft");
-        spindexEncoder = new RawEncoder(hardwareMap.get(DcMotorEx.class,"intakeMotor"));
+        spindexEncoder = new RawEncoder(hardwareMap.get(DcMotorEx.class,"frontLeft"));
 
         flapperLeft.setDirection(Servo.Direction.REVERSE);
         frontColorSensor = hardwareMap.get(RevColorSensorV3.class, "rotaryColorSensorF");

@@ -508,7 +508,7 @@ public class MecanumDrive {
             c.fillCircle(turn.beginPose.position.x, turn.beginPose.position.y, 2);
         }
     }
-    private AtomicReference<PoseVelocity2d> velocity=new AtomicReference<>();
+    private AtomicReference<PoseVelocity2d> velocity=new AtomicReference<>(new PoseVelocity2d(new Vector2d(0,0),0.0));
     public void updatePoseEstimate() {
 
         velocity.set(localizer.update());

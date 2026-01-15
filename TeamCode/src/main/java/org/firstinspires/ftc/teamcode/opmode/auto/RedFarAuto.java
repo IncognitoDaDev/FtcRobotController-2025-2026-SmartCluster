@@ -95,6 +95,7 @@ public class RedFarAuto extends LinearOpMode {
     private final Pose2d shootPose = new Pose2d(15,-56,Math.toRadians(-120));
     private final Pose2d stack1 = new Pose2d(25,-35.5,Math.toRadians(0));
     private final Pose2d stack2 = new Pose2d(28,-10.5,Math.toRadians(0));
+    private final Pose2d stack3 = new Pose2d(28,12.5,Math.toRadians(0));
     private final Pose2d endPose = new Pose2d(24, -15, Math.toRadians(-90));
     public static double hoodAngle = 0.42;
     public VelConstraint slow = (pose2dDual, posePath, v) -> 20;
@@ -121,20 +122,24 @@ public class RedFarAuto extends LinearOpMode {
                                         {
                                             robot.storage.storage.OuttakeFacing = -1;
                                             Storage.StorageState.Order = robot.cam.getOrder();
+                                            robot.storage.storage.Slot[0]= Storage.ArtifactColor.PURPLE;
+                                            robot.storage.storage.Slot[1]= Storage.ArtifactColor.PURPLE;
+                                            robot.storage.storage.Slot[2]= Storage.ArtifactColor.GREEN;
+
                                         })
                                 )),
 
                         robot.drive.actionBuilder(startPose)
                                 .setTangent(Math.toRadians(90))
-                                .splineToLinearHeading(shootPose, Math.toRadians(90))
+                                .splineToLinearHeading(shootPose, Math.toRadians(70))
 //                        .turnTo(Math.toRadians(270+30))
                                 .build(),
 
                         commandToAction(
                                 new SequentialCommand(
-                                        robot.storage.routineBallInspection(500),
+//                                        robot.storage.routineBallInspection(700),
                                         // caches the ball into data
-                                        robot.storage.outtakeMode(-1),
+//                                        robot.storage.outtakeMode(-1),
 
                                         new InstantCommand(() -> {
                                             robot.turret.setTargetVelocity(3700);
@@ -144,6 +149,7 @@ public class RedFarAuto extends LinearOpMode {
                                         robot.storage.sort(0),
                                         robot.turret.WaitForRPM(1000),
                                         robot.storage.BallToOuttake(),
+                                        new InstantCommand(()->robot.turret.hood.setTarget(0.47)),
                                         robot.storage.sort(1),
                                         robot.turret.WaitForRPM(1000),
                                         robot.storage.BallToOuttake(),
@@ -170,6 +176,9 @@ public class RedFarAuto extends LinearOpMode {
                                         new SequentialCommand(
                                                 robot.intake.intake(),
                                                 robot.storage.WaitForBall(3, 3000),
+                                                robot.intake.stop(),
+                                                robot.intake.outake(),
+                                                new WaitCommand(100),
                                                 robot.intake.stop()
 
                                         )
@@ -191,6 +200,7 @@ public class RedFarAuto extends LinearOpMode {
                                         robot.storage.sort(0),
                                         robot.turret.WaitForRPM(1000),
                                         robot.storage.BallToOuttake(),
+                                        robot.turret.hood.move(new AtomicReference<>(0.02)),
                                         robot.storage.sort(1),
                                         robot.turret.WaitForRPM(1000),
                                         robot.storage.BallToOuttake(),
@@ -204,10 +214,7 @@ public class RedFarAuto extends LinearOpMode {
                         robot.drive.actionBuilder(shootPose)
                                 .setTangent(Math.toRadians(-135))
                                 .splineToLinearHeading(endPose,Math.toRadians(-135))
-                                .build(),
-
-
-                        commandToAction(robot.storage.intakeMode())
+                                .build()
                 );
 
         waitForStart();

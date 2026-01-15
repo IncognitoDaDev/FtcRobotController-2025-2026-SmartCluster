@@ -93,8 +93,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
     private final Pose2d startPose = new Pose2d(-13, -62, Math.toRadians(270));
     private final Pose2d shootPose = new Pose2d(-15, -56,Math.toRadians(298));
+    private final Vector2d shootpose = new Vector2d(-15,-56);
     private final Pose2d stack1 = new Pose2d(-25,-35,Math.toRadians(180));
     private final Pose2d stack2 = new Pose2d(-28,-10.5,Math.toRadians(180));
+    private final Pose2d stack3 = new Pose2d(-28,12.5,Math.toRadians(180));
     private final Pose2d endPose = new Pose2d(-25, -25, Math.toRadians(270));
     private final Pose2d blueCorner = new Pose2d(60, 63, Math.toRadians(-45));
     public static double hoodAngle = 0.45;
@@ -117,9 +119,14 @@ import java.util.concurrent.atomic.AtomicReference;
         (
                 commandToAction( new SequentialCommand(
                         robot.cam.scanOrder(),
-                        new InstantCommand(() -> {
+                        new InstantCommand(() ->
+                        {
                             robot.storage.storage.OuttakeFacing = -1;
                             Storage.StorageState.Order = robot.cam.getOrder();
+                            robot.storage.storage.Slot[0]= Storage.ArtifactColor.PURPLE;
+                            robot.storage.storage.Slot[1]= Storage.ArtifactColor.PURPLE;
+                            robot.storage.storage.Slot[2]= Storage.ArtifactColor.GREEN;
+
                         })
                 )),
 

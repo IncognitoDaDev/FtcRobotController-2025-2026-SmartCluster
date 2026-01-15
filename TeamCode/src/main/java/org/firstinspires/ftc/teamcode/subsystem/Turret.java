@@ -10,10 +10,16 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.commands.ParallelCommand;
+import com.smartcluster.oracleftc.commands.SequentialCommand;
 import com.smartcluster.oracleftc.hardware.OracleLynxVoltageSensor;
+import com.smartcluster.oracleftc.hardware.subsystem.Actuator;
 import com.smartcluster.oracleftc.hardware.subsystem.ServoActuator;
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
 import com.smartcluster.oracleftc.hardware.subsystem.SubsystemFlavor;
+import com.smartcluster.oracleftc.hardware.wrappers.Encoder;
+import com.smartcluster.oracleftc.hardware.wrappers.RawEncoder;
+import com.smartcluster.oracleftc.math.DualNum;
+import com.smartcluster.oracleftc.math.Time;
 import com.smartcluster.oracleftc.math.control.MotorFeedforward;
 import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
@@ -25,10 +31,16 @@ import org.firstinspires.ftc.teamcode.roadrunner.Localizer;
 public class Turret extends Subsystem {
 
 
-    private final DcMotorImplEx turretUp, turretDown;
+    private final DcMotorImplEx turretUp, turretDown,turretRot;
     private final ServoImplEx rightHood, leftHood;
     private final OracleLynxVoltageSensor voltageSensor;
     public static TrapezoidalMotionProfile hoodMotionProfile = new TrapezoidalMotionProfile(12, 16, 16);
+    public static TrapezoidalMotionProfile turretMotionProfile = new TrapezoidalMotionProfile(80, 100, 100);
+    public static PIDController turretPID = new PIDController(0.025, 0.00002, 0.0019, 1);
+    public static MotorFeedforward turretFeedForward = new MotorFeedforward(0.01, 0.0015, 0);
+
+    public final Actuator turret;
+    public final Encoder encoder;
     public final ServoActuator hood;
     private final double m = 8.502;
     private final double n = 1300.98;
@@ -38,9 +50,12 @@ public class Turret extends Subsystem {
 
     public Turret(OpMode opMode) {
         super(opMode);
+
         voltageSensor = hardwareMap.getAll(OracleLynxVoltageSensor.class).iterator().next();
         turretUp = hardwareMap.get(DcMotorImplEx.class, "turretUp");
         turretUp.setDirection(DcMotorSimple.Direction.REVERSE);
+        turretRot = hardwareMap.get(DcMotorImplEx.class, "turretRotate");
+        encoder = new RawEncoder(hardwareMap.get(DcMotorImplEx.class,"turretRotate"));
         turretDown = hardwareMap.get(DcMotorImplEx.class, "turretDown");
         hardwareMap.get(ServoImplEx.class, "leftHood");
         rightHood = hardwareMap.get(ServoImplEx.class, "rightHood");
@@ -62,15 +77,73 @@ public class Turret extends Subsystem {
                 return true;
             }
         };
-    }
 
+        turret = new Actuator(this, "turret", turretPID, turretMotionProfile, turretFeedForward, 2, turretRot) {
+            @Override
+            public Command reset() {
+                return new InstantCommand(encoder::reset);
+            }
+
+            @Override
+            public boolean setTarget(double target) {
+                if(target>180)target-=180;
+                if(target<-180)target+=180;
+                this.target.set(target);
+                return true;
+            }
+
+            @Override
+            public DualNum<Time> getPosition() {
+                return encoder.getCurrentPosition().div(28).times(48).div(260).times(103.8);
+            }
+
+
+        };
+    }
     public static MotorFeedforward flywheelFeedforward = new MotorFeedforward(0.1, 0.00024, 0);
     public static PIDController flywheelPID = new PIDController(0.0012, 0, 0, 0.5);
     public static LowPassFilter velocityFilter = new LowPassFilter(0.5);
     private double targetVelocity = 0; // RPM
 
     private final double Tolerance = 100;
+    //angle between -180 and 180 to corespond with the robot heading values
 
+    public Command trackCorner(Localizer localizer, Pose2d corner){
+        return Command.builder()
+                .init(()->inZone = true)
+               .update(()->{
+                    localizer.update();
+                    Pose2d robotPose = localizer.getPose();
+                   double currentX = robotPose.position.x;
+                   double currentY = robotPose.position.y;
+
+                    // Calculate vector from robot to corner
+                    double dx = corner.position.x - robotPose.position.x;
+                    double dy = corner.position.y - robotPose.position.y;
+
+                    // Angle to the corner in world space (degrees)
+                    double worldAngle = Math.toDegrees(Math.atan2(dy, dx));
+
+                    // Robot heading in degrees
+                    double robotAngle = Math.toDegrees(robotPose.heading.toDouble());
+
+                    // Target turret angle relative to robot
+                    double targetAngle = worldAngle - robotAngle;
+
+                    // Normalize the angle to -180 to 180 (shortest path)
+                    // This prevents the turret from "taking the long way around"
+                    // which might be why it wasn't turning a full 360 or seemed stuck.
+                    while (targetAngle > 180) targetAngle -= 360;
+                    while (targetAngle <= -180) targetAngle += 360;
+
+                    turret.setTarget(180+targetAngle);
+                   if(currentY>=Math.abs(currentX)+9*1.41 || (currentY>-46+9*1.41 && Math.abs(currentX)<23+9*1.41))inZone = false;
+
+               })
+                .finished(()->!inZone)
+                .requires(this)
+                .build();
+    }
     public double getCurrentVelocity() {
         return velocityFilter.update((turretUp.getVelocity() / 28) * 60);
     }
@@ -107,6 +180,7 @@ public class Turret extends Subsystem {
     public Command update() {
         return new ParallelCommand(
                 hood.update(),
+                turret.update(),
                 Command.builder()
                         .update(() -> {
                             double currentVelocity = getCurrentVelocity(); //RPM
@@ -135,7 +209,10 @@ public class Turret extends Subsystem {
 
     public Command reset()
     {
-        return hood.reset();
+        return new SequentialCommand(
+                hood.reset(),
+                turret.reset()
+                );
     }
 
     @Override
