@@ -90,12 +90,15 @@ public class RedFarAuto extends LinearOpMode {
             public Set<Subsystem> requires() { return super.requires(); }
         };
     }
-
+    final double [] turretpoz = {0,115};
     private final Pose2d startPose = new Pose2d(13,-62, Math.toRadians(-90));
     private final Pose2d shootPose = new Pose2d(15,-56,Math.toRadians(-120));
+    private final Vector2d shootPoseV = new Vector2d(15, -56);
     private final Pose2d stack1 = new Pose2d(25,-35.5,Math.toRadians(0));
     private final Pose2d stack2 = new Pose2d(28,-10.5,Math.toRadians(0));
     private final Pose2d stack3 = new Pose2d(28,12.5,Math.toRadians(0));
+    //private final Pose2d gate = new Pose2d();
+    //private final Pose2d GateInt = new Pose2d();
     private final Pose2d endPose = new Pose2d(24, -15, Math.toRadians(-90));
     public static double hoodAngle = 0.42;
     public VelConstraint slow = (pose2dDual, posePath, v) -> 20;
@@ -132,17 +135,14 @@ public class RedFarAuto extends LinearOpMode {
                         robot.drive.actionBuilder(startPose)
                                 .setTangent(Math.toRadians(90))
                                 .splineToLinearHeading(shootPose, Math.toRadians(70))
-//                        .turnTo(Math.toRadians(270+30))
                                 .build(),
 
                         commandToAction(
                                 new SequentialCommand(
-//                                        robot.storage.routineBallInspection(700),
-                                        // caches the ball into data
-//                                        robot.storage.outtakeMode(-1),
 
                                         new InstantCommand(() -> {
-                                            robot.turret.setTargetVelocity(3700);
+                                            robot.turret.setTargetVelocity(500);
+                                            robot.turret.turret.setTarget(turretpoz[0]);
                                             robot.turret.hood.setTarget(hoodAngle);
                                         }),
 
@@ -177,24 +177,24 @@ public class RedFarAuto extends LinearOpMode {
                                                 robot.intake.intake(),
                                                 robot.storage.WaitForBall(3, 3000),
                                                 robot.intake.stop(),
-                                                robot.intake.outake(),
-                                                new WaitCommand(100),
-                                                robot.intake.stop()
+                                                robot.intake.outake()
+//                                                robot.intake.stop()
 
                                         )
                                 )
                         ),
                         robot.drive.actionBuilder(new Pose2d(65, -35.5, Math.toRadians(0)))
                                 .setTangent(Math.toRadians(-120))
-                                .splineToLinearHeading(shootPose, Math.toRadians(-140),normal)
+                                .splineToConstantHeading(shootPoseV ,Math.toRadians(0),normal)
                                 .build(),
                         commandToAction(
                                 new SequentialCommand(
                                         robot.storage.outtakeMode(-1),
 
                                         new InstantCommand(() -> {
-                                            robot.turret.setTargetVelocity(3700);
+                                            robot.turret.setTargetVelocity(500);
                                             robot.turret.hood.setTarget(hoodAngle);
+                                            robot.turret.turret.setTarget(turretpoz[1]); //mai trebuie testat
                                         }),
 
                                         robot.storage.sort(0),
@@ -211,9 +211,9 @@ public class RedFarAuto extends LinearOpMode {
                                         new InstantCommand(() -> robot.turret.setTargetVelocity(0))
                                 )
                         ),
-                        robot.drive.actionBuilder(shootPose)
-                                .setTangent(Math.toRadians(-135))
-                                .splineToLinearHeading(endPose,Math.toRadians(-135))
+                        robot.drive.actionBuilder(new Pose2d(shootPoseV,Math.toRadians(0)))
+                                .setTangent(Math.toRadians(90))
+                                .splineToLinearHeading(stack2,Math.toRadians(0))
                                 .build()
                 );
 

@@ -54,7 +54,7 @@ public class Robot {
     public Command update()
     {
         return new ParallelCommand(
-                cam.getPose(color,drive.localizer),
+//                cam.getPose(color,drive.localizer),
 //                Command.builder().update(drive::updatePoseEstimate).build(),
                 turret.update(),
                 storage.update()
