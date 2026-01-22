@@ -109,7 +109,6 @@ public class RedFarAuto extends LinearOpMode {
 
         scheduler.schedule(robot.update());
         Command.run(new SequentialCommand(
-                robot.storage.resetEncoder(),
                 robot.reset()
         ));
 

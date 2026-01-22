@@ -6,13 +6,13 @@
             <goBILDA5202SeriesMotor name="turretUp" port="0" /> <!-- Flywheel Encoder -->
             <goBILDA5202SeriesMotor name="turretDown" port="1" />
             <goBILDA5202SeriesMotor name="backRight" port="2" />
-            <goBILDA5202SeriesMotor name="frontRight" port="3" />
+            <goBILDA5202SeriesMotor name="frontRight" port="3" /><!--New Spindex encoder -->
 
             <ContinuousRotationServo name = "dexLeft" port = "0" />
             <Servo name="flapperRight" port="4"/>
 
             <RevColorSensorV3 name="rotaryColorSensorF" port="0" bus="3"/>
-            <LynxColorSensor name="rotaryColorSensorL" port="0" bus="2"/>
+<!--            <LynxColorSensor name="rotaryColorSensorL" port="0" bus="2"/>-->
 
             <Servo name="leftHood" port="2"/>
             <Servo name="rightHood" port="3"/>
@@ -30,7 +30,7 @@
 
             <Servo name="flapperLeft" port="4"/>
 
-            <LynxColorSensor name="rotaryColorSensorR" port="0" bus="3"/>
+<!--            <LynxColorSensor name="rotaryColorSensorR" port="0" bus="3"/>-->
         </LynxModule>
     </LynxUsbDevice>
 </Robot>

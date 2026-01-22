@@ -91,7 +91,7 @@ public class BlueCloseAuto extends LinearOpMode {
             public Set<Subsystem> requires() { return super.requires(); }
         };
     }
-    public double[] turretPositions = {0,45,90,135,180};
+
     private final Pose2d startPose = new Pose2d(-46.5, 55.5, Math.toRadians(-125));
     private final Pose2d shootPose = new Pose2d(-12, 12,Math.toRadians(180));
     private final Vector2d shootpose = new Vector2d(-12,12);
@@ -100,7 +100,7 @@ public class BlueCloseAuto extends LinearOpMode {
     private final Pose2d stack3 = new Pose2d(-28,12.5,Math.toRadians(180));
 
     private final Pose2d endPose = new Pose2d(-24, -15, Math.toRadians(-90));
-    public static double hoodAngle = 0.4;
+    public static double hoodAngle = 0.58;
     public VelConstraint slow = (pose2dDual, posePath, v) -> 20;
     public VelConstraint normal = (pose2dDual, posePath, v) -> 50;
 
@@ -112,7 +112,6 @@ public class BlueCloseAuto extends LinearOpMode {
 
         scheduler.schedule(robot.update());
         Command.run(new SequentialCommand(
-                robot.storage.resetEncoder(),
                 robot.reset()
         ));
         SequentialAction autoAction = new SequentialAction
@@ -121,12 +120,11 @@ public class BlueCloseAuto extends LinearOpMode {
                         new ParallelAction( // Move to a better pos for obelisk scan
                                 robot.drive.actionBuilder(startPose)
                                         .setTangent(Math.toRadians(-45))
-                                        .splineToLinearHeading(shootPose, Math.toRadians(-45))
+                                        .splineToLinearHeading(new Pose2d(shootpose,Math.toRadians(90)), Math.toRadians(-45))
                                         .build(),
 
                                 commandToAction(
                                         new SequentialCommand(
-                                            new InstantCommand(()->robot.turret.turret.setTarget(100)),// Scans the obelisk
                                             new WaitCommand(1500),
                                             robot.cam.scanOrder(),
                                             new InstantCommand(() ->
@@ -138,14 +136,15 @@ public class BlueCloseAuto extends LinearOpMode {
                                                 robot.storage.storage.Slot[2]= Storage.ArtifactColor.GREEN;
                                             })
                                 ))),
-
+                        robot.drive.actionBuilder(startPose)
+                                    .turnTo(Math.toRadians(-45))
+                                     .build(),
 
 
                         commandToAction(
                                 new SequentialCommand(
-                                    new InstantCommand(()->robot.turret.turret.setTarget(135)),
                                     new InstantCommand(() -> {
-                                        robot.turret.setTargetVelocity(2900);
+                                        robot.turret.setTargetVelocity(2700);
                                         robot.turret.hood.setTarget(hoodAngle);
                                     }),
 
@@ -159,7 +158,7 @@ public class BlueCloseAuto extends LinearOpMode {
                                     robot.turret.WaitForRPM(1000),
                                     robot.storage.BallToOuttake(),
 
-                                    new InstantCommand(() -> robot.turret.setTargetVelocity(0))
+                                    new InstantCommand(() -> robot.turret.setTargetVelocity(500))
                         )),
                         //STACK 3 INTAKE
                         new ParallelAction( //Heads to stack3 pos
@@ -193,7 +192,7 @@ public class BlueCloseAuto extends LinearOpMode {
 
                         commandToAction( new SequentialCommand(
                                 new InstantCommand(() -> {
-                                    robot.turret.setTargetVelocity(2900);
+                                    robot.turret.setTargetVelocity(2700);
                                     robot.turret.hood.setTarget(hoodAngle);
                                 }),
 

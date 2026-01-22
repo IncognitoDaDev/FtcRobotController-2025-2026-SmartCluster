@@ -73,6 +73,8 @@ public class Turret extends Subsystem {
 
             @Override
             public boolean setTarget(double target) {
+                if(target<0.25)target = 0.25;
+                if(target>0.9)target = 0.9;
                 this.target.set(target);
                 return true;
             }
@@ -86,8 +88,6 @@ public class Turret extends Subsystem {
 
             @Override
             public boolean setTarget(double target) {
-                if(target>180)target-=180;
-                if(target<-180)target+=180;
                 this.target.set(target);
                 return true;
             }
@@ -120,13 +120,19 @@ public class Turret extends Subsystem {
                     // Calculate vector from robot to corner
                     double dx = corner.position.x - robotPose.position.x;
                     double dy = corner.position.y - robotPose.position.y;
+                   double distance = (Math.sqrt(Math.pow((corner.position.x - currentX), 2)
+                           + Math.pow((corner.position.y - currentY), 2)))*2.54;
+                   double velocity = m * distance + n;
+                   double currentVelocity = getCurrentVelocity(); //RPM
+                   double power = flywheelPID.update(velocity, currentVelocity) + flywheelFeedforward.update(velocity, 0);
+                   power = power * (Robot.nominalVoltage / voltageSensor.getVoltage());
+                   turretUp.setPower(power);
+                   turretDown.setPower(power);
 
                     // Angle to the corner in world space (degrees)
                     double worldAngle = Math.toDegrees(Math.atan2(dy, dx));
-
                     // Robot heading in degrees
                     double robotAngle = Math.toDegrees(robotPose.heading.log());
-
                     // Target turret angle relative to robot
                     double targetAngle =180-(worldAngle - robotAngle);
 
@@ -178,7 +184,8 @@ public class Turret extends Subsystem {
     public Command update() {
         return new ParallelCommand(
                 hood.update(),
-                turret.update(),
+//                Experimental
+//                turret.update(),
                 Command.builder()
                         .update(() -> {
                             double currentVelocity = getCurrentVelocity(); //RPM

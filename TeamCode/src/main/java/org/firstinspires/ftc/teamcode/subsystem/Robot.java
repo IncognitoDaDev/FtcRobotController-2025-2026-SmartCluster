@@ -45,17 +45,17 @@ public class Robot {
         return new SequentialCommand(
                 new ParallelCommand(
                         turret.reset(),
-                        storage.flapper.reset()
-                ),
-                storage.spindexer.reset()
+                        storage.flapper.reset(),
+                        storage.spindexer.reset()
+                )
         );
     }
 
     public Command update()
     {
         return new ParallelCommand(
-                cam.getPose(color,drive.localizer),
-//                Command.builder().update(drive::updatePoseEstimate).build(),
+//                cam.getPose(color,drive.localizer),
+                Command.builder().update(drive::updatePoseEstimate).build(),
                 turret.update(),
                 storage.update()
         );

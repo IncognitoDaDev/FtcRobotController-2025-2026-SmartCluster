@@ -111,7 +111,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
         scheduler.schedule(robot.update());
         Command.run(new SequentialCommand(
-                robot.storage.resetEncoder(),
                 robot.reset()
         ));
 

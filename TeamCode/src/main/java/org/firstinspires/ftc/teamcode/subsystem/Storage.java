@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.subsystem;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.lynx.LynxI2cColorRangeSensor;
+import com.qualcomm.hardware.lynx.LynxI2cDeviceSynch;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
@@ -34,20 +35,19 @@ public class Storage extends Subsystem {
 
     private final CRServoImplEx spindexRight, spindexLeft;
     private final ServoImplEx flapperRight, flapperLeft;
-    private final LynxI2cColorRangeSensor leftColorSensor, rightColorSensor;
     private final RevColorSensorV3 frontColorSensor;
     public final Encoder spindexEncoder;
-    public static TrapezoidalMotionProfile flapperMotionProfile = new TrapezoidalMotionProfile(16, 20, 16);
+    public static TrapezoidalMotionProfile flapperMotionProfile = new TrapezoidalMotionProfile(16, 16, 16);
     public final ServoActuator flapper;
     public final CRActuator spindexer;
 
-    public static double flapperDownVal = 0.92, flapperUpVal = 0.44;
+    public static double flapperDownVal = 0.23, flapperUpVal = 0.5;
 
     public static double dexTarget = 0;
 
 
-    public static PIDController spindexerPID = new PIDController(0.007, 0.000001, 0.00031);
-    public static TrapezoidalMotionProfile spindexerMotionProfile = new TrapezoidalMotionProfile(100,1000,1000);
+    public static PIDController spindexerPID = new PIDController(0.0035, 0.0002, 0.00009);
+    public static TrapezoidalMotionProfile spindexerMotionProfile = new TrapezoidalMotionProfile(200,1000,1000);
     public enum ArtifactColor{
         GREEN,
         PURPLE,
@@ -116,12 +116,12 @@ public class Storage extends Subsystem {
         spindexLeft = hardwareMap.get(CRServoImplEx.class, "dexLeft");
         flapperRight=hardwareMap.get(ServoImplEx.class,"flapperRight");
         flapperLeft=hardwareMap.get(ServoImplEx.class,"flapperLeft");
-        spindexEncoder = new RawEncoder(hardwareMap.get(DcMotorEx.class,"frontLeft"));
+        spindexEncoder = new RawEncoder(hardwareMap.get(DcMotorEx.class,"frontRight"));
 
         flapperLeft.setDirection(Servo.Direction.REVERSE);
         frontColorSensor = hardwareMap.get(RevColorSensorV3.class, "rotaryColorSensorF");
-        rightColorSensor = hardwareMap.get(LynxI2cColorRangeSensor.class, "rotaryColorSensorR");
-        leftColorSensor = hardwareMap.get(LynxI2cColorRangeSensor.class, "rotaryColorSensorL");
+//        ((LynxI2cDeviceSynch) frontColorSensor.getDeviceClient()).setBusSpeed(LynxI2cDeviceSynch.BusSpeed.FAST_400K);
+
         flapper = new ServoActuator(this, "flapper", flapperMotionProfile,flapperLeft,flapperRight)
         {
             @Override
@@ -145,7 +145,7 @@ public class Storage extends Subsystem {
         };
 
 
-        spindexer = new CRActuator(this, "spindexer",  spindexerPID, spindexerMotionProfile, 6.0, spindexLeft,spindexRight) {
+        spindexer = new CRActuator(this, "spindexer",  spindexerPID, spindexerMotionProfile, 3.0, spindexLeft,spindexRight) {
             @Override
             public boolean setTarget(double target) {
                 this.target.set(target);
@@ -159,16 +159,15 @@ public class Storage extends Subsystem {
 
             @Override
             public Command reset() {
-
-                return move(new AtomicReference<>(0.0));
+                return new SequentialCommand(
+                        new InstantCommand(() -> spindexEncoder.reset()),
+                        spindexer.move(new AtomicReference<Double>(0.0))
+                        );
             }
         };
     }
     public Command flapperUp() { return flapper.move(new AtomicReference<>(flapperUpVal)); }
     public Command flapperDown() { return flapper.move(new AtomicReference<>(flapperDownVal)); }
-    public Command resetEncoder() {
-        return new InstantCommand(spindexEncoder::reset);
-    }
     public Storage.ArtifactColor identifyObj(RevColorSensorV3 sensor)
     {
         NormalizedRGBA data = sensor.getNormalizedColors();
@@ -196,10 +195,11 @@ public class Storage extends Subsystem {
     {
         return Command.builder()
                 .init(()->{
+
                     storage.next();
                     spindexer.setTarget(spindexer.getTarget()+120);
                 })
-                .finished(()->Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance)
+                .finished(()->Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance*2)
                 .build();
 
     }
@@ -210,7 +210,7 @@ public class Storage extends Subsystem {
                     storage.previous();
                     spindexer.setTarget(spindexer.getTarget()-120);
                 })
-                .finished(()->Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance)
+                .finished(()->Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance*2)
                 .build();
     }
 
@@ -233,7 +233,7 @@ public class Storage extends Subsystem {
                     storage.OuttakeFacing += Direction;
                     spindexer.setTarget(spindexer.getTarget()+ Direction*60);
                 })
-                .finished(()->Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance)
+                .finished(()->Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance*2)
                 .build();
     }
 
@@ -250,7 +250,7 @@ public class Storage extends Subsystem {
 
                     spindexer.setTarget(spindexer.getTarget()+Direction*60);
                 })
-                .finished(()->Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance)
+                .finished(()->Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance*2)
                 .build();
     }
 
@@ -300,7 +300,7 @@ public class Storage extends Subsystem {
                 .update(() -> {
                     if (isSpin.get())
                     {
-                        if (Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance)
+                        if (Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance*2)
                             isSpin.set(false);
                     } else { // Spindexer doesn't need to move, so scan all you can!
                         ArtifactColor dataScanned = identifyObjFrontSensor();
@@ -357,7 +357,7 @@ public class Storage extends Subsystem {
                     }
                 })
                 .update(() -> telemetry.addData("Looking for", ball))
-                .finished(()->Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance)
+                .finished(()->Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance*2)
                 .build();
     }
 
