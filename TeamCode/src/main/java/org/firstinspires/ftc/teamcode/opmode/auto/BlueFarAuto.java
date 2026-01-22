@@ -136,9 +136,6 @@ import java.util.concurrent.atomic.AtomicReference;
                         .build(),
 
                 commandToAction( new SequentialCommand(
-                        robot.storage.routineBallInspection(500),
-                        robot.storage.outtakeMode(-1),
-
                         new InstantCommand(() -> {
                             robot.turret.setTargetVelocity(3700);
                             robot.turret.hood.setTarget(hoodAngle);

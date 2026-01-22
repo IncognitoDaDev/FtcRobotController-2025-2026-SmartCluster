@@ -1,8 +1,6 @@
 package org.firstinspires.ftc.teamcode.subsystem;
 
 import com.acmerobotics.dashboard.config.Config;
-import com.qualcomm.hardware.lynx.LynxI2cColorRangeSensor;
-import com.qualcomm.hardware.lynx.LynxI2cDeviceSynch;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
@@ -12,6 +10,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.smartcluster.oracleftc.commands.Command;
+import com.smartcluster.oracleftc.commands.ConditionalCommand;
 import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.commands.ParallelCommand;
 import com.smartcluster.oracleftc.commands.SequentialCommand;
@@ -29,6 +28,7 @@ import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 @Config
 public class Storage extends Subsystem {
@@ -44,6 +44,10 @@ public class Storage extends Subsystem {
     public static double flapperDownVal = 0.23, flapperUpVal = 0.5;
 
     public static double dexTarget = 0;
+    private double lastPosition = 0;
+    private ElapsedTime shortTime = new ElapsedTime();
+    private boolean antiJamOn = false;
+
 
 
     public static PIDController spindexerPID = new PIDController(0.0035, 0.0002, 0.00009);
@@ -160,7 +164,7 @@ public class Storage extends Subsystem {
             @Override
             public Command reset() {
                 return new SequentialCommand(
-                        new InstantCommand(() -> spindexEncoder.reset()),
+                        new InstantCommand(spindexEncoder::reset),
                         spindexer.move(new AtomicReference<Double>(0.0))
                         );
             }
@@ -195,9 +199,9 @@ public class Storage extends Subsystem {
     {
         return Command.builder()
                 .init(()->{
-
                     storage.next();
                     spindexer.setTarget(spindexer.getTarget()+120);
+
                 })
                 .finished(()->Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance*2)
                 .build();
@@ -276,18 +280,7 @@ public class Storage extends Subsystem {
                 .build();
     }
 
-    public Command routineBallInspection(double maxDurationPerBallScan)
-    {
-        return new SequentialCommand(
 
-                intakeMode(),
-                SlotCheck(maxDurationPerBallScan),
-                nextBall(),
-                SlotCheck(maxDurationPerBallScan),
-                nextBall(),
-                SlotCheck(maxDurationPerBallScan)
-        );
-    }
 
     public Command WaitForBall(int maxBall, double maxDuration)
     {
@@ -398,12 +391,61 @@ public class Storage extends Subsystem {
                 .finished(()->Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance)
                 .build();
     }
+    public Command antiJamSequence() {
+        return new SequentialCommand(
+                new InstantCommand(() -> antiJamOn = true),
+                // 1. Reverse the intake (Assuming your intake is a separate subsystem or motor)
+                // intake.setPower(-0.8),
 
+                // 2. Nudge the spindexer back slightly to clear the physical bind
+                new InstantCommand(() -> spindexer.setTarget(spindexer.getTarget() - 20)),
+                new WaitCommand(300),
+
+                // 3. Try to go to the original target again
+                new InstantCommand(() -> spindexer.setTarget(spindexer.getTarget() + 20)),
+                // intake.setPower(1.0),
+
+                new InstantCommand(() -> {
+                    antiJamOn = false;
+                    shortTime.reset();
+                })
+        );
+
+    }
+    public Command watchDog(){
+        return Command.builder()
+                .update(()->{
+                    double currentPos = spindexer.getPosition().get(0);
+                    double target = spindexer.getTarget();
+                    double error = Math.abs(currentPos - target);
+
+                    if (storage.OuttakeFacing == 0 && error > spindexer.tolerance * 2) {
+                        if (Math.abs(currentPos - lastPosition) < 1.0) {
+                            if (shortTime.milliseconds() > 800 && !antiJamOn) {
+                                // TRIGGER ANTI-JAM
+                                antiJamSequence();
+                            }
+                        }
+                        else {
+                            shortTime.reset(); // It's moving, reset timer
+                        }
+                    }
+                    else {
+                        shortTime.reset();
+                    }
+                    lastPosition = currentPos;
+                })
+                .build();
+    }
     public Command update()
     {
         return new ParallelCommand(
                 flapper.update(),
-                spindexer.update()
+                spindexer.update(),
+                watchDog()
+
+
+
         );
     }
 

@@ -106,16 +106,8 @@ public class BaseTeleOp extends LinearOpMode {
 
                 //Charge init
                 .transition(TeleOpState.IDLE,TeleOpState.FarShooting,driverGamepad.dpad_down.pressed(),//👍
-                        new ParallelCommand(
-                                new InstantCommand(()->robot.turret.setTargetVelocity(3500)),
-//                                robot.turret.trackCorner(robot.drive.localizer,cornerCoordinate)
-                                new InstantCommand(()->robot.turret.turret.setTarget(0))
-//                                new InstantCommand(()->Actions.runBlocking(robot.drive.actionBuilder(robot.drive.localizer.getPose())
-//                                        .setTangent(Math.toRadians(90))
-//                                        .splineToLinearHeading(farShoot,Math.toRadians(55))
-//                                        .build()))
-
-                        ))
+                        new InstantCommand(()->robot.turret.setTargetVelocity(3500))
+                        )
 
                 .transition(TeleOpState.FarShooting,TeleOpState.SHOOT,driverGamepad.cross.pressed(),
                         new SequentialCommand(

@@ -197,7 +197,7 @@ public class BlueCloseAuto extends LinearOpMode {
                                 }),
 
                                 robot.storage.sort(0),
-                                robot.turret.WaitForRPM(2000),
+                                robot.turret.WaitForRPM(1000),
                                 robot.storage.BallToOuttake(),
                                 robot.storage.sort(1),
                                 robot.turret.WaitForRPM(1000),
@@ -241,12 +241,12 @@ public class BlueCloseAuto extends LinearOpMode {
 
                         commandToAction( new SequentialCommand(
                                 new InstantCommand(() -> {
-                                    robot.turret.setTargetVelocity(2900);
+                                    robot.turret.setTargetVelocity(2700);
                                     robot.turret.hood.setTarget(hoodAngle);
                                 }),
 
                                 robot.storage.sort(0),
-                                robot.turret.WaitForRPM(2000),
+                                robot.turret.WaitForRPM(1000),
                                 robot.storage.BallToOuttake(),
                                 robot.storage.sort(1),
                                 robot.turret.WaitForRPM(1000),

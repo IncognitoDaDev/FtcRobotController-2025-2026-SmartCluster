@@ -3,11 +3,16 @@ package org.firstinspires.ftc.teamcode.subsystem;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import com.smartcluster.oracleftc.commands.Command;
+import com.smartcluster.oracleftc.commands.ConditionalCommand;
 import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.commands.ParallelCommand;
 import com.smartcluster.oracleftc.commands.SequentialCommand;
+import com.smartcluster.oracleftc.commands.WaitCommand;
 import com.smartcluster.oracleftc.hardware.OracleLynxVoltageSensor;
+
+import java.util.function.Supplier;
 
 @Config
 public class Robot {
@@ -59,6 +64,10 @@ public class Robot {
                 turret.update(),
                 storage.update()
         );
+    }
+
+    public Command slotRewind(Supplier<Boolean> condition){
+        return new ConditionalCommand(condition,intake.outake(),new WaitCommand(1));
     }
 
 }
