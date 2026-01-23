@@ -13,6 +13,7 @@ import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
 
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 public abstract class CRActuator {
     private final Subsystem subsystem;
@@ -40,10 +41,7 @@ public abstract class CRActuator {
      * @return if the operation succeeded
      */
     public abstract boolean setTarget(double target);
-    public double getFeedforward()
-    {
-        return 0.0;
-    }
+
     public abstract DualNum<Time> getPosition();
     public final double getTarget()
     {
@@ -68,6 +66,19 @@ public abstract class CRActuator {
             }
         });
     }
+
+    public final void ManualSetFromPosition(double initialPosition)
+    {
+        from.set(initialPosition);
+        time.reset();
+    }
+
+    public final Supplier<Boolean> isNotInMotion()
+    {
+        return () -> Math.abs(getPosition().get(0)-getTarget())<tolerance;
+    }
+
+
     public final Command move(AtomicReference<Double> target)
     {
         return Command.builder()
@@ -77,7 +88,7 @@ public abstract class CRActuator {
                     time.reset();
                     setTarget(target.get());
                 })
-                .finished(()->Math.abs(getPosition().get(0)-getTarget())<tolerance)
+                .finished(() -> Math.abs(getPosition().get(0)-getTarget())<tolerance)
                 .end((interrupted)->{
                     from.set(getPosition().get(0));
                     time.reset();
@@ -101,18 +112,16 @@ public abstract class CRActuator {
                         to.set(getTarget());
                     }
                     final double distance = to.get()-from.get();
-                    DualNum<Time> mp = motionProfile.getMotionState(Math.abs(distance),
-                            time.seconds());
-                    double power = pid.update(mp.get(0) *Math.signum(distance)+from.get(),
-                            getPosition().get(0))+getFeedforward();
+                    DualNum<Time> mp = motionProfile.getMotionState(Math.abs(distance), time.seconds());
+                    double power = pid.update(mp.get(0) * Math.signum(distance) + from.get(), getPosition().get(0));
                     for (CRServoImpl motor :
                             crservos) {
                         if(enabled) motor.setPower(power);
                     }
 //                    subsystem.telemetry.addData(String.format("%s.position", name), getPosition().get(0));
-//                    subsystem.telemetry.addData(String.format("%s.power", name), power);
+                    subsystem.telemetry.addData(String.format("%s.power", name), power);
 //                    subsystem.telemetry.addData(String.format("%s.target", name), getTarget());
-//                    subsystem.telemetry.addData(String.format("%s.mp", name), mp.get(1));
+                    subsystem.telemetry.addData(String.format("%s.mp", name), mp.get(0));
                 })
                 .build();
     }

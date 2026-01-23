@@ -91,17 +91,17 @@ public class RedFarAuto extends LinearOpMode {
         };
     }
     final double [] turretpoz = {0,115};
-    private final Pose2d startPose = new Pose2d(13,-62, Math.toRadians(-90));
+    private final Pose2d startPose = new Pose2d(13,-59, Math.toRadians(-90));
     private final Pose2d shootPose = new Pose2d(15,-56,Math.toRadians(-120));
     private final Vector2d shootPoseV = new Vector2d(15, -56);
-    private final Pose2d stack1 = new Pose2d(25,-35.5,Math.toRadians(0));
-    private final Pose2d stack2 = new Pose2d(28,-10.5,Math.toRadians(0));
+    private final Pose2d stack1 = new Pose2d(25,-32,Math.toRadians(0));
+    private final Pose2d stack2 = new Pose2d(25,-11,Math.toRadians(0));
     private final Pose2d stack3 = new Pose2d(28,12.5,Math.toRadians(0));
     //private final Pose2d gate = new Pose2d();
     //private final Pose2d GateInt = new Pose2d();
     private final Pose2d endPose = new Pose2d(24, -15, Math.toRadians(-90));
     public static double hoodAngle = 0.42;
-    public VelConstraint slow = (pose2dDual, posePath, v) -> 20;
+    public VelConstraint slow = (pose2dDual, posePath, v) -> 15;
     public VelConstraint normal = (pose2dDual, posePath, v) -> 50;
 
     @Override
@@ -144,7 +144,7 @@ public class RedFarAuto extends LinearOpMode {
                                             robot.turret.turret.setTarget(turretpoz[0]);
                                             robot.turret.hood.setTarget(hoodAngle);
                                         }),
-
+                                        robot.turret.WaitForRPM(1000),
                                         robot.storage.sort(0),
                                         robot.turret.WaitForRPM(1000),
                                         robot.storage.BallToOuttake(),
@@ -169,7 +169,7 @@ public class RedFarAuto extends LinearOpMode {
                         new ParallelAction(
                                 robot.drive.actionBuilder(stack1)
                                         .setTangent(Math.toRadians(0))
-                                        .splineToConstantHeading(new Vector2d(65, -35.5), Math.toRadians(0),slow)
+                                        .splineToConstantHeading(new Vector2d(50, -30), Math.toRadians(0),slow)
                                         .build(),
                                 commandToAction(
                                         new SequentialCommand(
@@ -182,9 +182,9 @@ public class RedFarAuto extends LinearOpMode {
                                         )
                                 )
                         ),
-                        robot.drive.actionBuilder(new Pose2d(65, -35.5, Math.toRadians(0)))
-                                .setTangent(Math.toRadians(-120))
-                                .splineToConstantHeading(shootPoseV ,Math.toRadians(0),normal)
+                        robot.drive.actionBuilder(new Pose2d(50, -30, Math.toRadians(0)))
+                                .setTangent(Math.toRadians(-45))
+                                .splineToLinearHeading(shootPose ,Math.toRadians(0),normal)
                                 .build(),
                         commandToAction(
                                 new SequentialCommand(
@@ -238,7 +238,7 @@ public class RedFarAuto extends LinearOpMode {
             }
             TelemetryPacket p = new TelemetryPacket();
             p.fieldOverlay().getOperations().addAll(c.getOperations());
-            robot.drive.updatePoseEstimate();
+//            robot.drive.updatePoseEstimate();
             scheduler.update();
             running = autoAction.run(p);
 

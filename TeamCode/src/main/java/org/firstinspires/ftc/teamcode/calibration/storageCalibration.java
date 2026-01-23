@@ -77,6 +77,11 @@ public class storageCalibration extends LinearOpMode {
                 .transition(BaseTeleOp.TeleOpState.IDLE, BaseTeleOp.TeleOpState.IDLE, driverGamepad.circle.pressed(),
                         robot.storage.previousBall())
 
+                .transition(BaseTeleOp.TeleOpState.IDLE, BaseTeleOp.TeleOpState.IDLE, driverGamepad.dpad_left.pressed(),
+                        robot.storage.outtakeMode(-1))
+                .transition(BaseTeleOp.TeleOpState.IDLE, BaseTeleOp.TeleOpState.IDLE, driverGamepad.dpad_right.pressed(),
+                        robot.storage.outtakeMode(1))
+
                 .transition(BaseTeleOp.TeleOpState.IDLE, BaseTeleOp.TeleOpState.IDLE, driverGamepad.triangle.pressed(),
                         robot.storage.sort(Storage.ArtifactColor.PURPLE))
                 .transition(BaseTeleOp.TeleOpState.IDLE, BaseTeleOp.TeleOpState.IDLE, driverGamepad.cross.pressed(),

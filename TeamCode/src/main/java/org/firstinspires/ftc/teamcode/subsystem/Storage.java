@@ -43,15 +43,16 @@ public class Storage extends Subsystem {
 
     public static double flapperDownVal = 0.23, flapperUpVal = 0.5;
 
-    public static double dexTarget = 0;
+    public static double ToleranceCommand = 5.0;
     private double lastPosition = 0;
     private ElapsedTime shortTime = new ElapsedTime();
     private boolean antiJamOn = false;
 
 
 
-    public static PIDController spindexerPID = new PIDController(0.0035, 0.0002, 0.00009);
-    public static TrapezoidalMotionProfile spindexerMotionProfile = new TrapezoidalMotionProfile(200,1000,1000);
+//    public static PIDController spindexerPID = new PIDController(0.0035, 0.0002, 0.00009);
+    public static PIDController spindexerPID = new PIDController(0.0042, 0.00000, 0.00014);
+    public static TrapezoidalMotionProfile spindexerMotionProfile = new TrapezoidalMotionProfile(2500,2000,1500);
     public enum ArtifactColor{
         GREEN,
         PURPLE,
@@ -142,16 +143,16 @@ public class Storage extends Subsystem {
             @Override
             public boolean setTarget(double target)
             {
-//                if(target >= flapperDownVal || target <= flapperUpVal) return false;
                 this.target.set(target);
                 return true;
             }
         };
 
 
-        spindexer = new CRActuator(this, "spindexer",  spindexerPID, spindexerMotionProfile, 3.0, spindexLeft,spindexRight) {
+        spindexer = new CRActuator(this, "spindexer",  spindexerPID, spindexerMotionProfile, 3.0, spindexLeft, spindexRight) {
             @Override
             public boolean setTarget(double target) {
+                this.ManualSetFromPosition(getPosition().get(0));
                 this.target.set(target);
                 return true;
             }
@@ -201,9 +202,8 @@ public class Storage extends Subsystem {
                 .init(()->{
                     storage.next();
                     spindexer.setTarget(spindexer.getTarget()+120);
-
                 })
-                .finished(()->Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance*2)
+                .finished(spindexer.isNotInMotion())
                 .build();
 
     }
@@ -214,7 +214,7 @@ public class Storage extends Subsystem {
                     storage.previous();
                     spindexer.setTarget(spindexer.getTarget()-120);
                 })
-                .finished(()->Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance*2)
+                .finished(() -> Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())< ToleranceCommand)
                 .build();
     }
 
@@ -237,7 +237,7 @@ public class Storage extends Subsystem {
                     storage.OuttakeFacing += Direction;
                     spindexer.setTarget(spindexer.getTarget()+ Direction*60);
                 })
-                .finished(()->Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance*2)
+                .finished(() -> Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())< ToleranceCommand)
                 .build();
     }
 
@@ -254,7 +254,7 @@ public class Storage extends Subsystem {
 
                     spindexer.setTarget(spindexer.getTarget()+Direction*60);
                 })
-                .finished(()->Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance*2)
+                .finished(() -> Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())< ToleranceCommand)
                 .build();
     }
 
@@ -293,7 +293,7 @@ public class Storage extends Subsystem {
                 .update(() -> {
                     if (isSpin.get())
                     {
-                        if (Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance*2)
+                        if (Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())< ToleranceCommand)
                             isSpin.set(false);
                     } else { // Spindexer doesn't need to move, so scan all you can!
                         ArtifactColor dataScanned = identifyObjFrontSensor();
@@ -350,7 +350,7 @@ public class Storage extends Subsystem {
                     }
                 })
                 .update(() -> telemetry.addData("Looking for", ball))
-                .finished(()->Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance*2)
+                .finished(() -> Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())< ToleranceCommand)
                 .build();
     }
 
@@ -388,7 +388,7 @@ public class Storage extends Subsystem {
                     }
                 })
                 .update(() -> telemetry.addData("Looking for", storage.Order[order]))
-                .finished(()->Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())<spindexer.tolerance)
+                .finished(() -> Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())< ToleranceCommand)
                 .build();
     }
     public Command antiJamSequence() {
@@ -412,6 +412,26 @@ public class Storage extends Subsystem {
         );
 
     }
+
+    public Command ZoomiesForDogs()
+    {
+        final ElapsedTime timer = new ElapsedTime();
+
+        return Command.builder()
+                .init(() -> timer.reset())
+                .update(() ->
+                {
+                    if (antiJamOn) {
+                        if (!(Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget()) < ToleranceCommand)
+                                && timer.milliseconds() > 800) {
+                            Command.run(antiJamSequence());
+                            timer.reset();
+                        } else timer.reset(); // Tick tock...
+                    }
+                })
+                .build();
+    }
+
     public Command watchDog(){
         return Command.builder()
                 .update(()->{
@@ -437,14 +457,13 @@ public class Storage extends Subsystem {
                 })
                 .build();
     }
+
     public Command update()
     {
         return new ParallelCommand(
                 flapper.update(),
                 spindexer.update(),
                 watchDog()
-
-
 
         );
     }

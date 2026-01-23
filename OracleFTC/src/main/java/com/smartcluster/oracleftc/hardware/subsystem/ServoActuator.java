@@ -66,8 +66,7 @@ public abstract class ServoActuator{
                         to.set(this.target.get());
                     }
                     final double distance = to.get()-from.get();
-                    double position = motionProfile.getMotionState(Math.abs(distance),
-                                    time.seconds()).get(0) *Math.signum(distance)+from.get();
+                    double position = motionProfile.getMotionState(Math.abs(distance), time.seconds()).get(0) * Math.signum(distance)+from.get();
                     for(ServoImplEx servo: servos)
                     {
                         servo.setPosition(position);

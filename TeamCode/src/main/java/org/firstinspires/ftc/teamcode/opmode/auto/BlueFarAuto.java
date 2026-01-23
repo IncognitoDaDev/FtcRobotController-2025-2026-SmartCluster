@@ -91,15 +91,15 @@ import java.util.concurrent.atomic.AtomicReference;
         };
     }
 
-    private final Pose2d startPose = new Pose2d(-13, -62, Math.toRadians(270));
-    private final Pose2d shootPose = new Pose2d(-15, -56,Math.toRadians(298));
+    private final Pose2d startPose = new Pose2d(-13, -59, Math.toRadians(270));
+    private final Pose2d shootPose = new Pose2d(-15, -54,Math.toRadians(298));
     private final Vector2d shootpose = new Vector2d(-15,-56);
-    private final Pose2d stack1 = new Pose2d(-25,-35,Math.toRadians(180));
+    private final Pose2d stack1 = new Pose2d(0,-34,Math.toRadians(180));
     private final Pose2d stack2 = new Pose2d(-28,-10.5,Math.toRadians(180));
     private final Pose2d stack3 = new Pose2d(-28,12.5,Math.toRadians(180));
-    private final Pose2d endPose = new Pose2d(-25, -25, Math.toRadians(270));
+    private final Pose2d endPose = new Pose2d(-25, -25, Math.toRadians(90));
     private final Pose2d blueCorner = new Pose2d(60, 63, Math.toRadians(-45));
-    public static double hoodAngle = 0.45;
+    public static double hoodAngle = 0.68;
     public VelConstraint slow = (pose2dDual, posePath, v) -> 20;
     public VelConstraint normal = (pose2dDual, posePath, v) -> 50;
 
@@ -153,7 +153,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
                         new InstantCommand(() -> robot.turret.setTargetVelocity(0))
                 )),
-
+                //Second shoot, 1st stack
                 new ParallelAction(
                     robot.drive.actionBuilder(shootPose)
                             .setTangent(Math.toRadians(180))
@@ -165,7 +165,7 @@ import java.util.concurrent.atomic.AtomicReference;
                 new ParallelAction(
                     robot.drive.actionBuilder(stack1)
                             .setTangent(Math.toRadians(180))
-                            .splineToConstantHeading(new Vector2d(-63, -34), Math.toRadians(180), slow)
+                            .splineToConstantHeading(new Vector2d(-50, -34), Math.toRadians(180), slow)
                             .build(),
 
                     commandToAction(new SequentialCommand(
@@ -176,9 +176,9 @@ import java.util.concurrent.atomic.AtomicReference;
                 ),
 
                 new ParallelAction(
-                        robot.drive.actionBuilder(new Pose2d(-59, -34, Math.toRadians(180)))
-                            .setTangent(Math.toRadians(-30))
-                            .splineToLinearHeading(shootPose, Math.toRadians(-25), normal)
+                        robot.drive.actionBuilder(new Pose2d(-50, -34, Math.toRadians(180)))
+                            .setTangent(Math.toRadians(0))
+                            .splineToLinearHeading(shootPose, Math.toRadians(-90), normal)
                             .build(),
                         commandToAction(robot.storage.outtakeMode(-1))
                 ),
@@ -192,6 +192,56 @@ import java.util.concurrent.atomic.AtomicReference;
 
                                 robot.storage.sort(0),
                                 robot.turret.WaitForRPM(2000),
+                                robot.storage.BallToOuttake(),
+                                robot.storage.sort(1),
+                                robot.turret.WaitForRPM(1000),
+                                robot.storage.BallToOuttake(),
+                                robot.storage.sort(2),
+                                robot.turret.WaitForRPM(1000),
+                                robot.storage.BallToOuttake(),
+
+                                new InstantCommand(() -> robot.turret.setTargetVelocity(0))
+                        )
+                ),
+                //Third shoot, 2nd stack
+                new ParallelAction(
+                        robot.drive.actionBuilder(shootPose)
+                                .setTangent(Math.toRadians(180))
+                                .splineToLinearHeading(stack2,Math.toRadians(135))
+                                .build(),
+                        commandToAction(robot.storage.intakeMode())
+                ),
+
+                new ParallelAction(
+                        robot.drive.actionBuilder(stack2)
+                                .setTangent(Math.toRadians(180))
+                                .splineToConstantHeading(new Vector2d(-50, stack2.position.y), Math.toRadians(180), slow)
+                                .build(),
+
+                        commandToAction(new SequentialCommand(
+                                robot.intake.intake(),
+                                robot.storage.WaitForBall(3, 3000),
+                                robot.intake.stop()
+                        ))
+                ),
+
+                new ParallelAction(
+                        robot.drive.actionBuilder(new Pose2d(-50, stack2.position.y, Math.toRadians(180)))
+                                .setTangent(Math.toRadians(-30))
+                                .splineToLinearHeading(shootPose, Math.toRadians(-25), normal)
+                                .build(),
+                        commandToAction(robot.storage.outtakeMode(-1))
+                ),
+
+                commandToAction(
+                        new SequentialCommand(
+                                new InstantCommand(() -> {
+                                    robot.turret.setTargetVelocity(3700);
+                                    robot.turret.hood.setTarget(hoodAngle);
+                                }),
+
+                                robot.storage.sort(0),
+                                robot.turret.WaitForRPM(1000),
                                 robot.storage.BallToOuttake(),
                                 robot.storage.sort(1),
                                 robot.turret.WaitForRPM(1000),
@@ -244,6 +294,7 @@ import java.util.concurrent.atomic.AtomicReference;
             telemetry.addData("Stock [2]", robot.storage.storage.Slot[2]);
             telemetry.addData("Flywheel speed", robot.turret.getCurrentVelocity());
             telemetry.addData("Hood angle", hoodAngle);
+            telemetry.addData("Current pose",robot.drive.localizer.getPose().position);
 
             telemetry.addData("hz", loopTimeFilter.update(1 / (Performance.loopTimeNano() / 1E9)));
             telemetry.update();
