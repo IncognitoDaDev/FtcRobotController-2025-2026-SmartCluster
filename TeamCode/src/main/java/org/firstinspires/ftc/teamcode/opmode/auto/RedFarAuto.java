@@ -92,15 +92,15 @@ public class RedFarAuto extends LinearOpMode {
     }
     final double [] turretpoz = {0,115};
     private final Pose2d startPose = new Pose2d(13,-59, Math.toRadians(-90));
-    private final Pose2d shootPose = new Pose2d(15,-56,Math.toRadians(-120));
-    private final Vector2d shootPoseV = new Vector2d(15, -56);
-    private final Pose2d stack1 = new Pose2d(25,-32,Math.toRadians(0));
-    private final Pose2d stack2 = new Pose2d(25,-11,Math.toRadians(0));
+    private final Pose2d shootPose = new Pose2d(15,-54,Math.toRadians(-125));
+
+    private final Pose2d stack1 = new Pose2d(25,-38,Math.toRadians(0));
+    private final Pose2d stack2 = new Pose2d(25,-10.5,Math.toRadians(0));
     private final Pose2d stack3 = new Pose2d(28,12.5,Math.toRadians(0));
-    //private final Pose2d gate = new Pose2d();
-    //private final Pose2d GateInt = new Pose2d();
-    private final Pose2d endPose = new Pose2d(20, 56, Math.toRadians(90));
-    public static double hoodAngle = 0.42;
+
+    private final Pose2d endPose = new Pose2d(35, -56, Math.toRadians(90));
+    public static double hoodAngle = 0.68;
+
     public VelConstraint slow = (pose2dDual, posePath, v) -> 15;
     public VelConstraint normal = (pose2dDual, posePath, v) -> 50;
 
@@ -133,22 +133,20 @@ public class RedFarAuto extends LinearOpMode {
 
                         robot.drive.actionBuilder(startPose)
                                 .setTangent(Math.toRadians(90))
-                                .splineToLinearHeading(shootPose, Math.toRadians(70))
+                                .splineToLinearHeading(shootPose, Math.toRadians(90))
                                 .build(),
 
                         commandToAction(
                                 new SequentialCommand(
 
                                         new InstantCommand(() -> {
-                                            robot.turret.setTargetVelocity(500);
-                                            robot.turret.turret.setTarget(turretpoz[0]);
+                                            robot.turret.setTargetVelocity(3700);
                                             robot.turret.hood.setTarget(hoodAngle);
                                         }),
-                                        robot.turret.WaitForRPM(1000),
+
                                         robot.storage.sort(0),
-                                        robot.turret.WaitForRPM(1000),
+                                        robot.turret.WaitForRPM(2000),
                                         robot.storage.BallToOuttake(),
-                                        new InstantCommand(()->robot.turret.hood.setTarget(0.47)),
                                         robot.storage.sort(1),
                                         robot.turret.WaitForRPM(1000),
                                         robot.storage.BallToOuttake(),
@@ -159,47 +157,48 @@ public class RedFarAuto extends LinearOpMode {
                                         new InstantCommand(() -> robot.turret.setTargetVelocity(0))
                                 )
                         ),
+
+
+                        //Second shoot, 1st stack
 //                        new ParallelAction(
 //                                robot.drive.actionBuilder(shootPose)
-//                                        .setTangent(Math.toRadians(90))
-//                                        .splineToLinearHeading(stack1,Math.toRadians(0))
+//                                        .setTangent(Math.toRadians(0))
+//                                        .splineToLinearHeading(stack1, Math.toRadians(45))
 //                                        .build(),
 //                                commandToAction(robot.storage.intakeMode())
 //                        ),
+//
 //                        new ParallelAction(
 //                                robot.drive.actionBuilder(stack1)
 //                                        .setTangent(Math.toRadians(0))
-//                                        .splineToConstantHeading(new Vector2d(50, -30), Math.toRadians(0),slow)
+//                                        .splineToConstantHeading(new Vector2d(50, stack1.position.y), Math.toRadians(0), slow)
 //                                        .build(),
-//                                commandToAction(
-//                                        new SequentialCommand(
-//                                                robot.intake.intake(),
-//                                                robot.storage.WaitForBall(3, 3000),
-//                                                robot.intake.stop(),
-//                                                robot.intake.outake()
-//                                                robot.intake.stop()
 //
-//                                        )
-//                                )
+//                                commandToAction(new SequentialCommand(
+//                                        robot.intake.intake(),
+//                                        robot.storage.WaitForBall(3, 3000),
+//                                        robot.intake.stop()
+//                                ))
 //                        ),
-//                        robot.drive.actionBuilder(new Pose2d(50, -30, Math.toRadians(0)))
-//                                .setTangent(Math.toRadians(-45))
-//                                .splineToLinearHeading(shootPose ,Math.toRadians(0),normal)
-//                                .build(),
+//
+//                        new ParallelAction(
+//                                robot.drive.actionBuilder(new Pose2d(50, stack1.position.y, Math.toRadians(180)))
+//                                        .setTangent(Math.toRadians(0))
+//                                        .splineToLinearHeading(shootPose, Math.toRadians(270), normal)
+//                                        .build(),
+//                                commandToAction(robot.storage.outtakeMode(-1))
+//                        ),
+//
 //                        commandToAction(
 //                                new SequentialCommand(
-//                                        robot.storage.outtakeMode(-1),
-//
 //                                        new InstantCommand(() -> {
-//                                            robot.turret.setTargetVelocity(500);
+//                                            robot.turret.setTargetVelocity(3700);
 //                                            robot.turret.hood.setTarget(hoodAngle);
-//                                            robot.turret.turret.setTarget(turretpoz[1]); //mai trebuie testat
 //                                        }),
 //
 //                                        robot.storage.sort(0),
-//                                        robot.turret.WaitForRPM(1000),
+//                                        robot.turret.WaitForRPM(2000),
 //                                        robot.storage.BallToOuttake(),
-//                                        robot.turret.hood.move(new AtomicReference<>(0.02)),
 //                                        robot.storage.sort(1),
 //                                        robot.turret.WaitForRPM(1000),
 //                                        robot.storage.BallToOuttake(),
@@ -210,10 +209,68 @@ public class RedFarAuto extends LinearOpMode {
 //                                        new InstantCommand(() -> robot.turret.setTargetVelocity(0))
 //                                )
 //                        ),
-                        robot.drive.actionBuilder(new Pose2d(shootPoseV,Math.toRadians(0)))
-                                .setTangent(Math.toRadians(90))
-                                .splineToLinearHeading(endPose,Math.toRadians(0))
+//
+//
+//                        //Third shoot, 2nd stack
+//                        new ParallelAction(
+//                                robot.drive.actionBuilder(shootPose)
+//                                        .setTangent(Math.toRadians(90))
+//                                        .splineToLinearHeading(stack2, Math.toRadians(45))
+//                                        .build(),
+//                                commandToAction(robot.storage.intakeMode())
+//                        ),
+//
+//                        new ParallelAction(
+//                                robot.drive.actionBuilder(stack2)
+//                                        .setTangent(Math.toRadians(0))
+//                                        .splineToConstantHeading(new Vector2d(50, stack2.position.y), Math.toRadians(0), slow)
+//                                        .build(),
+//
+//                                commandToAction(new SequentialCommand(
+//                                        robot.intake.intake(),
+//                                        robot.storage.WaitForBall(3, 3000),
+//                                        robot.intake.stop()
+//                                ))
+//                        ),
+//
+//                        new ParallelAction(
+//                                robot.drive.actionBuilder(new Pose2d(50, stack2.position.y, Math.toRadians(0)))
+//                                        .setTangent(Math.toRadians(210))
+//                                        .splineToLinearHeading(shootPose, Math.toRadians(205), normal)
+//                                        .build(),
+//                                commandToAction(robot.storage.outtakeMode(-1))
+//                        ),
+//
+//                        commandToAction(
+//                                new SequentialCommand(
+//                                        new InstantCommand(() -> {
+//                                            robot.turret.setTargetVelocity(3700);
+//                                            robot.turret.hood.setTarget(hoodAngle);
+//                                        }),
+//
+//                                        robot.storage.sort(0),
+//                                        robot.turret.WaitForRPM(1000),
+//                                        robot.storage.BallToOuttake(),
+//                                        robot.storage.sort(1),
+//                                        robot.turret.WaitForRPM(1000),
+//                                        robot.storage.BallToOuttake(),
+//                                        robot.storage.sort(2),
+//                                        robot.turret.WaitForRPM(1000),
+//                                        robot.storage.BallToOuttake(),
+//
+//                                        new InstantCommand(() -> robot.turret.setTargetVelocity(0))
+//                                )
+//                        ),
+
+                        robot.drive.actionBuilder(shootPose)
+                                .setTangent(Math.toRadians(-45))
+                                .splineToLinearHeading(endPose, Math.toRadians(-45))
                                 .build()
+
+                        //HYPERRION EMAIL- hyperion.cnme@gmail.com
+                        //HYPERRION EMAIL- hyperion.cnme@gmail.com
+                        //HYPERRION EMAIL- hyperion.cnme@gmail.com
+                        //HYPERRION EMAIL- hyperion.cnme@gmail.com
                 );
 
         waitForStart();

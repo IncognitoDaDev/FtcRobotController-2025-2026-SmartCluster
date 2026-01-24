@@ -73,8 +73,8 @@ public class AUTOTEST extends LinearOpMode {
         };
     }
 
-    private final Pose2d startPose = new Pose2d(13,-62, Math.toRadians(-90));
-    private final Pose2d shootPose = new Pose2d(15,-56,Math.toRadians(-120));
+    private final Pose2d startPose = new Pose2d(0,0, Math.toRadians(-90));
+    private final Pose2d shootPose = new Pose2d(20,20,Math.toRadians(-90));
     private final Pose2d stack1 = new Pose2d(25,-35.5,Math.toRadians(0));
     private final Pose2d stack2 = new Pose2d(28,-10.5,Math.toRadians(0));
     private final Pose2d endPose = new Pose2d(24, -15, Math.toRadians(-90));
@@ -97,8 +97,8 @@ public class AUTOTEST extends LinearOpMode {
         SequentialAction autoAction = new SequentialAction
                 (
                         robot.drive.actionBuilder(startPose)
-                                .setTangent(Math.toRadians(60))
-                                .splineToLinearHeading(stack1,Math.toRadians(0))
+                                .setTangent(Math.toDegrees(-35))
+                                .splineToLinearHeading(shootPose, Math.toDegrees(-35))
                                 .build()
                 );
 
@@ -137,6 +137,8 @@ public class AUTOTEST extends LinearOpMode {
             telemetry.addData("Stock [2]", robot.storage.storage.Slot[2]);
             telemetry.addData("Flywheel speed", robot.turret.getCurrentVelocity());
             telemetry.addData("Hood angle", hoodAngle);
+            telemetry.addData("Current pose",robot.drive.localizer.getPose().position);
+
 
             telemetry.addData("hz", loopTimeFilter.update(1 / (Performance.loopTimeNano() / 1E9)));
             telemetry.update();

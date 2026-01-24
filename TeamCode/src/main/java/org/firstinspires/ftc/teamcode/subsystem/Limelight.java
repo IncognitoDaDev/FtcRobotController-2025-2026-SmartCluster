@@ -21,7 +21,7 @@ import org.firstinspires.ftc.teamcode.subsystem.Storage.ArtifactColor;
 public class Limelight extends Subsystem {
 
     private final Limelight3A limelight;
-    private ArtifactColor[] order = {ArtifactColor.EMPTY, ArtifactColor.EMPTY, ArtifactColor.EMPTY};
+    private ArtifactColor[] order = {ArtifactColor.PURPLE, ArtifactColor.PURPLE, ArtifactColor.GREEN};
     private Pose2d limelightPose = new Pose2d(0,0,0);
     public Limelight(OpMode opMode) {
         super(opMode);
@@ -79,7 +79,7 @@ public class Limelight extends Subsystem {
                                 }
                             }
                         })
-                        .finished(() -> timer.milliseconds() > 250 || isFinished)
+                        .finished(() -> timer.milliseconds() > 400 || isFinished)
                         .build()
         );
 
