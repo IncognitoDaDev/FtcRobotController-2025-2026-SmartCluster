@@ -19,6 +19,8 @@ public abstract class CRActuator {
     private final Subsystem subsystem;
     private final String name;
     public PIDController pid;
+
+    private double minimumVoltagePass;
     public TrapezoidalMotionProfile motionProfile;
     public double tolerance;
     protected AtomicReference<Double> target = new AtomicReference<>(0.0);
@@ -26,7 +28,7 @@ public abstract class CRActuator {
     private final CRServoImplEx[] crservos;
 
     private final ElapsedTime time = new ElapsedTime();
-    public CRActuator(Subsystem subsystem, String name, PIDController pid, TrapezoidalMotionProfile motionProfile, double tolerance, CRServoImplEx... motors)
+    public CRActuator(Subsystem subsystem, String name, PIDController pid, TrapezoidalMotionProfile motionProfile, double tolerance,  double minimumVoltagePass, CRServoImplEx... motors)
     {
         this.subsystem=subsystem;
         this.name=name;
@@ -34,6 +36,7 @@ public abstract class CRActuator {
         this.motionProfile=motionProfile;
         this.crservos =motors;
         this.tolerance=tolerance;
+        this.minimumVoltagePass=minimumVoltagePass;
     }
     /**
      * Sets the target of the actuator, the user needs to check for limits
@@ -75,7 +78,7 @@ public abstract class CRActuator {
 
     public final Supplier<Boolean> isNotInMotion()
     {
-        return () -> Math.abs(getPosition().get(0)-getTarget())<tolerance;
+        return () -> Math.abs(getPosition().get(0)-getTarget()) < tolerance;
     }
 
 
@@ -88,7 +91,7 @@ public abstract class CRActuator {
                     time.reset();
                     setTarget(target.get());
                 })
-                .finished(() -> Math.abs(getPosition().get(0)-getTarget())<tolerance)
+                .finished(isNotInMotion())
                 .end((interrupted)->{
                     from.set(getPosition().get(0));
                     time.reset();
@@ -114,14 +117,19 @@ public abstract class CRActuator {
                     final double distance = to.get()-from.get();
                     DualNum<Time> mp = motionProfile.getMotionState(Math.abs(distance), time.seconds());
                     double power = pid.update(mp.get(0) * Math.signum(distance) + from.get(), getPosition().get(0));
+
+                    if (!isNotInMotion().get() && Math.abs(power) < minimumVoltagePass)
+                        power = minimumVoltagePass * Math.signum(power); // This is for making sure servos are not way too underpowered
+
                     for (CRServoImpl motor :
                             crservos) {
                         if(enabled) motor.setPower(power);
                     }
+
 //                    subsystem.telemetry.addData(String.format("%s.position", name), getPosition().get(0));
                     subsystem.telemetry.addData(String.format("%s.power", name), power);
 //                    subsystem.telemetry.addData(String.format("%s.target", name), getTarget());
-                    subsystem.telemetry.addData(String.format("%s.mp", name), mp.get(0));
+//                    subsystem.telemetry.addData(String.format("%s.mp", name), mp.get(0));
                 })
                 .build();
     }
