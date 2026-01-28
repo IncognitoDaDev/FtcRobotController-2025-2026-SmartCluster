@@ -82,10 +82,13 @@ public class BaseTeleOp extends LinearOpMode {
                         ))
                 .state(BaseTeleOp.TeleOpState.INTAKE, Command.builder()
                         .update(()->{
-                            Storage.ArtifactColor frontScan = robot.storage.identifyObjFrontSensor();
-                            robot.storage.storage.appendBallIntake(frontScan);
-//                            if (frontScan != Storage.ArtifactColor.EMPTY)
-//                                robot.storage.storage.appendBallIntake(frontScan);
+                            // Scan only when it "knows" there is nothing
+                            if (robot.storage.spindexer.isNotInMotion().get()
+                                    && robot.storage.storage.Slot[0] == Storage.ArtifactColor.EMPTY)
+                            {
+                                Storage.ArtifactColor frontScan = robot.storage.identifyObj();
+                                robot.storage.storage.appendBallIntake(frontScan);
+                            }
                         })
                         .build())
                 .transition(TeleOpState.INTAKE, TeleOpState.INTAKE, driverGamepad.square::get,

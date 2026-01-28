@@ -54,7 +54,7 @@ public class storageCalibration extends LinearOpMode {
                 )
                 .state(BaseTeleOp.TeleOpState.INTAKE, Command.builder()
                         .update(()->{
-                            Storage.ArtifactColor frontScan = robot.storage.identifyObjFrontSensor();
+                            Storage.ArtifactColor frontScan = robot.storage.identifyObj();
                             if (frontScan != Storage.ArtifactColor.EMPTY)
                                 robot.storage.storage.appendBallIntake(frontScan);
                         })

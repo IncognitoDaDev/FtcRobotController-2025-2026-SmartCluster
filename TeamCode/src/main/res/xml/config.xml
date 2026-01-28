@@ -13,6 +13,9 @@
 
             <RevColorSensorV3 name="rotaryColorSensorF" port="0" bus="3"/>
 
+            <DigitalDevice name="rotaryColorSensorF_Purple" port="0"/>
+            <DigitalDevice name="rotaryColorSensorF_Green" port="1"/>
+
             <goBILDAPinpoint name="pinpoint" port="1"/>
             <LynxEmbeddedIMU name="imu" port="0" bus="0" />
         </LynxModule>

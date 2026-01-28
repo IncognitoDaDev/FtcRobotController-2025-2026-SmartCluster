@@ -7,6 +7,8 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
+import com.qualcomm.robotcore.hardware.DigitalChannelImpl;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -18,25 +20,19 @@ import org.firstinspires.ftc.teamcode.subsystem.Storage;
 @TeleOp(group="Calibration")
 public class ColorCalibration extends LinearOpMode {
 
-    private RevColorSensorV3 frontColorSensor;
-
     @Override
     public void runOpMode() throws InterruptedException {
-        Storage dex = new Storage(this);
+//        Storage dex = new Storage(this);
 
-        frontColorSensor = hardwareMap.get(RevColorSensorV3.class, "rotaryColorSensorF");
-
+        DigitalChannel pin0 = hardwareMap.digitalChannel.get("rotaryColorSensorF_Purple");
+        DigitalChannel pin1 = hardwareMap.digitalChannel.get("rotaryColorSensorF_Green");
 
         waitForStart();
         while(opModeIsActive()){
-            NormalizedRGBA data = frontColorSensor.getNormalizedColors();
 
-            telemetry.addData("A", data.alpha*256);
-            telemetry.addData("R", data.red*256);
-            telemetry.addData("G", data.green*256);
-            telemetry.addData("B", data.blue*256);
-            telemetry.addData("ARGB", data.toColor());
-            telemetry.addData("IdentifyObj", dex.identifyObjFrontSensor());
+            telemetry.addData("Is purple?", pin0.getState());
+            telemetry.addData("Is green?", pin1.getState());
+//            telemetry.addData("IdentifyObj", dex.identifyObj());
 
             telemetry.update();
 

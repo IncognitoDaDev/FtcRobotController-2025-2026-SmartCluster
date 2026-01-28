@@ -5,6 +5,8 @@ import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
+import com.qualcomm.robotcore.hardware.DigitalChannelImpl;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
@@ -35,7 +37,9 @@ public class Storage extends Subsystem {
 
     private final CRServoImplEx spindexRight, spindexLeft;
     private final ServoImplEx flapperRight, flapperLeft;
-    private final RevColorSensorV3 frontColorSensor;
+//    private final RevColorSensorV3 frontColorSensor;
+
+    private DigitalChannelImpl frontColorSensor_Purple, frontColorSensor_Green;
     public final Encoder spindexEncoder;
     public static TrapezoidalMotionProfile flapperMotionProfile = new TrapezoidalMotionProfile(16, 16, 16);
     public final ServoActuator flapper;
@@ -123,8 +127,9 @@ public class Storage extends Subsystem {
         spindexEncoder = new RawEncoder(hardwareMap.get(DcMotorEx.class,"frontRight"));
 
         flapperLeft.setDirection(Servo.Direction.REVERSE);
-        frontColorSensor = hardwareMap.get(RevColorSensorV3.class, "rotaryColorSensorF");
-//        ((LynxI2cDeviceSynch) frontColorSensor.getDeviceClient()).setBusSpeed(LynxI2cDeviceSynch.BusSpeed.FAST_400K);
+
+        frontColorSensor_Purple = hardwareMap.get(DigitalChannelImpl.class, "rotaryColorSensorF_Purple");
+        frontColorSensor_Green = hardwareMap.get(DigitalChannelImpl.class, "rotaryColorSensorF_Green");
 
         flapper = new ServoActuator(this, "flapper", flapperMotionProfile,flapperLeft,flapperRight)
         {
@@ -172,27 +177,11 @@ public class Storage extends Subsystem {
     }
     public Command flapperUp() { return flapper.move(new AtomicReference<>(flapperUpVal)); }
     public Command flapperDown() { return flapper.move(new AtomicReference<>(flapperDownVal)); }
-    public Storage.ArtifactColor identifyObj(RevColorSensorV3 sensor)
+    public Storage.ArtifactColor identifyObj()
     {
-        NormalizedRGBA data = sensor.getNormalizedColors();
-
-        if (data.alpha*256 > 220) { //Something exists... and it's a ball
-            /*
-             * Am observat ca o minge mov are tot timpu nuanta albastru mai prominent decat nuanta verde
-             * si viceversa pentru o minge verde
-             */
-            if (data.green > data.blue)
-                return Storage.ArtifactColor.GREEN;
-            else
-                return (Storage.ArtifactColor.PURPLE); // Must be PURPLE then
-        }
-
+        if (frontColorSensor_Purple.getState()) return ArtifactColor.PURPLE;
+        if (frontColorSensor_Green.getState()) return ArtifactColor.GREEN;
         return Storage.ArtifactColor.EMPTY;
-    }
-
-    public Storage.ArtifactColor identifyObjFrontSensor()
-    {
-        return identifyObj(frontColorSensor);
     }
 
     public Command nextBall() // Clockwise
@@ -271,7 +260,7 @@ public class Storage extends Subsystem {
                 .init(timer::reset)
                 .update(() ->
                 {
-                    ArtifactColor dataScanned = identifyObjFrontSensor();
+                    ArtifactColor dataScanned = identifyObj();
                     if (dataScanned != ArtifactColor.EMPTY)
                         storage.Slot[0] = dataScanned;
                 })
@@ -294,7 +283,7 @@ public class Storage extends Subsystem {
                         if (Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())< ToleranceCommand)
                             isSpin.set(false);
                     } else { // Spindexer doesn't need to move, so scan all you can!
-                        ArtifactColor dataScanned = identifyObjFrontSensor();
+                        ArtifactColor dataScanned = identifyObj();
                         if (dataScanned != ArtifactColor.EMPTY) {
                             ballCount.getAndIncrement();
                             storage.Slot[0] = dataScanned;
