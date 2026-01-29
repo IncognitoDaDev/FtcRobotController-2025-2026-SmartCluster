@@ -220,7 +220,6 @@ public class Storage extends Subsystem {
     {
         return new SequentialCommand(
                 flapperUp(),
-                new WaitCommand(100),
                 flapperDown(),
                 new InstantCommand(() -> storage.removeBallOuttake())
         );

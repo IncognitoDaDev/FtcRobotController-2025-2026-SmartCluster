@@ -10,13 +10,10 @@ import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.CommandScheduler;
 import com.smartcluster.oracleftc.commands.InstantCommand;
-import com.smartcluster.oracleftc.commands.ParallelCommand;
 import com.smartcluster.oracleftc.commands.SequentialCommand;
 import com.smartcluster.oracleftc.fsm.FSM;
-import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
 import com.smartcluster.oracleftc.math.filters.MovingAverageFilter;
 import com.smartcluster.oracleftc.utils.Performance;
@@ -26,11 +23,10 @@ import org.firstinspires.ftc.teamcode.opmode.teleop.BaseTeleOp;
 import org.firstinspires.ftc.teamcode.subsystem.Robot;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 @Config
 @TeleOp(group="Calibration")
-public class Test extends LinearOpMode {
+public class turretCalibration extends LinearOpMode {
     public static TrapezoidalMotionProfile mp = new TrapezoidalMotionProfile(6000, 10000, 12000);
     private final CommandScheduler scheduler = new CommandScheduler();
     private static Pose2d currentPose;

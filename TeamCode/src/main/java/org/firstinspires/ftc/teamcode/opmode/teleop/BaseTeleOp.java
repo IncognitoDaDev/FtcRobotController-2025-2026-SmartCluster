@@ -30,7 +30,7 @@ import org.firstinspires.ftc.teamcode.subsystem.Storage;
 import java.util.List;
 
 @Config
-@TeleOp(group = "TeleOp")
+//@TeleOp(group = "TeleOp")
 public class BaseTeleOp extends LinearOpMode {
     protected Pose2d cornerCoordinate;
     protected Pose2d endPose;

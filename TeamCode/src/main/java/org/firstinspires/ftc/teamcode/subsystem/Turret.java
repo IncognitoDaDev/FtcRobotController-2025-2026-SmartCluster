@@ -5,6 +5,7 @@ import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotorImplEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.smartcluster.oracleftc.commands.Command;
@@ -60,6 +61,8 @@ public class Turret extends Subsystem {
         hardwareMap.get(ServoImplEx.class, "leftHood");
         rightHood = hardwareMap.get(ServoImplEx.class, "rightHood");
         leftHood = hardwareMap.get(ServoImplEx.class, "leftHood");
+
+        leftHood.setDirection(Servo.Direction.REVERSE);
         hood = new ServoActuator(this, "hood", hoodMotionProfile, rightHood, leftHood) {
             @Override
             public Command reset() {
