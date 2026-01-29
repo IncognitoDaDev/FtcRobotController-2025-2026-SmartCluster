@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.subsystem;
 
 import com.acmerobotics.dashboard.config.Config;
+import com.qualcomm.hardware.lynx.LynxI2cDeviceSynch;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
@@ -37,9 +38,9 @@ public class Storage extends Subsystem {
 
     private final CRServoImplEx spindexRight, spindexLeft;
     private final ServoImplEx flapperRight, flapperLeft;
-//    private final RevColorSensorV3 frontColorSensor;
+    private final RevColorSensorV3 frontColorSensor;
 
-    private DigitalChannelImpl frontColorSensor_Purple, frontColorSensor_Green;
+//    private DigitalChannelImpl frontColorSensor_Purple, frontColorSensor_Green;
     public final Encoder spindexEncoder;
     public static TrapezoidalMotionProfile flapperMotionProfile = new TrapezoidalMotionProfile(16, 16, 16);
     public final ServoActuator flapper;
@@ -47,14 +48,10 @@ public class Storage extends Subsystem {
 
     public static double flapperDownVal = 0.23, flapperUpVal = 0.5;
 
-    public static double ToleranceCommand = 5.0;
     private boolean antiJamOn = true;
 
-//    public static PIDController spindexerPID = new PIDController(0.0031, 0.00000, 0.00013);
-//    public static TrapezoidalMotionProfile spindexerMotionProfile = new TrapezoidalMotionProfile(2300,2000,1000);
-
-    public static PIDController spindexerPID = new PIDController(0.0034, 0.00000, 0.00014);
-    public static TrapezoidalMotionProfile spindexerMotionProfile = new TrapezoidalMotionProfile(3000,2500,850);
+    public static PIDController spindexerPID = new PIDController(0.0034, 0, 0.00012);
+    public static TrapezoidalMotionProfile spindexerMotionProfile = new TrapezoidalMotionProfile(130000,150000,120000);
 
     public enum ArtifactColor{
         GREEN,
@@ -126,10 +123,14 @@ public class Storage extends Subsystem {
         flapperLeft=hardwareMap.get(ServoImplEx.class,"flapperLeft");
         spindexEncoder = new RawEncoder(hardwareMap.get(DcMotorEx.class,"frontRight"));
 
+        frontColorSensor = hardwareMap.get(RevColorSensorV3.class, "rotaryColorSensorF");
+        ((LynxI2cDeviceSynch) frontColorSensor.getDeviceClient()).setBusSpeed(LynxI2cDeviceSynch.BusSpeed.FAST_400K);
+
+
         flapperLeft.setDirection(Servo.Direction.REVERSE);
 
-        frontColorSensor_Purple = hardwareMap.get(DigitalChannelImpl.class, "rotaryColorSensorF_Purple");
-        frontColorSensor_Green = hardwareMap.get(DigitalChannelImpl.class, "rotaryColorSensorF_Green");
+//        frontColorSensor_Purple = hardwareMap.get(DigitalChannelImpl.class, "rotaryColorSensorF_Purple");
+//        frontColorSensor_Green = hardwareMap.get(DigitalChannelImpl.class, "rotaryColorSensorF_Green");
 
         flapper = new ServoActuator(this, "flapper", flapperMotionProfile,flapperLeft,flapperRight)
         {
@@ -153,7 +154,7 @@ public class Storage extends Subsystem {
         };
 
 
-        spindexer = new CRActuator(this, "spindexer",  spindexerPID, spindexerMotionProfile, 3.0, 0.048, spindexLeft, spindexRight) {
+        spindexer = new CRActuator(this, "spindexer",  spindexerPID, spindexerMotionProfile, 4.0, 0.0, spindexLeft, spindexRight) {
             @Override
             public boolean setTarget(double target) {
                 this.ManualSetFromPosition(getPosition().get(0));
@@ -179,8 +180,17 @@ public class Storage extends Subsystem {
     public Command flapperDown() { return flapper.move(new AtomicReference<>(flapperDownVal)); }
     public Storage.ArtifactColor identifyObj()
     {
-        if (frontColorSensor_Purple.getState()) return ArtifactColor.PURPLE;
-        if (frontColorSensor_Green.getState()) return ArtifactColor.GREEN;
+//        if (frontColorSensor_Purple.getState()) return ArtifactColor.PURPLE;
+//        if (frontColorSensor_Green.getState()) return ArtifactColor.GREEN;
+
+        NormalizedRGBA data = frontColorSensor.getNormalizedColors();
+
+        if (data.alpha > 220) // Is something in front?
+        {
+            if (data.red < data.green) return ArtifactColor.GREEN;
+            if (data.blue > data.green) return ArtifactColor.PURPLE;
+        }
+
         return Storage.ArtifactColor.EMPTY;
     }
 
@@ -280,7 +290,7 @@ public class Storage extends Subsystem {
                 .update(() -> {
                     if (isSpin.get())
                     {
-                        if (Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())< ToleranceCommand)
+                        if (spindexer.isNotInMotion().get())
                             isSpin.set(false);
                     } else { // Spindexer doesn't need to move, so scan all you can!
                         ArtifactColor dataScanned = identifyObj();
@@ -375,7 +385,7 @@ public class Storage extends Subsystem {
                     }
                 })
                 .update(() -> telemetry.addData("Looking for", storage.Order[order]))
-                .finished(() -> Math.abs(spindexer.getPosition().get(0)-spindexer.getTarget())< ToleranceCommand)
+                .finished(spindexer.isNotInMotion())
                 .build();
     }
 

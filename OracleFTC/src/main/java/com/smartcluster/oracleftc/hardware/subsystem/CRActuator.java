@@ -121,13 +121,14 @@ public abstract class CRActuator {
                     if (!isNotInMotion().get() && Math.abs(power) < minimumVoltagePass)
                         power = minimumVoltagePass * Math.signum(power); // This is for making sure servos are not way too underpowered
 
-                    for (CRServoImpl motor :
-                            crservos) {
-                        if(enabled) motor.setPower(power);
-                    }
+                    double IntentionalErrOffset = 0.005*Math.random();
+
+                    for (CRServoImpl motor : crservos)
+                        if (enabled) motor.setPower(power+IntentionalErrOffset);
 
 //                    subsystem.telemetry.addData(String.format("%s.position", name), getPosition().get(0));
                     subsystem.telemetry.addData(String.format("%s.power", name), power);
+                    subsystem.telemetry.addData(String.format("%s.errInduced", name), IntentionalErrOffset);
 //                    subsystem.telemetry.addData(String.format("%s.target", name), getTarget());
 //                    subsystem.telemetry.addData(String.format("%s.mp", name), mp.get(0));
                 })
