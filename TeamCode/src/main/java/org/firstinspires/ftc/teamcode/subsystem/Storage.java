@@ -46,6 +46,8 @@ public class Storage extends Subsystem {
     public final ServoActuator flapper;
     public final CRActuator spindexer;
 
+    static public double minimumPowerServo = 0.0045, integralInducedIncremental = 0.00000001;
+
     public static double flapperDownVal = 0.23, flapperUpVal = 0.5;
 
     private boolean antiJamOn = true;
@@ -154,7 +156,7 @@ public class Storage extends Subsystem {
         };
 
 
-        spindexer = new CRActuator(this, "spindexer",  spindexerPID, spindexerMotionProfile, 4.0, 0.0, spindexLeft, spindexRight) {
+        spindexer = new CRActuator(this, "spindexer",  spindexerPID, spindexerMotionProfile, 4.0, minimumPowerServo, integralInducedIncremental, spindexLeft, spindexRight) {
             @Override
             public boolean setTarget(double target) {
                 this.ManualSetFromPosition(getPosition().get(0));

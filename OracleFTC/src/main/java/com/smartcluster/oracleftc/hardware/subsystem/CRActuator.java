@@ -21,14 +21,15 @@ public abstract class CRActuator {
     public PIDController pid;
 
     private double minimumVoltagePass;
+
     public TrapezoidalMotionProfile motionProfile;
-    public double tolerance;
+    public double tolerance, integralIncrement;
     protected AtomicReference<Double> target = new AtomicReference<>(0.0);
     private final AtomicReference<Double> to = new AtomicReference<>(0.0), from=new AtomicReference<>(0.0);
     private final CRServoImplEx[] crservos;
 
     private final ElapsedTime time = new ElapsedTime();
-    public CRActuator(Subsystem subsystem, String name, PIDController pid, TrapezoidalMotionProfile motionProfile, double tolerance,  double minimumVoltagePass, CRServoImplEx... motors)
+    public CRActuator(Subsystem subsystem, String name, PIDController pid, TrapezoidalMotionProfile motionProfile, double tolerance,  double minimumVoltagePass, double integralIncrement, CRServoImplEx... motors)
     {
         this.subsystem=subsystem;
         this.name=name;
@@ -37,6 +38,7 @@ public abstract class CRActuator {
         this.crservos =motors;
         this.tolerance=tolerance;
         this.minimumVoltagePass=minimumVoltagePass;
+        this.integralIncrement = integralIncrement;
     }
     /**
      * Sets the target of the actuator, the user needs to check for limits
@@ -63,8 +65,7 @@ public abstract class CRActuator {
         return new InstantCommand(()->{
 
             enabled=false;
-            for (CRServoImpl motor :
-                    crservos) {
+            for (CRServoImpl motor : crservos) {
                 motor.setPower(0.0);
             }
         });
@@ -78,7 +79,7 @@ public abstract class CRActuator {
 
     public final Supplier<Boolean> isNotInMotion()
     {
-        return () -> Math.abs(getPosition().get(0)-getTarget()) < tolerance;
+        return () -> Math.abs(getPosition().get(0)-getTarget()) <= tolerance;
     }
 
 
@@ -100,35 +101,58 @@ public abstract class CRActuator {
                 .build();
     }
 
-    public final Command update()
+    // My silly attempt at making a dynamic minimum voltage regulator for when outside the tolerance
+    private double integralInduced = 0, incrementalIntegral = 0;
+    private long lastTimestamp=0;
+    public double IntegralErrInduced(double distance)
     {
+        //Add or remove a tiny value (values for ~30hz), fixing itself after overshooting
+        incrementalIntegral += (distance > 0 ? 1 : -1)*integralIncrement;
+
+        long timestamp = System.nanoTime();
+        if (lastTimestamp != 0) {
+            double deltaTime = (timestamp - lastTimestamp) / 1E9;
+            integralInduced += deltaTime * distance;
+            if (Double.isNaN(integralInduced)) integralInduced = 0;
+        }
+        lastTimestamp = timestamp;
+
+        return integralInduced*incrementalIntegral;
+    }
+
+    public final Command update() {
 
         return Command.builder()
-                .init(()->{
+                .init(() -> {
                     from.set(getPosition().get(0));
                     to.set(getTarget());
                     time.reset();
                 })
-                .update(()->{
-                    if(to.get()!=getTarget())
-                    {
+                .update(() -> {
+                    if (to.get() != getTarget()) {
                         to.set(getTarget());
                     }
-                    final double distance = to.get()-from.get();
+
+                    final double distance = to.get() - from.get();
                     DualNum<Time> mp = motionProfile.getMotionState(Math.abs(distance), time.seconds());
                     double power = pid.update(mp.get(0) * Math.signum(distance) + from.get(), getPosition().get(0));
 
+                    // Servos have an minimum acceptance of voltage, too less of it and they can barely move without velocity.
                     if (!isNotInMotion().get() && Math.abs(power) < minimumVoltagePass)
-                        power = minimumVoltagePass * Math.signum(power); // This is for making sure servos are not way too underpowered
+                        power += integralInduced;
+                    else {
+                        // Reset the dynamic voltage regulator
+                        integralInduced = 0;
+                        incrementalIntegral = 0;
+                    }
 
-                    double IntentionalErrOffset = 0.005*Math.random();
-
-                    for (CRServoImpl motor : crservos)
-                        if (enabled) motor.setPower(power+IntentionalErrOffset);
+                    for (CRServoImpl motor : crservos) {
+                        if (enabled) motor.setPower(power);
+                    }
 
 //                    subsystem.telemetry.addData(String.format("%s.position", name), getPosition().get(0));
                     subsystem.telemetry.addData(String.format("%s.power", name), power);
-                    subsystem.telemetry.addData(String.format("%s.errInduced", name), IntentionalErrOffset);
+                    subsystem.telemetry.addData(String.format("%s.integralInduced", name), integralInduced);
 //                    subsystem.telemetry.addData(String.format("%s.target", name), getTarget());
 //                    subsystem.telemetry.addData(String.format("%s.mp", name), mp.get(0));
                 })
