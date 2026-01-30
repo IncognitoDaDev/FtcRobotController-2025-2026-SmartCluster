@@ -7,6 +7,7 @@ import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.hardware.OracleLynxVoltageSensor;
 import com.smartcluster.oracleftc.math.DualNum;
 import com.smartcluster.oracleftc.math.Time;
+import com.smartcluster.oracleftc.math.control.MotorFeedforward;
 import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
 
@@ -18,13 +19,16 @@ public abstract class Actuator {
     public PIDController pid;
     public TrapezoidalMotionProfile motionProfile;
     public double tolerance;
+    public MotorFeedforward feedforward;
+
     protected AtomicReference<Double> target = new AtomicReference<>(0.0);
     private final AtomicReference<Double> to = new AtomicReference<>(0.0), from=new AtomicReference<>(0.0);
     private final DcMotorEx[] motors;
     private final OracleLynxVoltageSensor voltageSensor;
     private final ElapsedTime time = new ElapsedTime();
-    public Actuator(Subsystem subsystem, String name, PIDController pid, TrapezoidalMotionProfile motionProfile, double tolerance, DcMotorEx... motors)
+    public Actuator(Subsystem subsystem, String name, PIDController pid, TrapezoidalMotionProfile motionProfile,MotorFeedforward feedforward, double tolerance, DcMotorEx... motors)
     {
+        this.feedforward=feedforward;
         this.subsystem=subsystem;
         this.name=name;
         this.pid=pid;
@@ -39,10 +43,10 @@ public abstract class Actuator {
      * @return if the operation succeeded
      */
     public abstract boolean setTarget(double target);
-    public double getFeedforward()
-    {
-        return 0.0;
-    }
+//    public double getFeedforward()
+//    {
+//        return 0.0;
+//    }
     public abstract DualNum<Time> getPosition();
     public final double getTarget()
     {
@@ -102,8 +106,9 @@ public abstract class Actuator {
                     final double distance = to.get()-from.get();
                     DualNum<Time> mp = motionProfile.getMotionState(Math.abs(distance),
                             time.seconds());
+
                     double power = pid.update(mp.get(0) *Math.signum(distance)+from.get(),
-                            getPosition().get(0))+getFeedforward();
+                            getPosition().get(0))+ feedforward.update(mp.get(0),mp.get(1));
                     for (DcMotorEx motor :
                             motors) {
                         if(enabled) motor.setPower(power*(12/voltageSensor.getVoltage()));

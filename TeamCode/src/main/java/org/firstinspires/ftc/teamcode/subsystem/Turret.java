@@ -1,98 +1,93 @@
 package org.firstinspires.ftc.teamcode.subsystem;
 
-
-
-import com.ThermalEquilibrium.homeostasis.Controllers.Feedforward.BasicFeedforward;
-import com.ThermalEquilibrium.homeostasis.Parameters.FeedforwardCoefficients;
-import com.qualcomm.hardware.lynx.LynxVoltageSensor;
-import com.smartcluster.oracleftc.commands.InstantCommand;
-import com.smartcluster.oracleftc.hardware.wrappers.Encoder;
-import com.smartcluster.oracleftc.hardware.wrappers.RawEncoder;
-import com.qualcomm.robotcore.hardware.DcMotor;
+import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.roadrunner.Pose2d;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.hardware.DcMotorImplEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.smartcluster.oracleftc.commands.Command;
+import com.smartcluster.oracleftc.commands.InstantCommand;
+import com.smartcluster.oracleftc.commands.ParallelCommand;
+import com.smartcluster.oracleftc.commands.SequentialCommand;
 import com.smartcluster.oracleftc.hardware.OracleLynxVoltageSensor;
 import com.smartcluster.oracleftc.hardware.subsystem.Actuator;
-import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.smartcluster.oracleftc.hardware.subsystem.ServoActuator;
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
+import com.smartcluster.oracleftc.hardware.subsystem.SubsystemFlavor;
+import com.smartcluster.oracleftc.hardware.wrappers.Encoder;
+import com.smartcluster.oracleftc.hardware.wrappers.RawEncoder;
 import com.smartcluster.oracleftc.math.DualNum;
-import com.smartcluster.oracleftc.math.Pose2d;
-import com.smartcluster.oracleftc.math.Pose2dDual;
 import com.smartcluster.oracleftc.math.Time;
+import com.smartcluster.oracleftc.math.control.MotorFeedforward;
 import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
+import com.smartcluster.oracleftc.math.filters.LowPassFilter;
 
-import java.util.concurrent.atomic.AtomicReference;
+import org.firstinspires.ftc.teamcode.roadrunner.Localizer;
 
-
+@Config
 public class Turret extends Subsystem {
 
-    final double HOOD_MIN_ANGLE = 0.0;   // Example: Angle when servo is at position 0.0
-    final double HOOD_MAX_ANGLE = 60.0;
-    public final double MOTOR_TO_TURRET_RATIO =  260.0/48;
-    public final double ENCODER_TICKS_PER_ROTATION = 384.5*MOTOR_TO_TURRET_RATIO;
-    public final double ENCODER_TICKS_PER_DEGREE = ENCODER_TICKS_PER_ROTATION/360;
-    private final String name;
-    public DcMotorEx turret1,turret2,rot;
-    public ServoImplEx s1,s2;
-    public static PIDController shootPidController = new PIDController(0.0,0.0,0.0);
-    public static TrapezoidalMotionProfile shootMotionProfile = new TrapezoidalMotionProfile(6000,40000,20000);
-    public static PIDController rotationalPidController = new PIDController(0.0,0.0,0.0);
-    public static TrapezoidalMotionProfile rotationalMotionProfile = new TrapezoidalMotionProfile(6000,40000,20000);
-    private final Encoder rotate;
-    public double[] Speed ={0,4500,5000,6000};
+
+    private final DcMotorImplEx turretUp, turretDown,turretRot;
+    private final ServoImplEx rightHood, leftHood;
     private final OracleLynxVoltageSensor voltageSensor;
-    public static double tolerance = 2;
+    public static TrapezoidalMotionProfile hoodMotionProfile = new TrapezoidalMotionProfile(12, 16, 16);
+    public static TrapezoidalMotionProfile turretMotionProfile = new TrapezoidalMotionProfile(80, 100, 100);
+    public static PIDController turretPID = new PIDController(0.025, 0.00002, 0.0019, 1);
+    public static MotorFeedforward turretFeedForward = new MotorFeedforward(0.01, 0.0015, 0);
 
-    private final ElapsedTime time = new ElapsedTime();
-    public static double Kv = 1.1;
-    public static double Ka = 0.2;
-    public static double Ks = 0.001;
-    FeedforwardCoefficients coefficients = new FeedforwardCoefficients(Kv,Ka,Ks);
-    BasicFeedforward shootController = new BasicFeedforward(coefficients);
-    public double targetSpeed = 0;
-    public int targetAngle = 0;
+    public final Actuator turret;
+    public final Encoder encoder;
+    public final ServoActuator hood;
+    private final double m = 8.502;
+    private final double n = 1300.98;
+    private boolean inZone;
 
 
-    public Actuator turret;
-    public Actuator rotation;
-    public ServoActuator hood;
 
-    public Turret(OpMode opMode, String name) {
+    public Turret(OpMode opMode) {
         super(opMode);
-        this.name = name;
-        turret1 = hardwareMap.get(DcMotorEx.class,"turretDown");
-//        turret2 = hardwareMap.get(DcMotorEx.class,"turretUp");
-        rot = hardwareMap.get(DcMotorEx.class,"turretRotate");
 
-
-//        s1 = hardwareMap.get(ServoImplEx.class,"leftHood");
-//        s2 = hardwareMap.get(ServoImplEx.class,"rightHood");
-//        s2.setDirection(Servo.Direction.REVERSE);
-
-
-        turret1.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
-//        turret2.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
-        rot.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
-
-        turret1.setDirection(DcMotorSimple.Direction.REVERSE);
-
-
-//        t2 = new RawEncoder(hardwareMap.get(DcMotorEx.class,"turretUp"));
-        rotate = new RawEncoder(hardwareMap.get(DcMotorEx.class,"turretRotate"));
         voltageSensor = hardwareMap.getAll(OracleLynxVoltageSensor.class).iterator().next();
+        turretUp = hardwareMap.get(DcMotorImplEx.class, "turretUp");
+        turretUp.setDirection(DcMotorSimple.Direction.REVERSE);
+        turretRot = hardwareMap.get(DcMotorImplEx.class, "turretRotate");
+        encoder = new RawEncoder(hardwareMap.get(DcMotorImplEx.class,"turretRotate"));
+        turretDown = hardwareMap.get(DcMotorImplEx.class, "turretDown");
+        hardwareMap.get(ServoImplEx.class, "leftHood");
+        rightHood = hardwareMap.get(ServoImplEx.class, "rightHood");
+        leftHood = hardwareMap.get(ServoImplEx.class, "leftHood");
 
+        leftHood.setDirection(Servo.Direction.REVERSE);
+        hood = new ServoActuator(this, "hood", hoodMotionProfile, rightHood, leftHood) {
+            @Override
+            public Command reset() {
 
+                return new InstantCommand(() -> {
+                    setTarget(0.4);
+                    rightHood.setPosition(this.target.get());
+                    leftHood.setPosition(this.target.get());
+                });
+            }
 
-        /*turret = new Actuator(this, "turret", shootPidController.clone(), shootMotionProfile, 50, turret1,turret2) {
+            @Override
+            public boolean setTarget(double target) {
+                if(target<0.25)target = 0.25;
+                if(target>0.9)target = 0.9;
+                this.target.set(target);
+                return true;
+            }
+        };
 
-
-
+        turret = new Actuator(this, "turret", turretPID, turretMotionProfile, turretFeedForward, 2, turretRot) {
+            @Override
+            public Command reset() {
+                return new InstantCommand(encoder::reset);
+            }
 
             @Override
             public boolean setTarget(double target) {
@@ -100,154 +95,136 @@ public class Turret extends Subsystem {
                 return true;
             }
 
-
-            public double getSpeed() {
-                return (t1.getCurrentPosition().get(1)+t2.getCurrentPosition().get(1))/2.0;
-            }
             @Override
             public DualNum<Time> getPosition() {
-                return new DualNum<>(getSpeed(),0);
-            }
-
-            @Override
-            public Command reset() {
-                return Command.builder()
-                        .init(() -> {
-                            turret1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-                            turret2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
-                            turret1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                            turret2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-
-
-                        })
-                        .finished(() -> true)
-                        .requires(Turret.this)
-                        .build();
+                return encoder.getCurrentPosition().div(28).times(48).div(260).times(103.8);
             }
 
 
         };
-
-        hood = new ServoActuator(this, "hood", new TrapezoidalMotionProfile(10,16,16),s1,s2) {
-            @Override
-            public Command reset() {
-                return Command.builder()
-                        .init(() -> {
-                            s1.setPosition(0);
-                            s2.setPosition(0);
-                        })
-                        .finished(() -> true)
-                        .requires(Turret.this)
-                        .build();
-            }
-            public double setAngle(double angle) {
-                angle = angle/100;
-                //Angle between 0 - 60 degrees
-                setTarget(angle);
-                return angle;
-            }
-
-            @Override
-            public boolean setTarget(double target) {
-                target = target/100;
-                if(target<HOOD_MIN_ANGLE)target = HOOD_MIN_ANGLE;
-                if(target>HOOD_MAX_ANGLE)target = HOOD_MAX_ANGLE;
-
-                this.target.set(target);
-                return true;
-            }
-        };
-
-
-
-*/
     }
-    public void setAngle(int angle){targetAngle = angle;}
-    public void setRotation(int angle){
-        AtomicReference<DualNum<Time>> lastPosition = new AtomicReference<>(rotate.getCurrentPosition().div(ENCODER_TICKS_PER_DEGREE));
-        time.reset();
+    public static MotorFeedforward flywheelFeedforward = new MotorFeedforward(0.1, 0.00024, 0);
+    public static PIDController flywheelPID = new PIDController(0.0012, 0, 0, 0.5);
+    public static LowPassFilter velocityFilter = new LowPassFilter(0.5);
+    private double targetVelocity = 0; // RPM
 
-        if (rotate.getCurrentPosition().get(0) <= tolerance || rotate.getCurrentPosition().get(0) >= -tolerance) {
-            rot.setPower(0);}
+    private final double Tolerance = 100;
+    //angle between -180 and 180 to corespond with the robot heading values
 
-        DualNum<Time> currentPosition = rotate.getCurrentPosition();
-
-        final double distance = angle - currentPosition.get(0);
-        DualNum<Time> mop = rotationalMotionProfile.getMotionState(Math.abs(distance),
-                time.seconds());
-        double power = rotationalPidController.update(mop.get(0) *Math.signum(distance),
-                rotate.getCurrentPosition().get(0));
-
-        rot.setTargetPosition(angle);
-        rot.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        rot.setPower(power);
-
-    }
-    public double getRotation(){
-        return rotate.getCurrentPosition().get(0)*ENCODER_TICKS_PER_DEGREE;
-    }
-
-
-
-    public void setTargetSpeed(double speed) {
-        targetSpeed = shootController.calculate(0,speed,shootMotionProfile.maxAcceleration);
-    }
-    public void setShooter(double power){
-        if (power < -1.0) power = -1.0;
-        else if (power > 1.0) power = 1.0;
-        turret1.setPower(power);
-    }
-    public double getSpeed(){
-
-        return turret1.getVelocity();
-    }
-    public int ppToAngle(Pose2d pose){
-        int angle = 0;
-        final Pose2d corner = new Pose2d(-60,63,0);
-
-
-
-        return angle;
-
-    }
-    public Command update(){
+    public Command trackCorner(Localizer localizer, Pose2d corner){
         return Command.builder()
-                .update(()->{
-                        setShooter(shootController.calculate(0,targetSpeed,shootMotionProfile.maxAcceleration));
-                        telemetry.addData("Error ", getSpeed() - targetSpeed);
-                        setRotation(targetAngle);
-                        telemetry.addData("Rotation error ", getRotation()-targetAngle);
-                })
-                .finished(()->{
-                    if (Math.abs(getRotation() - targetAngle) <= tolerance&&getSpeed()-targetSpeed==0)
-                    {
-                        setShooter(0);
-                        return true;
-                    }
+                .init(()->inZone = true)
+               .update(()->{
+                    localizer.update();
+                    Pose2d robotPose = localizer.getPose();
+                   double currentX = robotPose.position.x;
+                   double currentY = robotPose.position.y;
 
-                    else return false;
-                })
-                .build();
+                    // Calculate vector from robot to corner
+                    double dx = corner.position.x - robotPose.position.x;
+                    double dy = corner.position.y - robotPose.position.y;
+                   double distance = (Math.sqrt(Math.pow((corner.position.x - currentX), 2)
+                           + Math.pow((corner.position.y - currentY), 2)))*2.54;
+                   double velocity = m * distance + n;
+                   double currentVelocity = getCurrentVelocity(); //RPM
+                   double power = flywheelPID.update(velocity, currentVelocity) + flywheelFeedforward.update(velocity, 0);
+                   power = power * (Robot.nominalVoltage / voltageSensor.getVoltage());
+                   turretUp.setPower(power);
+                   turretDown.setPower(power);
 
-    }
-    public Command reset(){
-        return Command.builder()
-                .update(()->{
-                    turret1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-                    rot.setTargetPosition(0);
-                    rot.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    rot.setPower(0.7);
-                })
-                .finished(()->{
-                    if(getRotation()==0 && getSpeed()==0)return true;
-                    else return false;
-                })
+                    // Angle to the corner in world space (degrees)
+                    double worldAngle = Math.toDegrees(Math.atan2(dy, dx));
+                    // Robot heading in degrees
+                    double robotAngle = Math.toDegrees(robotPose.heading.log());
+                    // Target turret angle relative to robot
+                    double targetAngle =180-(worldAngle - robotAngle);
+
+                    // Normalize the angle to -180 to 180 (shortest path)
+                    while (targetAngle > 180) targetAngle -= 180;
+                    while (targetAngle <= -180) targetAngle += 180;
+
+                    turret.setTarget(targetAngle);
+                   if(currentY>=Math.abs(currentX)+9*1.41 || (currentY>-46+9*1.41 && Math.abs(currentX)<23+9*1.41))inZone = false;
+
+               })
+                .finished(()->!inZone)
                 .requires(this)
                 .build();
     }
-
-
+    public double getCurrentVelocity() {
+        return velocityFilter.update((turretUp.getVelocity() / 28) * 60);
     }
 
+    public void setTargetVelocity(double velocity) {
+        if (velocity < 0) velocity = 0;
+        if (velocity > 6000) velocity = 6000;
+        targetVelocity = velocity;
+    }
+    public Command setVelocityByDistance(Localizer localizer, Pose2d corner){
+        return Command.builder()
+                .init(()-> {
+                    inZone = true;
+                })
+                .update(()-> {
+                    localizer.update();
+                    Pose2d currentPose = localizer.getPose();
+                    double currentX = currentPose.position.x;
+                    double currentY = currentPose.position.y;
+                    double distance = (Math.sqrt(Math.pow((corner.position.x - currentX), 2)
+                                    + Math.pow((corner.position.y - currentY), 2)))*2.54;
+                    double velocity = m * distance + n;
+                    double currentVelocity = getCurrentVelocity(); //RPM
+                    double power = flywheelPID.update(velocity, currentVelocity) + flywheelFeedforward.update(velocity, 0);
+                    power = power * (Robot.nominalVoltage / voltageSensor.getVoltage());
+                    turretUp.setPower(power);
+                    turretDown.setPower(power);
+                    if(currentY>=Math.abs(currentX)+9*1.41 || (currentY>-46+9*1.41 && Math.abs(currentX)<23+9*1.41))inZone = false;
+                })
+                .finished(()->!inZone)
+                .build();
+    }
+
+    public Command update() {
+        return new ParallelCommand(
+                hood.update(),
+//                Experimental
+//                turret.update(),
+                Command.builder()
+                        .update(() -> {
+                            double currentVelocity = getCurrentVelocity(); //RPM
+                            double power = flywheelPID.update(targetVelocity, currentVelocity) + flywheelFeedforward.update(targetVelocity, 0);
+                            power = power * (Robot.nominalVoltage / voltageSensor.getVoltage());
+                            turretUp.setPower(power);
+                            turretDown.setPower(power);
+                        })
+                        .requires(this)
+                        .build()
+        );
+    }
+
+    public Command WaitForRPM(double maxMinisecond)
+    {
+        ElapsedTime timer = new ElapsedTime();
+        return Command.builder()
+                .init(timer::reset)
+                .update(() ->
+                {
+                    telemetry.addData("VelocityErrDist", Math.abs(targetVelocity-getCurrentVelocity()));
+                })
+                .finished(() -> Math.abs(targetVelocity-getCurrentVelocity())<Tolerance || timer.milliseconds() > maxMinisecond)
+                .build();
+    }
+
+    public Command reset()
+    {
+        return new SequentialCommand(
+                hood.reset(),
+                turret.reset()
+                );
+    }
+
+    @Override
+    public SubsystemFlavor flavor() {
+        return SubsystemFlavor.ControlHubOnly;
+    }
+}

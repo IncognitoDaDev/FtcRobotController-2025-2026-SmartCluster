@@ -13,12 +13,13 @@ import com.acmerobotics.roadrunner.ftc.FlightRecorder;
 import com.acmerobotics.roadrunner.ftc.OverflowEncoder;
 import com.acmerobotics.roadrunner.ftc.PositionVelocityPair;
 import com.acmerobotics.roadrunner.ftc.RawEncoder;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-import org.firstinspires.ftc.teamcode.messages.ThreeDeadWheelInputsMessage;
+import org.firstinspires.ftc.teamcode.roadrunner.messages.ThreeDeadWheelInputsMessage;
 
-@Config
+//@Config
 public final class ThreeDeadWheelLocalizer implements Localizer {
     public static class Params {
         public double par0YTicks = 0.0; // y position of the first parallel encoder (in tick units)

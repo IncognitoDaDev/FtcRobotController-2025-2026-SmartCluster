@@ -1,32 +1,37 @@
 package org.firstinspires.ftc.teamcode.subsystem;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorImplEx;
+import com.smartcluster.oracleftc.commands.Command;
+import com.smartcluster.oracleftc.commands.InstantCommand;
+import com.smartcluster.oracleftc.hardware.OracleLynxVoltageSensor;
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
+import com.smartcluster.oracleftc.hardware.subsystem.SubsystemFlavor;
 
 public class Intake extends Subsystem {
 
-    public DcMotor intakeMotor;
-    public double intakePower = 0.85;
 
-    public Intake(OpMode mode)
+    private final DcMotorImplEx intakeMotor;
+    private final OracleLynxVoltageSensor voltageSensor;
+    public Intake(OpMode opMode) {
+        super(opMode);
+
+        intakeMotor=hardwareMap.get(DcMotorImplEx.class, "intakeMotor");
+        voltageSensor=hardwareMap.getAll(OracleLynxVoltageSensor.class).iterator().next();
+    }
+
+    public Command intake()
     {
-        super(mode);
-
-        intakeMotor = hardwareMap.get(DcMotor.class, "intakeMotor");
-        intakeMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        return new InstantCommand(()->intakeMotor.setPower(Robot.nominalVoltage/voltageSensor.getVoltage()));
+    }
+    public Command outake()
+    {
+        return new InstantCommand(()->intakeMotor.setPower(-Robot.nominalVoltage/voltageSensor.getVoltage()));
     }
 
-    public void reset() {
-        intakeMotor.setPower(0);
-    }
-
-    public void setPower(double power) {
-        intakeMotor.setPower(power);
-    }
-
-    public void Intake() {
-        intakeMotor.setPower(intakePower);
+    public Command stop()
+    {
+        return new InstantCommand(()->intakeMotor.setPower(0));
     }
 
 
