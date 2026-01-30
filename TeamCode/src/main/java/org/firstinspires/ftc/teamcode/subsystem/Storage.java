@@ -46,6 +46,7 @@ public class Storage extends Subsystem {
     public final ServoActuator flapper;
     public final CRActuator spindexer;
 
+    // Don't worry about them, they're not in use at the moment (way too experimental)
     static public double minimumPowerServo = 0.0045, integralInducedIncremental = 0.00000001;
 
     public static double flapperDownVal = 0.23, flapperUpVal = 0.5;

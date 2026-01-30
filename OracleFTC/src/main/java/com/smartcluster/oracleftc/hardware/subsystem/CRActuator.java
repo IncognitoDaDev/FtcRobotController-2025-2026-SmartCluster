@@ -138,13 +138,13 @@ public abstract class CRActuator {
                     double power = pid.update(mp.get(0) * Math.signum(distance) + from.get(), getPosition().get(0));
 
                     // Servos have an minimum acceptance of voltage, too less of it and they can barely move without velocity.
-                    if (!isNotInMotion().get() && Math.abs(power) < minimumVoltagePass)
-                        power += integralInduced;
-                    else {
-                        // Reset the dynamic voltage regulator
-                        integralInduced = 0;
-                        incrementalIntegral = 0;
-                    }
+//                    if (!isNotInMotion().get() && Math.abs(power) < minimumVoltagePass)
+//                        power += integralInduced;
+//                    else {
+//                        // Reset the dynamic voltage regulator
+//                        integralInduced = 0;
+//                        incrementalIntegral = 0;
+//                    }
 
                     for (CRServoImpl motor : crservos) {
                         if (enabled) motor.setPower(power);
