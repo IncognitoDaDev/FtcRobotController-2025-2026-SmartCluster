@@ -28,6 +28,8 @@ import com.smartcluster.oracleftc.math.Time;
 import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
 
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -53,9 +55,8 @@ public class Storage extends Subsystem {
 
     private boolean antiJamOn = true;
 
-    public static PIDController spindexerPID = new PIDController(0.0034, 0, 0.00012);
-    public static TrapezoidalMotionProfile spindexerMotionProfile = new TrapezoidalMotionProfile(130000,150000,120000);
-
+    public static PIDController spindexerPID = new PIDController(0.0045, 0.00014, 0.00014);
+    public static TrapezoidalMotionProfile spindexerMotionProfile = new TrapezoidalMotionProfile(3000,2500,850);
     public enum ArtifactColor{
         GREEN,
         PURPLE,
@@ -187,11 +188,12 @@ public class Storage extends Subsystem {
 //        if (frontColorSensor_Green.getState()) return ArtifactColor.GREEN;
 
         NormalizedRGBA data = frontColorSensor.getNormalizedColors();
+        frontColorSensor.setGain(2);
 
-        if (data.alpha > 220) // Is something in front?
+        if (frontColorSensor.getDistance(DistanceUnit.MM)<152) // Is something in front?
         {
-            if (data.red < data.green) return ArtifactColor.GREEN;
-            if (data.blue > data.green) return ArtifactColor.PURPLE;
+            if (data.blue*256 < data.green*256) return ArtifactColor.GREEN;
+            if(data.blue*256> data.green*256)return ArtifactColor.PURPLE;
         }
 
         return Storage.ArtifactColor.EMPTY;
@@ -279,7 +281,9 @@ public class Storage extends Subsystem {
                 .finished(() -> storage.Slot[0] != ArtifactColor.EMPTY || timer.milliseconds() > maxDuration)
                 .build();
     }
-
+    public boolean hasBall(){
+        return frontColorSensor.getDistance(DistanceUnit.MM) < 152;
+    }
 
     public Command WaitForBall(int maxBall, double maxDuration)
     {
@@ -299,6 +303,39 @@ public class Storage extends Subsystem {
                         if (dataScanned != ArtifactColor.EMPTY) {
                             ballCount.getAndIncrement();
                             storage.Slot[0] = dataScanned;
+
+                            if (!storage.isFull())
+                            {
+                                isSpin.set(true);
+                                spindexer.setTarget(spindexer.getPosition().get(0)+120);
+                                storage.next();
+                            }
+                        }
+                    }
+                })
+                .finished(() -> storage.isFull()
+                        || timer.milliseconds() > maxDuration
+                        || ballCount.get() >= maxBall)
+                .build();
+    }
+    public Command distanceSwitch(int maxBall, double maxDuration)
+    {
+        final ElapsedTime timer = new ElapsedTime();
+
+        AtomicBoolean isSpin = new AtomicBoolean(false);
+        AtomicInteger ballCount = new AtomicInteger(0);
+        return Command.builder()
+                .init(timer::reset)
+                .update(() -> {
+                    if (isSpin.get())
+                    {
+                        if (spindexer.isNotInMotion().get())
+                            isSpin.set(false);
+                    } else { // Spindexer doesn't need to move, so scan all you can!
+                        ArtifactColor dataScanned = identifyObj();
+                        if(frontColorSensor.getDistance(DistanceUnit.MM)<152) {
+                            ballCount.getAndIncrement();
+//                            storage.Slot[0] = dataScanned;
 
                             if (!storage.isFull())
                             {

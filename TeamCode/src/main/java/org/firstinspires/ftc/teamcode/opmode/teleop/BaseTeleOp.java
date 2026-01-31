@@ -91,6 +91,7 @@ public class BaseTeleOp extends LinearOpMode {
                             }
                         })
                         .build())
+//                .transition(TeleOpState.INTAKE,TeleOpState.INTAKE, robot.storage::hasBall,robot.storage.nextBall())
                 .transition(TeleOpState.INTAKE, TeleOpState.INTAKE, driverGamepad.square::get,
                                 robot.storage.nextBall())
                 .transition(TeleOpState.INTAKE,TeleOpState.INTAKE,driverGamepad.circle.pressed(),

@@ -122,6 +122,7 @@ public class storageCalibration extends LinearOpMode {
             telemetry.addData("[0]", robot.storage.storage.Slot[0]);
             telemetry.addData("[1]", robot.storage.storage.Slot[1]);
             telemetry.addData("[2]", robot.storage.storage.Slot[2]);
+
             telemetry.addData("state", fsm.getCurrentState());
             telemetry.addData("hz", loopTimeFilter.update(1/(Performance.loopTimeNano()/1E9)));
             telemetry.update();

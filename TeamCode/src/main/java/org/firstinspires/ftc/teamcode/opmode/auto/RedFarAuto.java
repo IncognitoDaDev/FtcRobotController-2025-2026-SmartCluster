@@ -92,17 +92,18 @@ public class RedFarAuto extends LinearOpMode {
     }
     final double [] turretpoz = {0,115};
     private final Pose2d startPose = new Pose2d(13,-59, Math.toRadians(-90));
-    private final Pose2d shootPose = new Pose2d(15,-54,Math.toRadians(-125));
+    private final Pose2d shootPose = new Pose2d(15,-54,Math.toRadians(-122));
 
-    private final Pose2d stack1 = new Pose2d(25,-38,Math.toRadians(0));
-    private final Pose2d stack2 = new Pose2d(25,-10.5,Math.toRadians(0));
+    private final Pose2d stack1 = new Pose2d(28.5,-36,Math.toRadians(0));
+    private final Pose2d stack2 = new Pose2d(28.5,-11,Math.toRadians(0));
     private final Pose2d stack3 = new Pose2d(28,12.5,Math.toRadians(0));
 
     private final Pose2d endPose = new Pose2d(35, -56, Math.toRadians(90));
-    public static double hoodAngle = 0.68;
+    public static double hoodAngle = 0.62;
 
-    public VelConstraint slow = (pose2dDual, posePath, v) -> 15;
-    public VelConstraint normal = (pose2dDual, posePath, v) -> 50;
+
+    public VelConstraint slow = (pose2dDual, posePath, v) -> 20;
+    public VelConstraint normal = (pose2dDual, posePath, v) -> 60;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -132,26 +133,29 @@ public class RedFarAuto extends LinearOpMode {
                                 )),
 
                         robot.drive.actionBuilder(startPose)
-                                .setTangent(Math.toRadians(90))
-                                .splineToLinearHeading(shootPose, Math.toRadians(90))
+                                .setTangent(Math.toRadians(69))
+                                .splineToLinearHeading(shootPose, Math.toRadians(69))
                                 .build(),
 
                         commandToAction(
                                 new SequentialCommand(
 
                                         new InstantCommand(() -> {
-                                            robot.turret.setTargetVelocity(3700);
+                                            robot.turret.setTargetVelocity(3300);
                                             robot.turret.hood.setTarget(hoodAngle);
                                         }),
 
                                         robot.storage.sort(0),
-                                        robot.turret.WaitForRPM(2000),
+                                        robot.turret.WaitForRPM(1000),
                                         robot.storage.BallToOuttake(),
+                                        new WaitCommand(50),
                                         robot.storage.sort(1),
                                         robot.turret.WaitForRPM(1000),
                                         robot.storage.BallToOuttake(),
+                                        new WaitCommand(50),
                                         robot.storage.sort(2),
                                         robot.turret.WaitForRPM(1000),
+                                        new WaitCommand(50),
                                         robot.storage.BallToOuttake(),
 
                                         new InstantCommand(() -> robot.turret.setTargetVelocity(0))
@@ -160,111 +164,131 @@ public class RedFarAuto extends LinearOpMode {
 
 
                         //Second shoot, 1st stack
-//                        new ParallelAction(
-//                                robot.drive.actionBuilder(shootPose)
-//                                        .setTangent(Math.toRadians(0))
-//                                        .splineToLinearHeading(stack1, Math.toRadians(45))
-//                                        .build(),
-//                                commandToAction(robot.storage.intakeMode())
-//                        ),
-//
-//                        new ParallelAction(
-//                                robot.drive.actionBuilder(stack1)
-//                                        .setTangent(Math.toRadians(0))
-//                                        .splineToConstantHeading(new Vector2d(50, stack1.position.y), Math.toRadians(0), slow)
-//                                        .build(),
-//
-//                                commandToAction(new SequentialCommand(
-//                                        robot.intake.intake(),
-//                                        robot.storage.WaitForBall(3, 3000),
-//                                        robot.intake.stop()
-//                                ))
-//                        ),
-//
-//                        new ParallelAction(
-//                                robot.drive.actionBuilder(new Pose2d(50, stack1.position.y, Math.toRadians(180)))
-//                                        .setTangent(Math.toRadians(0))
-//                                        .splineToLinearHeading(shootPose, Math.toRadians(270), normal)
-//                                        .build(),
-//                                commandToAction(robot.storage.outtakeMode(-1))
-//                        ),
-//
-//                        commandToAction(
-//                                new SequentialCommand(
-//                                        new InstantCommand(() -> {
-//                                            robot.turret.setTargetVelocity(3700);
-//                                            robot.turret.hood.setTarget(hoodAngle);
-//                                        }),
-//
-//                                        robot.storage.sort(0),
-//                                        robot.turret.WaitForRPM(2000),
-//                                        robot.storage.BallToOuttake(),
-//                                        robot.storage.sort(1),
-//                                        robot.turret.WaitForRPM(1000),
-//                                        robot.storage.BallToOuttake(),
-//                                        robot.storage.sort(2),
-//                                        robot.turret.WaitForRPM(1000),
-//                                        robot.storage.BallToOuttake(),
-//
-//                                        new InstantCommand(() -> robot.turret.setTargetVelocity(0))
-//                                )
-//                        ),
-//
-//
-//                        //Third shoot, 2nd stack
-//                        new ParallelAction(
-//                                robot.drive.actionBuilder(shootPose)
-//                                        .setTangent(Math.toRadians(90))
-//                                        .splineToLinearHeading(stack2, Math.toRadians(45))
-//                                        .build(),
-//                                commandToAction(robot.storage.intakeMode())
-//                        ),
-//
-//                        new ParallelAction(
-//                                robot.drive.actionBuilder(stack2)
-//                                        .setTangent(Math.toRadians(0))
-//                                        .splineToConstantHeading(new Vector2d(50, stack2.position.y), Math.toRadians(0), slow)
-//                                        .build(),
-//
-//                                commandToAction(new SequentialCommand(
-//                                        robot.intake.intake(),
-//                                        robot.storage.WaitForBall(3, 3000),
-//                                        robot.intake.stop()
-//                                ))
-//                        ),
-//
-//                        new ParallelAction(
-//                                robot.drive.actionBuilder(new Pose2d(50, stack2.position.y, Math.toRadians(0)))
-//                                        .setTangent(Math.toRadians(210))
-//                                        .splineToLinearHeading(shootPose, Math.toRadians(205), normal)
-//                                        .build(),
-//                                commandToAction(robot.storage.outtakeMode(-1))
-//                        ),
-//
-//                        commandToAction(
-//                                new SequentialCommand(
-//                                        new InstantCommand(() -> {
-//                                            robot.turret.setTargetVelocity(3700);
-//                                            robot.turret.hood.setTarget(hoodAngle);
-//                                        }),
-//
-//                                        robot.storage.sort(0),
-//                                        robot.turret.WaitForRPM(1000),
-//                                        robot.storage.BallToOuttake(),
-//                                        robot.storage.sort(1),
-//                                        robot.turret.WaitForRPM(1000),
-//                                        robot.storage.BallToOuttake(),
-//                                        robot.storage.sort(2),
-//                                        robot.turret.WaitForRPM(1000),
-//                                        robot.storage.BallToOuttake(),
-//
-//                                        new InstantCommand(() -> robot.turret.setTargetVelocity(0))
-//                                )
-//                        ),
+                        new ParallelAction(
+                                robot.drive.actionBuilder(shootPose)
+                                        .setTangent(Math.toRadians(60))
+                                        .splineToLinearHeading(stack1, Math.toRadians(45))
+                                        .build(),
+                                commandToAction(robot.storage.intakeMode())
+                        ),
+
+                        new ParallelAction(
+                                robot.drive.actionBuilder(stack1)
+                                        .setTangent(Math.toRadians(0))
+                                        .splineToConstantHeading(new Vector2d(65, stack1.position.y), Math.toRadians(0), slow)
+                                        .build(),
+
+                                commandToAction(new SequentialCommand(
+                                        robot.intake.intake(),
+                                        robot.storage.distanceSwitch(3, 3000),
+                                        new InstantCommand(() ->
+                                        {
+                                            robot.storage.storage.Slot[0]= Storage.ArtifactColor.GREEN;
+                                            robot.storage.storage.Slot[1]= Storage.ArtifactColor.PURPLE;
+                                            robot.storage.storage.Slot[2]= Storage.ArtifactColor.PURPLE;
+
+                                        }),
+                                        robot.intake.stop()
+                                ))
+                        ),
+
+                        new ParallelAction(
+                                robot.drive.actionBuilder(new Pose2d(65, stack1.position.y, Math.toRadians(0)))
+                                        .setTangent(Math.toRadians(-140))
+                                        .splineToLinearHeading(shootPose, Math.toRadians(-140), normal)
+                                        .build(),
+                                commandToAction(robot.storage.outtakeMode(-1))
+                        ),
+
+                        commandToAction(
+                                new SequentialCommand(
+                                        new InstantCommand(() -> {
+                                            robot.turret.setTargetVelocity(3300);
+                                            robot.turret.hood.setTarget(hoodAngle);
+                                        }),
+
+                                        robot.storage.sort(0),
+                                        robot.turret.WaitForRPM(1000),
+                                        robot.storage.BallToOuttake(),
+                                        new WaitCommand(50),
+                                        robot.storage.sort(1),
+                                        robot.turret.WaitForRPM(1000),
+                                        robot.storage.BallToOuttake(),
+                                        new WaitCommand(50),
+                                        robot.storage.sort(2),
+                                        robot.turret.WaitForRPM(1000),
+                                        new WaitCommand(50),
+                                        robot.storage.BallToOuttake(),
+
+                                        new InstantCommand(() -> robot.turret.setTargetVelocity(0))
+                                )
+                        ),
+
+
+                        //Third shoot, 2nd stack
+                        new ParallelAction(
+                                robot.drive.actionBuilder(shootPose)
+                                        .setTangent(Math.toRadians(90))
+                                        .splineToLinearHeading(stack2, Math.toRadians(45))
+                                        .build(),
+                                commandToAction(robot.storage.intakeMode())
+                        ),
+
+                        new ParallelAction(
+                                robot.drive.actionBuilder(stack2)
+                                        .setTangent(Math.toRadians(0))
+                                        .splineToConstantHeading(new Vector2d(65, stack2.position.y), Math.toRadians(0), slow)
+                                        .build(),
+
+                                commandToAction(new SequentialCommand(
+                                        robot.intake.intake(),
+                                        robot.storage.distanceSwitch(3, 3000),
+                                        new InstantCommand(() ->
+                                        {
+                                            robot.storage.storage.Slot[0]= Storage.ArtifactColor.PURPLE;
+                                            robot.storage.storage.Slot[1]= Storage.ArtifactColor.GREEN;
+                                            robot.storage.storage.Slot[2]= Storage.ArtifactColor.PURPLE;
+
+                                        }),
+                                        robot.intake.stop()
+                                ))
+                        ),
+
+                        new ParallelAction(
+                                robot.drive.actionBuilder(new Pose2d(65, stack2.position.y, Math.toRadians(0)))
+                                        .setTangent(Math.toRadians(-120))
+                                        .splineToLinearHeading(shootPose, Math.toRadians(-120), normal)
+                                        .build(),
+                                commandToAction(robot.storage.outtakeMode(-1))
+                        ),
+
+                        commandToAction(
+                                new SequentialCommand(
+                                        new InstantCommand(() -> {
+                                            robot.turret.setTargetVelocity(3300);
+                                            robot.turret.hood.setTarget(hoodAngle);
+                                        }),
+
+                                        robot.storage.sort(0),
+                                        robot.turret.WaitForRPM(1000),
+                                        robot.storage.BallToOuttake(),
+                                        new WaitCommand(50),
+                                        robot.storage.sort(1),
+                                        robot.turret.WaitForRPM(1000),
+                                        robot.storage.BallToOuttake(),
+                                        new WaitCommand(50),
+                                        robot.storage.sort(2),
+                                        robot.turret.WaitForRPM(1000),
+                                        new WaitCommand(50),
+                                        robot.storage.BallToOuttake(),
+
+                                        new InstantCommand(() -> robot.turret.setTargetVelocity(0))
+                                )
+                        ),
 
                         robot.drive.actionBuilder(shootPose)
-                                .setTangent(Math.toRadians(-45))
-                                .splineToLinearHeading(endPose, Math.toRadians(-45))
+                                .setTangent(Math.toRadians(90))
+                                .splineToLinearHeading(endPose, Math.toRadians(0))
                                 .build()
 
                         //HYPERRION EMAIL- hyperion.cnme@gmail.com
