@@ -6,18 +6,14 @@ import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DigitalChannel;
-import com.qualcomm.robotcore.hardware.DigitalChannelImpl;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.smartcluster.oracleftc.commands.Command;
-import com.smartcluster.oracleftc.commands.ConditionalCommand;
 import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.commands.ParallelCommand;
 import com.smartcluster.oracleftc.commands.SequentialCommand;
-import com.smartcluster.oracleftc.commands.WaitCommand;
 import com.smartcluster.oracleftc.hardware.subsystem.CRActuator;
 import com.smartcluster.oracleftc.hardware.subsystem.ServoActuator;
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
@@ -33,7 +29,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 
 @Config
 public class Storage extends Subsystem {
@@ -41,8 +36,6 @@ public class Storage extends Subsystem {
     private final CRServoImplEx spindexRight, spindexLeft;
     private final ServoImplEx flapperRight, flapperLeft;
     private final RevColorSensorV3 frontColorSensor;
-
-//    private DigitalChannelImpl frontColorSensor_Purple, frontColorSensor_Green;
     public final Encoder spindexEncoder;
     public static TrapezoidalMotionProfile flapperMotionProfile = new TrapezoidalMotionProfile(16, 16, 16);
     public final ServoActuator flapper;
