@@ -18,7 +18,7 @@ public class TrapezoidalMotionProfile extends MotionProfile {
     }
 
     @Override
-    public DualNum<Time> getMotionState(double distance, double time) {
+    public DualNum<Time> getMotionState(double distance, double  time) {
         // Math to determine proper acceleration and deceleration periods
         double accelerationTime = Math.min(Math.sqrt((distance / (1 - maxAcceleration / -maxDeceleration)) / (maxAcceleration / 2)), maxVelocity / maxAcceleration);
         double decelerationTime = Math.min(Math.sqrt((distance / (1 - maxDeceleration / -maxAcceleration)) / (maxDeceleration / 2)), maxVelocity / maxDeceleration);
