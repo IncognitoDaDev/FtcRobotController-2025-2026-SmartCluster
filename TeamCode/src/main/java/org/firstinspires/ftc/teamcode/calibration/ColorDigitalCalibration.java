@@ -11,8 +11,6 @@ public class ColorDigitalCalibration extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
-//        Storage dex = new Storage(this);
-
         DigitalChannel pin0 = hardwareMap.digitalChannel.get("rotaryColorSensorF_Purple");
         DigitalChannel pin1 = hardwareMap.digitalChannel.get("rotaryColorSensorF_Green");
 

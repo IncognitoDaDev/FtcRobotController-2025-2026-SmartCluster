@@ -9,6 +9,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.smartcluster.oracleftc.commands.CommandScheduler;
 
+import org.firstinspires.ftc.teamcode.subsystem.Robot;
 import org.firstinspires.ftc.teamcode.subsystem.Turret;
 
 import java.util.List;
@@ -26,24 +27,25 @@ public class FlywheelCalibration extends LinearOpMode {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         telemetry = new MultipleTelemetry(telemetry, PanelsTelemetry.INSTANCE.getFtcTelemetry());
         telemetry.setMsTransmissionInterval(100);
-        Turret flywheel =new Turret(this);
+//        Turret flywheel =new Turret(this);
+        Robot robot = new Robot(this, false);
         waitForStart();
 
         List<LynxModule> lynxModules = hardwareMap.getAll(LynxModule.class);
         for (LynxModule lynxModule : lynxModules)
             lynxModule.setBulkCachingMode(LynxModule.BulkCachingMode.MANUAL);
 
-        scheduler.schedule(flywheel.update());
+        scheduler.schedule(robot.flywheel.update());
 
         while(opModeIsActive())
         {
+            robot.powerManager.read();
+
             telemetry.addData("targetVelocity", targetVelocity);
-            telemetry.addData("Current velocity", flywheel.getCurrentVelocity());
-            flywheel.setTargetVelocity(targetVelocity);
+            telemetry.addData("Current velocity", robot.flywheel.getCurrentVelocity());
+            robot.flywheel.setTargetVelocity(targetVelocity);
             scheduler.update();
             telemetry.update();
-            for (LynxModule lynxModule : lynxModules)
-                lynxModule.clearBulkCache();
         }
     }
 }

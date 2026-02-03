@@ -12,8 +12,13 @@ import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.commands.ParallelCommand;
 import com.smartcluster.oracleftc.commands.SequentialCommand;
+import com.smartcluster.oracleftc.hardware.OmegaPowerCollector;
 import com.smartcluster.oracleftc.hardware.OracleLynxVoltageSensor;
+import com.smartcluster.oracleftc.hardware.motor.OracleDcMotorImplEx;
+import com.smartcluster.oracleftc.hardware.servo.OracleServoImplEx;
 import com.smartcluster.oracleftc.hardware.subsystem.Actuator;
+import com.smartcluster.oracleftc.hardware.subsystem.OracleActuator;
+import com.smartcluster.oracleftc.hardware.subsystem.OracleServoActuator;
 import com.smartcluster.oracleftc.hardware.subsystem.ServoActuator;
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
 import com.smartcluster.oracleftc.hardware.subsystem.SubsystemFlavor;
@@ -32,38 +37,50 @@ import org.firstinspires.ftc.teamcode.roadrunner.Localizer;
 public class Turret extends Subsystem {
 
 
-    private final DcMotorImplEx turretUp, turretDown,turretRot;
-    private final ServoImplEx rightHood, leftHood;
+    private final OracleDcMotorImplEx turretUp, turretDown,turretRot;
+    private final OracleServoImplEx rightHood, leftHood;
     private final OracleLynxVoltageSensor voltageSensor;
+
+    private OmegaPowerCollector powerCollector;
     public static TrapezoidalMotionProfile hoodMotionProfile = new TrapezoidalMotionProfile(12, 16, 16);
     public static TrapezoidalMotionProfile turretMotionProfile = new TrapezoidalMotionProfile(80, 100, 100);
     public static PIDController turretPID = new PIDController(0.025, 0.00002, 0.0019, 1);
     public static MotorFeedforward turretFeedForward = new MotorFeedforward(0.01, 0.0015, 0);
 
-    public final Actuator turret;
+    public final OracleActuator turret;
     public final Encoder encoder;
-    public final ServoActuator hood;
+    public final OracleServoActuator hood;
     private final double m = 8.502;
     private final double n = 1300.98;
     private boolean inZone;
 
 
 
-    public Turret(OpMode opMode) {
+    public Turret(OpMode opMode, OmegaPowerCollector powerCollector) {
         super(opMode);
+        this.powerCollector = powerCollector;
 
         voltageSensor = hardwareMap.getAll(OracleLynxVoltageSensor.class).iterator().next();
-        turretUp = hardwareMap.get(DcMotorImplEx.class, "turretUp");
-        turretUp.setDirection(DcMotorSimple.Direction.REVERSE);
-        turretRot = hardwareMap.get(DcMotorImplEx.class, "turretRotate");
+        turretUp = (OracleDcMotorImplEx) hardwareMap.get(DcMotorImplEx.class, "turretUp");
+        turretDown = (OracleDcMotorImplEx) hardwareMap.get(DcMotorImplEx.class, "turretDown");
+
+        turretRot = (OracleDcMotorImplEx) hardwareMap.get(DcMotorImplEx.class, "turretRotate");
+
         encoder = new RawEncoder(hardwareMap.get(DcMotorImplEx.class,"turretRotate"));
-        turretDown = hardwareMap.get(DcMotorImplEx.class, "turretDown");
-        hardwareMap.get(ServoImplEx.class, "leftHood");
-        rightHood = hardwareMap.get(ServoImplEx.class, "rightHood");
-        leftHood = hardwareMap.get(ServoImplEx.class, "leftHood");
+
+        rightHood = (OracleServoImplEx) hardwareMap.get(ServoImplEx.class, "rightHood");
+        leftHood = (OracleServoImplEx) hardwareMap.get(ServoImplEx.class, "leftHood");
+
+        turretUp.setDestination(powerCollector, false);
+        turretDown.setDestination(powerCollector, false);
+        turretRot.setDestination(powerCollector, false);
+        rightHood.setDestination(powerCollector, false);
+        leftHood.setDestination(powerCollector, false);
 
         leftHood.setDirection(Servo.Direction.REVERSE);
-        hood = new ServoActuator(this, "hood", hoodMotionProfile, rightHood, leftHood) {
+        turretUp.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        hood = new OracleServoActuator(this, "hood", hoodMotionProfile, rightHood, leftHood) {
             @Override
             public Command reset() {
 
@@ -83,7 +100,7 @@ public class Turret extends Subsystem {
             }
         };
 
-        turret = new Actuator(this, "turret", turretPID, turretMotionProfile, turretFeedForward, 2, turretRot) {
+        turret = new OracleActuator(this, "turret", turretPID, turretMotionProfile, turretFeedForward, 2, turretRot) {
             @Override
             public Command reset() {
                 return new InstantCommand(encoder::reset);

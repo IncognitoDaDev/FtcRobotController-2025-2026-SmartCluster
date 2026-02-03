@@ -312,11 +312,8 @@ public class RedFarAuto extends LinearOpMode {
 
         boolean running = true;
         while (running && !isStopRequested()) {
-            for (LynxModule lynxModule : lynxModules)
-            {
-                lynxModule.clearBulkCache();
-                lynxModule.getBulkData();
-            }
+            robot.powerManager.read();
+
             TelemetryPacket p = new TelemetryPacket();
             p.fieldOverlay().getOperations().addAll(c.getOperations());
 //            robot.drive.updatePoseEstimate();
@@ -341,11 +338,7 @@ public class RedFarAuto extends LinearOpMode {
         }
 
         while (opModeIsActive()) {
-            for (LynxModule lynxModule : lynxModules)
-            {
-                lynxModule.clearBulkCache();
-                lynxModule.getBulkData();
-            }
+            robot.powerManager.read();
 
             scheduler.update();
             telemetry.update();

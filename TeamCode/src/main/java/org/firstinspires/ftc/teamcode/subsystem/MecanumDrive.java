@@ -37,7 +37,9 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.smartcluster.oracleftc.commands.Command;
+import com.smartcluster.oracleftc.hardware.OmegaPowerCollector;
 import com.smartcluster.oracleftc.hardware.OracleLynxVoltageSensor;
+import com.smartcluster.oracleftc.hardware.motor.OracleDcMotorImplEx;
 import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.utils.ProcessedGamepad;
 
@@ -114,13 +116,15 @@ public class MecanumDrive {
     public final AccelConstraint defaultAccelConstraint =
             new ProfileAccelConstraint(PARAMS.minProfileAccel, PARAMS.maxProfileAccel);
 
-    public final DcMotorEx frontLeft, backLeft, backRight, frontRight;
+    public final OracleDcMotorImplEx frontLeft, backLeft, backRight, frontRight;
 
     public final OracleLynxVoltageSensor voltageSensor;
 
     public final LazyImu lazyImu;
 
     public final Localizer localizer;
+
+    public OmegaPowerCollector powerCollector;
     private final LinkedList<Pose2d> poseHistory = new LinkedList<>();
 
     private final DownsampledWriter estimatedPoseWriter = new DownsampledWriter("ESTIMATED_POSE", 50_000_000);
@@ -267,6 +271,7 @@ public class MecanumDrive {
                                double backLeftPower) {
 
         double voltage = voltageSensor.getVoltage();
+
         frontRight.setPower(frontRightPower*(12.0/voltage));
         backRight.setPower(backRightPower*(12.0/voltage));
         frontLeft.setPower(frontLeftPower*(12.0/voltage));
@@ -276,7 +281,7 @@ public class MecanumDrive {
     // Odometry stuff past this --------------------------------------------------------
     // ---------------------------------------------------------------------------------
 
-    public MecanumDrive(HardwareMap hardwareMap, Pose2d pose) {
+    public MecanumDrive(HardwareMap hardwareMap, OmegaPowerCollector powerCollector, Pose2d pose) {
         LynxFirmware.throwIfModulesAreOutdated(hardwareMap);
 
         for (LynxModule module : hardwareMap.getAll(LynxModule.class)) {
@@ -285,10 +290,16 @@ public class MecanumDrive {
 
         // TODO: make sure your config has motors with these names (or change them)
         //   see https://ftc-docs.firstinspires.org/en/latest/hardware_and_software_configuration/configuring/index.html
-        frontRight = hardwareMap.get(DcMotorEx.class, "frontRight");
-        frontLeft = hardwareMap.get(DcMotorEx.class, "frontLeft");
-        backRight = hardwareMap.get(DcMotorEx.class, "backRight");
-        backLeft = hardwareMap.get(DcMotorEx.class, "backLeft");
+        frontRight = (OracleDcMotorImplEx) hardwareMap.get(DcMotorEx.class, "frontRight");
+        frontLeft = (OracleDcMotorImplEx) hardwareMap.get(DcMotorEx.class, "frontLeft");
+        backRight = (OracleDcMotorImplEx) hardwareMap.get(DcMotorEx.class, "backRight");
+        backLeft = (OracleDcMotorImplEx) hardwareMap.get(DcMotorEx.class, "backLeft");
+
+        frontRight.setDestination(powerCollector, true);
+        frontLeft.setDestination(powerCollector, true);
+        backRight.setDestination(powerCollector, true);
+        backLeft.setDestination(powerCollector, true);
+
 
         frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);

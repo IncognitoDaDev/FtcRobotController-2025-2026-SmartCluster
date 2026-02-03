@@ -4,29 +4,28 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotorImplEx;
 import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.InstantCommand;
-import com.smartcluster.oracleftc.hardware.OracleLynxVoltageSensor;
+import com.smartcluster.oracleftc.hardware.OmegaPowerCollector;
+import com.smartcluster.oracleftc.hardware.motor.OracleDcMotorImplEx;
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
-import com.smartcluster.oracleftc.hardware.subsystem.SubsystemFlavor;
 
 public class Intake extends Subsystem {
 
 
-    private final DcMotorImplEx intakeMotor;
-    private final OracleLynxVoltageSensor voltageSensor;
-    public Intake(OpMode opMode) {
+    private final OracleDcMotorImplEx intakeMotor;
+    public Intake(OpMode opMode, OmegaPowerCollector powerCollector) {
         super(opMode);
 
-        intakeMotor=hardwareMap.get(DcMotorImplEx.class, "intakeMotor");
-        voltageSensor=hardwareMap.getAll(OracleLynxVoltageSensor.class).iterator().next();
+        intakeMotor = (OracleDcMotorImplEx) hardwareMap.get(DcMotorImplEx.class, "intakeMotor");
+        intakeMotor.setDestination(powerCollector, true); // port 3
     }
 
     public Command intake()
     {
-        return new InstantCommand(()->intakeMotor.setPower(Robot.nominalVoltage/voltageSensor.getVoltage()));
+        return new InstantCommand(()-> intakeMotor.setPower(1.0));
     }
-    public Command outake()
+    public Command outtake()
     {
-        return new InstantCommand(()->intakeMotor.setPower(-Robot.nominalVoltage/voltageSensor.getVoltage()));
+        return new InstantCommand(()->intakeMotor.setPower(-1.0));
     }
 
     public Command stop()

@@ -233,11 +233,7 @@ public class RedCloseAuto extends LinearOpMode {
 
         boolean running = true;
         while (running && !isStopRequested()) {
-            for (LynxModule lynxModule : lynxModules)
-            {
-                lynxModule.clearBulkCache();
-                lynxModule.getBulkData();
-            }
+            robot.powerManager.read();
 
             TelemetryPacket p = new TelemetryPacket();
             p.fieldOverlay().getOperations().addAll(c.getOperations());
@@ -261,11 +257,7 @@ public class RedCloseAuto extends LinearOpMode {
         }
 
         while (opModeIsActive()) {
-            for (LynxModule lynxModule : lynxModules)
-            {
-                lynxModule.clearBulkCache();
-                lynxModule.getBulkData();
-            }
+            robot.powerManager.read();
 
             scheduler.update();
             telemetry.update();

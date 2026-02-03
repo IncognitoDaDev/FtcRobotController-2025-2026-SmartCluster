@@ -289,11 +289,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
         boolean running = true;
         while (running && !isStopRequested()) {
-            for (LynxModule lynxModule : lynxModules)
-            {
-                lynxModule.clearBulkCache();
-                lynxModule.getBulkData();
-            }
+            robot.powerManager.read();
+
             TelemetryPacket p = new TelemetryPacket();
             p.fieldOverlay().getOperations().addAll(c.getOperations());
             running = autoAction.run(p);
@@ -316,11 +313,7 @@ import java.util.concurrent.atomic.AtomicReference;
         }
 
         while (opModeIsActive()) {
-            for (LynxModule lynxModule : lynxModules)
-            {
-                    lynxModule.clearBulkCache();
-                    lynxModule.getBulkData();
-            }
+            robot.powerManager.read();
 
             scheduler.update();
             telemetry.update();

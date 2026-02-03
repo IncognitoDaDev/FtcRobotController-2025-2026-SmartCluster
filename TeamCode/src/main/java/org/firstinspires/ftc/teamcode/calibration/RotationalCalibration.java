@@ -10,6 +10,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.CommandScheduler;
 
+import org.firstinspires.ftc.teamcode.subsystem.Robot;
 import org.firstinspires.ftc.teamcode.subsystem.Turret;
 
 import java.util.List;
@@ -26,23 +27,26 @@ public class RotationalCalibration extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         telemetry.setMsTransmissionInterval(100);
-        Turret turret = new Turret(this);
+//        Turret turret = new Turret(this);
+        Robot robot = new Robot(this, false);
         waitForStart();
-        Command.run(turret.reset());
+        Command.run(robot.turret.reset());
         List<LynxModule> lynxModules = hardwareMap.getAll(LynxModule.class);
         for (LynxModule lynxModule : lynxModules)
             lynxModule.setBulkCachingMode(LynxModule.BulkCachingMode.MANUAL);
 
-        scheduler.schedule(turret.update());
+        scheduler.schedule(robot.turret.update());
 
         while (opModeIsActive()) {
 
+            robot.powerManager.read();
+
             telemetry.addData("target", target);
             telemetry.addData("target", 180.0);
-            telemetry.addData("Current velocity", turret.turret.getPosition());
+            telemetry.addData("Current velocity", robot.turret.turret.getPosition());
 
-            if (gamepad1.cross) turret.turret.setTarget(180);
-            if (gamepad1.square) turret.turret.setTarget(0);
+            if (gamepad1.cross) robot.turret.turret.setTarget(180);
+            if (gamepad1.square) robot.turret.turret.setTarget(0);
 
 
             scheduler.update();

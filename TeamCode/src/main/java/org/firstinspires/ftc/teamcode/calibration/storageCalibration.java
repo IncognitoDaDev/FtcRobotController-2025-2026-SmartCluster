@@ -107,12 +107,7 @@ public class storageCalibration extends LinearOpMode {
         MovingAverageFilter loopTimeFilter=new MovingAverageFilter(50);
 
         while (opModeIsActive()) {
-
-            for (LynxModule lynxModule : lynxModules)
-            {
-                lynxModule.clearBulkCache();
-                lynxModule.getBulkData();
-            }
+            robot.powerManager.read();
 
             telemetry.addData("StorageState", robot.storage.storage.OuttakeFacing);
             telemetry.addData("Storage position",robot.storage.spindexer.getPosition().value());

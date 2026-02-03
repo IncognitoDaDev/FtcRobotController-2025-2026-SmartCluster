@@ -14,7 +14,12 @@ import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.commands.ParallelCommand;
 import com.smartcluster.oracleftc.commands.SequentialCommand;
+import com.smartcluster.oracleftc.hardware.OmegaPowerCollector;
+import com.smartcluster.oracleftc.hardware.servo.OracleCRServoImplEx;
+import com.smartcluster.oracleftc.hardware.servo.OracleServoImplEx;
 import com.smartcluster.oracleftc.hardware.subsystem.CRActuator;
+import com.smartcluster.oracleftc.hardware.subsystem.OracleCRActuator;
+import com.smartcluster.oracleftc.hardware.subsystem.OracleServoActuator;
 import com.smartcluster.oracleftc.hardware.subsystem.ServoActuator;
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
 import com.smartcluster.oracleftc.hardware.wrappers.Encoder;
@@ -33,13 +38,13 @@ import java.util.concurrent.atomic.AtomicReference;
 @Config
 public class Storage extends Subsystem {
 
-    private final CRServoImplEx spindexRight, spindexLeft;
-    private final ServoImplEx flapperRight, flapperLeft;
+    private final OracleCRServoImplEx spindexRight, spindexLeft;
+    private final OracleServoImplEx flapperRight, flapperLeft;
     private final RevColorSensorV3 frontColorSensor;
     public final Encoder spindexEncoder;
     public static TrapezoidalMotionProfile flapperMotionProfile = new TrapezoidalMotionProfile(16, 16, 16);
-    public final ServoActuator flapper;
-    public final CRActuator spindexer;
+    public final OracleServoActuator flapper;
+    public final OracleCRActuator spindexer;
 
     // Don't worry about them, they're not in use at the moment (way too experimental)
     static public double minimumPowerServo = 0.0045, integralInducedIncremental = 0.00000001;
@@ -112,24 +117,29 @@ public class Storage extends Subsystem {
 
     public StorageState storage = new StorageState();
 
-    public Storage(OpMode opMode) {
+    public Storage(OpMode opMode, OmegaPowerCollector powerCollector) {
         super(opMode);
-        spindexRight = hardwareMap.get(CRServoImplEx.class, "dexRight");
-        spindexLeft = hardwareMap.get(CRServoImplEx.class, "dexLeft");
-        flapperRight=hardwareMap.get(ServoImplEx.class,"flapperRight");
-        flapperLeft=hardwareMap.get(ServoImplEx.class,"flapperLeft");
+        spindexRight = (OracleCRServoImplEx) hardwareMap.get(CRServoImplEx.class, "dexRight");
+        spindexLeft = (OracleCRServoImplEx) hardwareMap.get(CRServoImplEx.class, "dexLeft");
+        flapperRight = (OracleServoImplEx) hardwareMap.get(ServoImplEx.class,"flapperRight");
+        flapperLeft = (OracleServoImplEx) hardwareMap.get(ServoImplEx.class,"flapperLeft");
+
+        spindexRight.setDestination(powerCollector, true);
+        spindexLeft.setDestination(powerCollector, true);
+        flapperRight.setDestination(powerCollector, false);
+        flapperLeft.setDestination(powerCollector, false);
+
         spindexEncoder = new RawEncoder(hardwareMap.get(DcMotorEx.class,"frontRight"));
 
         frontColorSensor = hardwareMap.get(RevColorSensorV3.class, "rotaryColorSensorF");
         ((LynxI2cDeviceSynch) frontColorSensor.getDeviceClient()).setBusSpeed(LynxI2cDeviceSynch.BusSpeed.FAST_400K);
-
 
         flapperLeft.setDirection(Servo.Direction.REVERSE);
 
 //        frontColorSensor_Purple = hardwareMap.get(DigitalChannelImpl.class, "rotaryColorSensorF_Purple");
 //        frontColorSensor_Green = hardwareMap.get(DigitalChannelImpl.class, "rotaryColorSensorF_Green");
 
-        flapper = new ServoActuator(this, "flapper", flapperMotionProfile,flapperLeft,flapperRight)
+        flapper = new OracleServoActuator(this, "flapper", flapperMotionProfile,flapperLeft,flapperRight)
         {
             @Override
             public Command reset()
@@ -151,7 +161,7 @@ public class Storage extends Subsystem {
         };
 
 
-        spindexer = new CRActuator(this, "spindexer",  spindexerPID, spindexerMotionProfile, 4.0, minimumPowerServo, integralInducedIncremental, spindexLeft, spindexRight) {
+        spindexer = new OracleCRActuator(this, "spindexer",  spindexerPID, spindexerMotionProfile, 4.0, minimumPowerServo, integralInducedIncremental, spindexLeft, spindexRight) {
             @Override
             public boolean setTarget(double target) {
                 this.ManualSetFromPosition(getPosition().get(0));
