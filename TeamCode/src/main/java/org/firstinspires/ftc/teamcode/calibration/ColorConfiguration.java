@@ -15,29 +15,30 @@ import com.qualcomm.robotcore.hardware.I2cDeviceSynchSimple;
 *
 * */
 @Config
-@TeleOp(group="Calibration")
+//@TeleOp(group="Calibration")
 public class ColorConfiguration extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
-        ColorRangefinder crf = new ColorRangefinder(hardwareMap.get(RevColorSensorV3.class, "rotaryColorSensorF"));
+        ColorRangefinder crf = new ColorRangefinder(
+                hardwareMap.get(RevColorSensorV3.class, "rotaryColorSensorF")
+        );
         waitForStart();
+        crf.setLedBrightness(50);
+        // Configure Pin0 for analog HSV output
+        crf.setPin0Analog(ColorRangefinder.AnalogMode.HSV);
+        crf.setPin1Digital(ColorRangefinder.DigitalMode.HSV, 100, 140);
 
-        crf.setLedBrightness(2);
-        /* Using this example configuration, you can detect both artifact colors based on which pin is reading true:
-            pin0 --> purple
-            pin1 --> green */
-        crf.setPin0Digital(ColorRangefinder.DigitalMode.HSV, 160 / 360.0 * 255, 190 / 360.0 * 255); // purple
-        crf.setPin0DigitalMaxDistance(ColorRangefinder.DigitalMode.HSV, 30); // 30mm or closer requirement
-        crf.setPin1Digital(ColorRangefinder.DigitalMode.HSV, 110 / 360.0 * 255, 140 / 360.0 * 255); // green
-        crf.setPin1DigitalMaxDistance(ColorRangefinder.DigitalMode.HSV, 30); // 30mm or closer requirement
+
     }
 }
+
+
 
 /**
  * Helper class for configuring the Brushland Labs Color Rangefinder.
  * Online documentation: <a href="https://docs.brushlandlabs.com">...</a>
  */
-class ColorRangefinder {
+public class ColorRangefinder {
     private final I2cDeviceSynchSimple i2c;
 
     public ColorRangefinder(RevColorSensorV3 emulator) {

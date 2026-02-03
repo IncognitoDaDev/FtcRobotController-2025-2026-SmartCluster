@@ -4,20 +4,18 @@ import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.lynx.LynxI2cDeviceSynch;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
-import com.qualcomm.robotcore.hardware.DigitalChannelImpl;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.smartcluster.oracleftc.commands.Command;
-import com.smartcluster.oracleftc.commands.ConditionalCommand;
 import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.commands.ParallelCommand;
 import com.smartcluster.oracleftc.commands.SequentialCommand;
-import com.smartcluster.oracleftc.commands.WaitCommand;
 import com.smartcluster.oracleftc.hardware.subsystem.CRActuator;
 import com.smartcluster.oracleftc.hardware.subsystem.ServoActuator;
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
@@ -25,23 +23,24 @@ import com.smartcluster.oracleftc.hardware.wrappers.Encoder;
 import com.smartcluster.oracleftc.hardware.wrappers.RawEncoder;
 import com.smartcluster.oracleftc.math.DualNum;
 import com.smartcluster.oracleftc.math.Time;
+import com.smartcluster.oracleftc.math.control.MotionProfile;
 import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.teamcode.calibration.ColorRangefinder;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 
 @Config
 public class Storage extends Subsystem {
 
     private final CRServoImplEx spindexRight, spindexLeft;
     private final ServoImplEx flapperRight, flapperLeft;
-    private final RevColorSensorV3 frontColorSensor;
 
+    private final AnalogInput frontColorSensor;
 //    private DigitalChannelImpl frontColorSensor_Purple, frontColorSensor_Green;
     public final Encoder spindexEncoder;
     public static TrapezoidalMotionProfile flapperMotionProfile = new TrapezoidalMotionProfile(16, 16, 16);
@@ -54,7 +53,6 @@ public class Storage extends Subsystem {
     public static double flapperDownVal = 0.23, flapperUpVal = 0.5;
 
     private boolean antiJamOn = true;
-
     public static PIDController spindexerPID = new PIDController(0.0045, 0.00014, 0.00014);
     public static TrapezoidalMotionProfile spindexerMotionProfile = new TrapezoidalMotionProfile(3000,2500,850);
     public enum ArtifactColor{
@@ -127,14 +125,9 @@ public class Storage extends Subsystem {
         flapperLeft=hardwareMap.get(ServoImplEx.class,"flapperLeft");
         spindexEncoder = new RawEncoder(hardwareMap.get(DcMotorEx.class,"frontRight"));
 
-        frontColorSensor = hardwareMap.get(RevColorSensorV3.class, "rotaryColorSensorF");
-        ((LynxI2cDeviceSynch) frontColorSensor.getDeviceClient()).setBusSpeed(LynxI2cDeviceSynch.BusSpeed.FAST_400K);
-
+        frontColorSensor = hardwareMap.get(AnalogInput.class, "rotaryColorSensorF_Analog");
 
         flapperLeft.setDirection(Servo.Direction.REVERSE);
-
-//        frontColorSensor_Purple = hardwareMap.get(DigitalChannelImpl.class, "rotaryColorSensorF_Purple");
-//        frontColorSensor_Green = hardwareMap.get(DigitalChannelImpl.class, "rotaryColorSensorF_Green");
 
         flapper = new ServoActuator(this, "flapper", flapperMotionProfile,flapperLeft,flapperRight)
         {
@@ -184,16 +177,12 @@ public class Storage extends Subsystem {
     public Command flapperDown() { return flapper.move(new AtomicReference<>(flapperDownVal)); }
     public Storage.ArtifactColor identifyObj()
     {
-//        if (frontColorSensor_Purple.getState()) return ArtifactColor.PURPLE;
-//        if (frontColorSensor_Green.getState()) return ArtifactColor.GREEN;
+        double coly = frontColorSensor.getVoltage()*1000;
 
-        NormalizedRGBA data = frontColorSensor.getNormalizedColors();
-        frontColorSensor.setGain(2);
-
-        if (frontColorSensor.getDistance(DistanceUnit.MM)<152) // Is something in front?
+        if (coly>1100) // Is something in front?
         {
-            if (data.blue*256 < data.green*256) return ArtifactColor.GREEN;
-            if(data.blue*256> data.green*256)return ArtifactColor.PURPLE;
+            if (coly>1190 && coly<1208) return ArtifactColor.GREEN;
+            else return ArtifactColor.PURPLE;
         }
 
         return Storage.ArtifactColor.EMPTY;
@@ -281,9 +270,6 @@ public class Storage extends Subsystem {
                 .finished(() -> storage.Slot[0] != ArtifactColor.EMPTY || timer.milliseconds() > maxDuration)
                 .build();
     }
-    public boolean hasBall(){
-        return frontColorSensor.getDistance(DistanceUnit.MM) < 152;
-    }
 
     public Command WaitForBall(int maxBall, double maxDuration)
     {
@@ -333,7 +319,7 @@ public class Storage extends Subsystem {
                             isSpin.set(false);
                     } else { // Spindexer doesn't need to move, so scan all you can!
                         ArtifactColor dataScanned = identifyObj();
-                        if(frontColorSensor.getDistance(DistanceUnit.MM)<152) {
+                        if(identifyObj() != ArtifactColor.EMPTY) {
                             ballCount.getAndIncrement();
 //                            storage.Slot[0] = dataScanned;
 
