@@ -38,19 +38,17 @@ public class Storage extends Subsystem {
     private final ServoImplEx flapperRight, flapperLeft;
     private final RevColorSensorV3 frontColorSensor;
     public final Encoder spindexEncoder;
+
     public static MotorFeedforward spindexerFeedForward = new MotorFeedforward(0.0285,0.00455,0.0465);
-    public static TrapezoidalMotionProfile flapperMotionProfile = new TrapezoidalMotionProfile(7800, 8800, 8700);
     public static PIDController spindexerPID = new PIDController(0.0031, 0.00000682, 0.000103);
+    public static TrapezoidalMotionProfile spindexerMotionProfile = new TrapezoidalMotionProfile(7800,8800,8700);
+
+    public static double flapperDownVal = 0.23, flapperUpVal = 0.5;
+    public static TrapezoidalMotionProfile flapperMotionProfile = new TrapezoidalMotionProfile(16, 16, 16);
 
     public final ServoActuator flapper;
     public final CRActuator spindexer;
 
-    // Don't worry about them, they're not in use at the moment (way too experimental)
-    static public double minimumPowerServo = 0.0045, integralInducedIncremental = 0.00000001;
-
-    public static double flapperDownVal = 0.23, flapperUpVal = 0.5;
-    private boolean antiJamOn = true;
-    public static TrapezoidalMotionProfile spindexerMotionProfile = new TrapezoidalMotionProfile(3000,2500,850);
     public enum ArtifactColor{
         GREEN,
         PURPLE,
@@ -422,47 +420,14 @@ public class Storage extends Subsystem {
                 .build();
     }
 
-    public Command ZoomiesForDogs(double jamTime)
-    {
-        final ElapsedTime timer = new ElapsedTime();
-
-        return Command.builder()
-                .init(() -> timer.reset())
-                .update(() ->
-                {
-                    if (antiJamOn) {
-                        if (!spindexer.isNotInMotion().get() && timer.milliseconds() > jamTime) {
-                            timer.reset(); // Keep track of how long have the actions been in motion
-
-                            double originalTarget = spindexer.getTarget();
-                            double direction = -Math.signum(originalTarget - spindexer.getPosition().get(0));
-
-                            spindexer.setTarget(spindexer.getPosition().get(0) + 60 * direction);
-
-                            while(timer.milliseconds() < 300) telemetry.addLine("AntiJam!!!"); // Waiting...
-
-                            spindexer.setTarget(originalTarget); // Back to our original spot!
-
-                            timer.reset();
-                        } else timer.reset(); // Tick tock...
-                    }
-                })
-                .build();
-    }
-
-
     public Command update()
     {
         return new ParallelCommand(
                 flapper.update(),
                 spindexer.update()
 
-                // If the spindexer has been stuck for at least x, execute AntiJam sequence!!!
-//                ZoomiesForDogs(1000)
-
         );
     }
-
 }
 
 
