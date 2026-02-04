@@ -115,7 +115,7 @@ public class storageCalibration extends LinearOpMode {
             }
 
             telemetry.addData("StorageState", robot.storage.storage.OuttakeFacing);
-            telemetry.addData("Storage position",robot.storage.spindexer.getPosition().value());
+            telemetry.addData("Storage position",robot.storage.spindexer.getPosition().get(0));
             telemetry.addData("Storage target position",robot.storage.spindexer.getTarget());
             telemetry.addLine("StorageCache:");
 

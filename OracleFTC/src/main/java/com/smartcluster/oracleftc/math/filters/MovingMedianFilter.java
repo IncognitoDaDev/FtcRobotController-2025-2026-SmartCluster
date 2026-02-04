@@ -1,9 +1,12 @@
 package com.smartcluster.oracleftc.math.filters;
 
 import com.smartcluster.oracleftc.utils.DoubleCircularBuffer;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import java.util.*;
 
 public class MovingMedianFilter {
     private final DoubleCircularBuffer valueBuffer;
@@ -31,34 +34,30 @@ public class MovingMedianFilter {
      * @return The median of the moving window, updated to include the next value.
      */
     public double update(double measurement) {
-        // Find insertion point for next value
-        int index = Collections.binarySearch(sortedValues, measurement);
-
-        // Deal with binarySearch behavior for element not found
-        if (index < 0) {
-            index = Math.abs(index + 1);
+        // Remove the oldest value if buffer is full
+        if (valueBuffer.isFull()) {
+            double oldestValue = valueBuffer.removeLast();
+            int removeIndex = Collections.binarySearch(sortedValues, oldestValue);
+            if (removeIndex >= 0) {
+                sortedValues.remove(removeIndex);
+            }
         }
 
-        // Place value at proper insertion point
-        sortedValues.add(index, measurement);
-
-        int curSize = sortedValues.size();
-
-        // If buffer is at max size, pop element off of end of circular buffer
-        // and remove from ordered list
-        if (curSize > length) {
-            sortedValues.remove(valueBuffer.removeLast());
-            --curSize;
-        }
-
-        // Add next value to circular buffer
+        // Add new value to the buffer
         valueBuffer.addFirst(measurement);
 
+        // Insert new value into sorted list
+        int index = Collections.binarySearch(sortedValues, measurement);
+        if (index < 0) {
+            index = -(index + 1);
+        }
+        sortedValues.add(index, measurement);
+
+        // Get the median
+        int curSize = sortedValues.size();
         if (curSize % 2 != 0) {
-            // If size is odd, return middle element of sorted list
             return sortedValues.get(curSize / 2);
         } else {
-            // If size is even, return average of middle elements
             return (sortedValues.get(curSize / 2 - 1) + sortedValues.get(curSize / 2)) / 2.0;
         }
     }
@@ -69,6 +68,9 @@ public class MovingMedianFilter {
      * @return The last value.
      */
     public double lastValue() {
+        if (valueBuffer.isEmpty()) {
+            throw new NoSuchElementException("No values in filter.");
+        }
         return valueBuffer.getFirst();
     }
 

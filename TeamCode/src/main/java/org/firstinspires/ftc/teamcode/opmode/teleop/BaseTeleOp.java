@@ -246,7 +246,7 @@ public class BaseTeleOp extends LinearOpMode {
             telemetry.addData("x", robot.drive.localizer.getPose().position.x);
             telemetry.addData("y", robot.drive.localizer.getPose().position.y);
             telemetry.addData("turret shoot speed", robot.turret.getCurrentVelocity());
-            telemetry.addData("heading (deg)", Math.toDegrees(robot.drive.localizer.getPose().heading.toDouble()));
+            telemetry.addData("heading (deg)", robot.drive.localizer.getPose().heading.log().get(0));
             telemetry.addData("state", CurrentState);
             telemetry.addData("hz", loopTimeFilter.update(1/(Performance.loopTimeNano()/1E9)));
             telemetry.update();

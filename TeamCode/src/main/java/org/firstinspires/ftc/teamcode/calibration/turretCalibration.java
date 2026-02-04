@@ -1,7 +1,7 @@
 package org.firstinspires.ftc.teamcode.calibration;
 
-import com.ThermalEquilibrium.homeostasis.Controllers.Feedforward.BasicFeedforward;
-import com.ThermalEquilibrium.homeostasis.Parameters.FeedforwardCoefficients;
+//import com.ThermalEquilibrium.homeostasis.Controllers.Feedforward.BasicFeedforward;
+//import com.ThermalEquilibrium.homeostasis.Parameters.FeedforwardCoefficients;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
@@ -40,8 +40,8 @@ public class turretCalibration extends LinearOpMode {
     public static double Kv = 1.1;
     public static double Ka = 0.2;
     public static double Ks = 0.001;
-    FeedforwardCoefficients coefficients = new FeedforwardCoefficients(Kv, Ka, Ks);
-    BasicFeedforward shootController = new BasicFeedforward(coefficients);
+//    FeedforwardCoefficients coefficients = new FeedforwardCoefficients(Kv, Ka, Ks);
+//    BasicFeedforward shootController = new BasicFeedforward(coefficients);
 
     @Override
     public void runOpMode() throws InterruptedException {

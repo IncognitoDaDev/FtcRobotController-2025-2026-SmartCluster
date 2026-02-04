@@ -15,7 +15,7 @@ public class RawEncoder implements Encoder {
     public RawEncoder(DcMotorEx motor)
     {
         this.encoder=new Encoder() {
-            private int lastPosition =  0;
+            private int lastPosition =  motor.getCurrentPosition();
             private Direction direction;
             private double applyDirection(double x)
             {
@@ -38,12 +38,12 @@ public class RawEncoder implements Encoder {
 
             @Override
             public DualNum<Time> getCurrentPosition() {
-                return new DualNum<>(applyDirection(motor.getCurrentPosition()-lastPosition), applyDirection(motor.getVelocity()));
+                return new DualNum<>(applyDirection(motor.getCurrentPosition())-lastPosition, applyDirection(motor.getVelocity()));
             }
 
             @Override
             public void reset() {
-                lastPosition= motor.getCurrentPosition();
+                lastPosition= (int) applyDirection(motor.getCurrentPosition());
             }
 
             @Override

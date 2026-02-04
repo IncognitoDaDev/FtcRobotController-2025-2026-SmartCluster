@@ -1,13 +1,11 @@
 plugins {
     id 'com.android.library'
-    id 'com.github.node-gradle.node' version "2.2.4"
-    id 'checkstyle'
     id 'org.jetbrains.kotlin.android'
 }
 
 android {
     namespace 'com.smartcluster.oracleftc'
-    compileSdk 35
+    compileSdk 34
 
     defaultConfig {
         minSdk 24
@@ -31,19 +29,15 @@ android {
     }
 }
 
-
-
 dependencies {
-    implementation 'androidx.core:core-ktx:1.15.0'
+    compileOnly 'org.firstinspires.ftc:RobotCore:10.2.0'
+    compileOnly 'org.firstinspires.ftc:Hardware:10.2.0'
+    compileOnly 'org.firstinspires.ftc:FtcCommon:10.2.0'
+    compileOnly 'org.firstinspires.ftc:RobotServer:10.2.0'
+    api 'gov.nist.math:jama:1.0.3'
 
-
-    // FTC SDK dependencies
-    compileOnly 'org.firstinspires.ftc:RobotCore:11.1.0'
-    compileOnly 'org.firstinspires.ftc:Hardware:11.1.0'
-    compileOnly 'org.firstinspires.ftc:FtcCommon:11.1.0'
-    compileOnly 'org.firstinspires.ftc:RobotServer:11.1.0'
-
-    implementation 'org.ejml:ejml-all:0.43'
 
     testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
 }

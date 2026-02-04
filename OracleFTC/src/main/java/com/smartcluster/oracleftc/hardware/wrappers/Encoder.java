@@ -30,7 +30,7 @@ public interface Encoder {
     /**
      * Returns the current logical direction in which this encoder is set as operating.
      * @return the current logical direction in which this encoder is set as operating.
-     * @see #setDirection(Encoder.Direction)
+     * @see #setDirection(Direction)
      */
     Direction getDirection();
 

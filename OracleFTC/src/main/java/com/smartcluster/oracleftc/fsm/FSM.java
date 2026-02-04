@@ -3,7 +3,7 @@ package com.smartcluster.oracleftc.fsm;
 
 import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.CommandScheduler;
-import com.smartcluster.oracleftc.commands.ThreadedCommandScheduler;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -52,8 +52,7 @@ public class FSM<T extends Enum<T>> {
         return new FSMBuilder<>();
     }
 
-    public void update() throws InterruptedException {
-        scheduler.update();
+    public void update()  {
         if (currentTransition != null) {
             if (scheduler.finished(currentTransition.getCommand())) {
                 currentState = currentTransition.getTargetState();

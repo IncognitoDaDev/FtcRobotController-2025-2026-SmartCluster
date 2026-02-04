@@ -1,6 +1,7 @@
 package com.smartcluster.oracleftc.commands;
 
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -29,10 +30,11 @@ public class RaceCommand extends Command {
         }
     }
 
-    public int finishedCommandIndex;
+    public int finishedCommandIndex=-1;
 
     @Override
     public boolean finished() {
+        if(finishedCommandIndex!=-1) return true;
         for (int i = 0; i < commands.length; i++) {
             if (commands[i].finished()) {
                 finishedCommandIndex = i;

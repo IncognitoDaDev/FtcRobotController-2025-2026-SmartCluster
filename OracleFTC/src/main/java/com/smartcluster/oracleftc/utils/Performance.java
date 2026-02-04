@@ -5,7 +5,7 @@ import android.content.Context;
 import com.qualcomm.ftccommon.FtcEventLoop;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpModeManagerNotifier;
-import com.qualcomm.robotcore.eventloop.opmode.OpModeRegistrar;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.RobotLog;
 
 import org.firstinspires.ftc.ftccommon.external.OnCreateEventLoop;
@@ -26,6 +26,21 @@ public class Performance implements OpModeManagerNotifier.Notifications {
         long deltaTime =currentTime- instance.lastTime;
         instance.lastTime = currentTime;
         return deltaTime;
+    }
+    public static double loopTimeMillis()
+    {
+        long currentTime = System.nanoTime();
+        long deltaTime =currentTime- instance.lastTime;
+        instance.lastTime = currentTime;
+        return deltaTime/1E6;
+    }
+
+    public static double timeitMillis(Runnable runnable)
+    {
+        ElapsedTime startTime = new ElapsedTime();
+        startTime.reset();
+        runnable.run();
+        return startTime.milliseconds();
     }
 
 

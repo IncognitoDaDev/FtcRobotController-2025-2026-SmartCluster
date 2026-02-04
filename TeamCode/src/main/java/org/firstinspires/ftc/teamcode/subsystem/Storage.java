@@ -21,6 +21,8 @@ import com.smartcluster.oracleftc.hardware.wrappers.Encoder;
 import com.smartcluster.oracleftc.hardware.wrappers.RawEncoder;
 import com.smartcluster.oracleftc.math.DualNum;
 import com.smartcluster.oracleftc.math.Time;
+import com.smartcluster.oracleftc.math.control.MotionProfile;
+import com.smartcluster.oracleftc.math.control.MotorFeedforward;
 import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
 
@@ -42,12 +44,11 @@ public class Storage extends Subsystem {
     public final CRActuator spindexer;
 
     // Don't worry about them, they're not in use at the moment (way too experimental)
-    static public double minimumPowerServo = 0.0045, integralInducedIncremental = 0.00000001;
 
     public static double flapperDownVal = 0.23, flapperUpVal = 0.5;
 
-    private boolean antiJamOn = true;
-
+    // Calibrate these 3 variables please
+    public static MotorFeedforward spindexerFeedforward = new MotorFeedforward(0.045, 0.01, 0.01);
     public static PIDController spindexerPID = new PIDController(0.0045, 0.00014, 0.00014);
     public static TrapezoidalMotionProfile spindexerMotionProfile = new TrapezoidalMotionProfile(3000,2500,850);
     public enum ArtifactColor{
@@ -151,7 +152,7 @@ public class Storage extends Subsystem {
         };
 
 
-        spindexer = new CRActuator(this, "spindexer",  spindexerPID, spindexerMotionProfile, 4.0, minimumPowerServo, integralInducedIncremental, spindexLeft, spindexRight) {
+        spindexer = new CRActuator(this, "spindexer",  spindexerPID, spindexerFeedforward, spindexerMotionProfile, 4.0, spindexLeft, spindexRight) {
             @Override
             public boolean setTarget(double target) {
                 this.ManualSetFromPosition(getPosition().get(0));
@@ -421,44 +422,11 @@ public class Storage extends Subsystem {
                 .build();
     }
 
-    public Command ZoomiesForDogs(double jamTime)
-    {
-        final ElapsedTime timer = new ElapsedTime();
-
-        return Command.builder()
-                .init(() -> timer.reset())
-                .update(() ->
-                {
-                    if (antiJamOn) {
-                        if (!spindexer.isNotInMotion().get() && timer.milliseconds() > jamTime) {
-                            timer.reset(); // Keep track of how long have the actions been in motion
-
-                            double originalTarget = spindexer.getTarget();
-                            double direction = -Math.signum(originalTarget - spindexer.getPosition().get(0));
-
-                            spindexer.setTarget(spindexer.getPosition().get(0) + 60 * direction);
-
-                            while(timer.milliseconds() < 300) telemetry.addLine("AntiJam!!!"); // Waiting...
-
-                            spindexer.setTarget(originalTarget); // Back to our original spot!
-
-                            timer.reset();
-                        } else timer.reset(); // Tick tock...
-                    }
-                })
-                .build();
-    }
-
-
     public Command update()
     {
         return new ParallelCommand(
                 flapper.update(),
                 spindexer.update()
-
-                // If the spindexer has been stuck for at least x, execute AntiJam sequence!!!
-//                ZoomiesForDogs(1000)
-
         );
     }
 

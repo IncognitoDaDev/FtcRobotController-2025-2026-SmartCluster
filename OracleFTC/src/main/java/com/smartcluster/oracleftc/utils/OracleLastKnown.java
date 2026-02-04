@@ -1,7 +1,6 @@
 package com.smartcluster.oracleftc.utils;
 
 import com.qualcomm.robotcore.util.ElapsedTime;
-import com.qualcomm.robotcore.util.LastKnown;
 
 public class OracleLastKnown<T> {
     //----------------------------------------------------------------------------------------------
