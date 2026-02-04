@@ -42,8 +42,6 @@ public class Storage extends Subsystem {
     public static TrapezoidalMotionProfile flapperMotionProfile = new TrapezoidalMotionProfile(7800, 8800, 8700);
     public static PIDController spindexerPID = new PIDController(0.0031, 0.00000682, 0.000103);
 
-
-
     public final ServoActuator flapper;
     public final CRActuator spindexer;
 
@@ -154,7 +152,7 @@ public class Storage extends Subsystem {
         };
 
 
-        spindexer = new CRActuator(this, "spindexer", spindexerPID, spindexerFeedForward, spindexerMotionProfile, 4.0, minimumPowerServo, integralInducedIncremental, spindexLeft, spindexRight) {
+        spindexer = new CRActuator(this, "spindexer", spindexerPID, spindexerFeedForward, spindexerMotionProfile, 4.0, spindexLeft, spindexRight) {
             @Override
             public boolean setTarget(double target) {
                 this.ManualSetFromPosition(getPosition().get(0));
