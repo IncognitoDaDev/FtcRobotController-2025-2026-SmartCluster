@@ -1,11 +1,10 @@
 package com.smartcluster.oracleftc.hardware.subsystem;
 
-import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.hardware.OracleLynxVoltageSensor;
-import com.smartcluster.oracleftc.hardware.motor.OracleDcMotorImplEx;
+import com.smartcluster.oracleftc.hardware.wrappers.OmegaDcMotorImplEx;
 import com.smartcluster.oracleftc.math.DualNum;
 import com.smartcluster.oracleftc.math.Time;
 import com.smartcluster.oracleftc.math.control.MotorFeedforward;
@@ -14,7 +13,7 @@ import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-public abstract class OracleActuator {
+public abstract class OmegaActuator {
     private final Subsystem subsystem;
     private final String name;
     public PIDController pid;
@@ -24,10 +23,10 @@ public abstract class OracleActuator {
 
     protected AtomicReference<Double> target = new AtomicReference<>(0.0);
     private final AtomicReference<Double> to = new AtomicReference<>(0.0), from=new AtomicReference<>(0.0);
-    private final OracleDcMotorImplEx[] motors;
+    private final OmegaDcMotorImplEx[] motors;
     private final OracleLynxVoltageSensor voltageSensor;
     private final ElapsedTime time = new ElapsedTime();
-    public OracleActuator(Subsystem subsystem, String name, PIDController pid, TrapezoidalMotionProfile motionProfile, MotorFeedforward feedforward, double tolerance, OracleDcMotorImplEx... motors)
+    public OmegaActuator(Subsystem subsystem, String name, PIDController pid, TrapezoidalMotionProfile motionProfile, MotorFeedforward feedforward, double tolerance, OmegaDcMotorImplEx... motors)
     {
         this.feedforward=feedforward;
         this.subsystem=subsystem;
@@ -66,7 +65,7 @@ public abstract class OracleActuator {
         return new InstantCommand(()->{
 
             enabled=false;
-            for (OracleDcMotorImplEx motor : motors) {
+            for (OmegaDcMotorImplEx motor : motors) {
                 motor.setPower(0.0);
             }
         });
@@ -109,7 +108,7 @@ public abstract class OracleActuator {
 
                     double power = pid.update(mp.get(0) *Math.signum(distance)+from.get(),
                             getPosition().get(0))+ feedforward.update(mp.get(0),mp.get(1));
-                    for (OracleDcMotorImplEx motor : motors) {
+                    for (OmegaDcMotorImplEx motor : motors) {
                         if(enabled) motor.setPower(power*(12/voltageSensor.getVoltage()));
                     }
                     subsystem.telemetry.addData(String.format("%s.position", name), getPosition().get(0));

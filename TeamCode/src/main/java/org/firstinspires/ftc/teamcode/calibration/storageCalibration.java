@@ -1,8 +1,11 @@
 package org.firstinspires.ftc.teamcode.calibration;
 
+import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.telemetry;
+
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.qualcomm.hardware.lynx.LynxDcMotorController;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -100,9 +103,9 @@ public class storageCalibration extends LinearOpMode {
         waitForStart();
 
 
-        List<LynxModule> lynxModules = hardwareMap.getAll(LynxModule.class);
-        for (LynxModule lynxModule : lynxModules)
-            lynxModule.setBulkCachingMode(LynxModule.BulkCachingMode.MANUAL);
+//        List<LynxModule> lynxModules = hardwareMap.getAll(LynxModule.class);
+//        for (LynxModule lynxModule : lynxModules)
+//            lynxModule.setBulkCachingMode(LynxModule.BulkCachingMode.MANUAL);
 
         MovingAverageFilter loopTimeFilter=new MovingAverageFilter(50);
 

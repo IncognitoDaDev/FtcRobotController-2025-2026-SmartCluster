@@ -13,16 +13,13 @@ import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.commands.ParallelCommand;
 import com.smartcluster.oracleftc.commands.SequentialCommand;
 import com.smartcluster.oracleftc.hardware.OmegaPowerCollector;
-import com.smartcluster.oracleftc.hardware.OracleLynxVoltageSensor;
-import com.smartcluster.oracleftc.hardware.motor.OracleDcMotorImplEx;
-import com.smartcluster.oracleftc.hardware.servo.OracleServoImplEx;
-import com.smartcluster.oracleftc.hardware.subsystem.Actuator;
-import com.smartcluster.oracleftc.hardware.subsystem.OracleActuator;
-import com.smartcluster.oracleftc.hardware.subsystem.OracleServoActuator;
-import com.smartcluster.oracleftc.hardware.subsystem.ServoActuator;
+import com.smartcluster.oracleftc.hardware.subsystem.OmegaActuator;
+import com.smartcluster.oracleftc.hardware.subsystem.OmegaServoActuator;
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
 import com.smartcluster.oracleftc.hardware.subsystem.SubsystemFlavor;
 import com.smartcluster.oracleftc.hardware.wrappers.Encoder;
+import com.smartcluster.oracleftc.hardware.wrappers.OmegaDcMotorImplEx;
+import com.smartcluster.oracleftc.hardware.wrappers.OmegaServoImplEx;
 import com.smartcluster.oracleftc.hardware.wrappers.RawEncoder;
 import com.smartcluster.oracleftc.math.DualNum;
 import com.smartcluster.oracleftc.math.Time;
@@ -37,19 +34,17 @@ import org.firstinspires.ftc.teamcode.roadrunner.Localizer;
 public class Turret extends Subsystem {
 
 
-    private final OracleDcMotorImplEx turretUp, turretDown,turretRot;
-    private final OracleServoImplEx rightHood, leftHood;
-    private final OracleLynxVoltageSensor voltageSensor;
-
+    private final OmegaDcMotorImplEx turretUp, turretDown,turretRot;
+    private final OmegaServoImplEx rightHood, leftHood;
     private OmegaPowerCollector powerCollector;
     public static TrapezoidalMotionProfile hoodMotionProfile = new TrapezoidalMotionProfile(12, 16, 16);
     public static TrapezoidalMotionProfile turretMotionProfile = new TrapezoidalMotionProfile(80, 100, 100);
     public static PIDController turretPID = new PIDController(0.025, 0.00002, 0.0019, 1);
     public static MotorFeedforward turretFeedForward = new MotorFeedforward(0.01, 0.0015, 0);
 
-    public final OracleActuator turret;
+    public final OmegaActuator turret;
     public final Encoder encoder;
-    public final OracleServoActuator hood;
+    public final OmegaServoActuator hood;
     private final double m = 8.502;
     private final double n = 1300.98;
     private boolean inZone;
@@ -60,27 +55,19 @@ public class Turret extends Subsystem {
         super(opMode);
         this.powerCollector = powerCollector;
 
-        voltageSensor = hardwareMap.getAll(OracleLynxVoltageSensor.class).iterator().next();
-        turretUp = (OracleDcMotorImplEx) hardwareMap.get(DcMotorImplEx.class, "turretUp");
-        turretDown = (OracleDcMotorImplEx) hardwareMap.get(DcMotorImplEx.class, "turretDown");
-
-        turretRot = (OracleDcMotorImplEx) hardwareMap.get(DcMotorImplEx.class, "turretRotate");
+        turretUp = new OmegaDcMotorImplEx(hardwareMap.get(DcMotorImplEx.class, "turretUp"), powerCollector, false);
+        turretDown = new OmegaDcMotorImplEx(hardwareMap.get(DcMotorImplEx.class, "turretDown"), powerCollector, false);
+        turretRot = new OmegaDcMotorImplEx(hardwareMap.get(DcMotorImplEx.class, "turretRotate"), powerCollector, false);
 
         encoder = new RawEncoder(hardwareMap.get(DcMotorImplEx.class,"turretRotate"));
 
-        rightHood = (OracleServoImplEx) hardwareMap.get(ServoImplEx.class, "rightHood");
-        leftHood = (OracleServoImplEx) hardwareMap.get(ServoImplEx.class, "leftHood");
+        rightHood = new OmegaServoImplEx(hardwareMap.get(ServoImplEx.class, "rightHood"), powerCollector, false);
+        leftHood = new OmegaServoImplEx(hardwareMap.get(ServoImplEx.class, "leftHood"), powerCollector, false);
 
-        turretUp.setDestination(powerCollector, false);
-        turretDown.setDestination(powerCollector, false);
-        turretRot.setDestination(powerCollector, false);
-        rightHood.setDestination(powerCollector, false);
-        leftHood.setDestination(powerCollector, false);
+        leftHood.getServo().setDirection(Servo.Direction.REVERSE);
+        turretUp.getDcMotor().setDirection(DcMotorSimple.Direction.REVERSE);
 
-        leftHood.setDirection(Servo.Direction.REVERSE);
-        turretUp.setDirection(DcMotorSimple.Direction.REVERSE);
-
-        hood = new OracleServoActuator(this, "hood", hoodMotionProfile, rightHood, leftHood) {
+        hood = new OmegaServoActuator(this, "hood", hoodMotionProfile, rightHood, leftHood) {
             @Override
             public Command reset() {
 
@@ -100,7 +87,7 @@ public class Turret extends Subsystem {
             }
         };
 
-        turret = new OracleActuator(this, "turret", turretPID, turretMotionProfile, turretFeedForward, 2, turretRot) {
+        turret = new OmegaActuator(this, "turret", turretPID, turretMotionProfile, turretFeedForward, 2, turretRot) {
             @Override
             public Command reset() {
                 return new InstantCommand(encoder::reset);
@@ -145,7 +132,6 @@ public class Turret extends Subsystem {
                    double velocity = m * distance + n;
                    double currentVelocity = getCurrentVelocity(); //RPM
                    double power = flywheelPID.update(velocity, currentVelocity) + flywheelFeedforward.update(velocity, 0);
-                   power = power * (Robot.nominalVoltage / voltageSensor.getVoltage());
                    turretUp.setPower(power);
                    turretDown.setPower(power);
 
@@ -169,7 +155,7 @@ public class Turret extends Subsystem {
                 .build();
     }
     public double getCurrentVelocity() {
-        return velocityFilter.update((turretUp.getVelocity() / 28) * 60);
+        return velocityFilter.update((turretUp.getDcMotor().getVelocity() / 28) * 60);
     }
 
     public void setTargetVelocity(double velocity) {
@@ -192,7 +178,6 @@ public class Turret extends Subsystem {
                     double velocity = m * distance + n;
                     double currentVelocity = getCurrentVelocity(); //RPM
                     double power = flywheelPID.update(velocity, currentVelocity) + flywheelFeedforward.update(velocity, 0);
-                    power = power * (Robot.nominalVoltage / voltageSensor.getVoltage());
                     turretUp.setPower(power);
                     turretDown.setPower(power);
                     if(currentY>=Math.abs(currentX)+9*1.41 || (currentY>-46+9*1.41 && Math.abs(currentX)<23+9*1.41))inZone = false;
@@ -210,7 +195,6 @@ public class Turret extends Subsystem {
                         .update(() -> {
                             double currentVelocity = getCurrentVelocity(); //RPM
                             double power = flywheelPID.update(targetVelocity, currentVelocity) + flywheelFeedforward.update(targetVelocity, 0);
-                            power = power * (Robot.nominalVoltage / voltageSensor.getVoltage());
                             turretUp.setPower(power);
                             turretDown.setPower(power);
                         })

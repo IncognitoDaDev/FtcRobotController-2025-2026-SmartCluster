@@ -1,7 +1,6 @@
 package org.firstinspires.ftc.teamcode.subsystem;
 
 import com.acmerobotics.dashboard.config.Config;
-import com.qualcomm.hardware.lynx.LynxI2cDeviceSynch;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
@@ -15,14 +14,12 @@ import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.commands.ParallelCommand;
 import com.smartcluster.oracleftc.commands.SequentialCommand;
 import com.smartcluster.oracleftc.hardware.OmegaPowerCollector;
-import com.smartcluster.oracleftc.hardware.servo.OracleCRServoImplEx;
-import com.smartcluster.oracleftc.hardware.servo.OracleServoImplEx;
-import com.smartcluster.oracleftc.hardware.subsystem.CRActuator;
-import com.smartcluster.oracleftc.hardware.subsystem.OracleCRActuator;
-import com.smartcluster.oracleftc.hardware.subsystem.OracleServoActuator;
-import com.smartcluster.oracleftc.hardware.subsystem.ServoActuator;
+import com.smartcluster.oracleftc.hardware.subsystem.OmegaCRActuator;
+import com.smartcluster.oracleftc.hardware.subsystem.OmegaServoActuator;
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
 import com.smartcluster.oracleftc.hardware.wrappers.Encoder;
+import com.smartcluster.oracleftc.hardware.wrappers.OmegaCRServoImplEx;
+import com.smartcluster.oracleftc.hardware.wrappers.OmegaServoImplEx;
 import com.smartcluster.oracleftc.hardware.wrappers.RawEncoder;
 import com.smartcluster.oracleftc.math.DualNum;
 import com.smartcluster.oracleftc.math.Time;
@@ -38,20 +35,15 @@ import java.util.concurrent.atomic.AtomicReference;
 @Config
 public class Storage extends Subsystem {
 
-    private final OracleCRServoImplEx spindexRight, spindexLeft;
-    private final OracleServoImplEx flapperRight, flapperLeft;
+    private final OmegaCRServoImplEx spindexRight, spindexLeft;
+    private final OmegaServoImplEx flapperRight, flapperLeft;
     private final RevColorSensorV3 frontColorSensor;
     public final Encoder spindexEncoder;
     public static TrapezoidalMotionProfile flapperMotionProfile = new TrapezoidalMotionProfile(16, 16, 16);
-    public final OracleServoActuator flapper;
-    public final OracleCRActuator spindexer;
-
-    // Don't worry about them, they're not in use at the moment (way too experimental)
-    static public double minimumPowerServo = 0.0045, integralInducedIncremental = 0.00000001;
+    public final OmegaServoActuator flapper;
+    public final OmegaCRActuator spindexer;
 
     public static double flapperDownVal = 0.23, flapperUpVal = 0.5;
-
-    private boolean antiJamOn = true;
 
     public static PIDController spindexerPID = new PIDController(0.0045, 0.00014, 0.00014);
     public static TrapezoidalMotionProfile spindexerMotionProfile = new TrapezoidalMotionProfile(3000,2500,850);
@@ -119,27 +111,21 @@ public class Storage extends Subsystem {
 
     public Storage(OpMode opMode, OmegaPowerCollector powerCollector) {
         super(opMode);
-        spindexRight = (OracleCRServoImplEx) hardwareMap.get(CRServoImplEx.class, "dexRight");
-        spindexLeft = (OracleCRServoImplEx) hardwareMap.get(CRServoImplEx.class, "dexLeft");
-        flapperRight = (OracleServoImplEx) hardwareMap.get(ServoImplEx.class,"flapperRight");
-        flapperLeft = (OracleServoImplEx) hardwareMap.get(ServoImplEx.class,"flapperLeft");
-
-        spindexRight.setDestination(powerCollector, true);
-        spindexLeft.setDestination(powerCollector, true);
-        flapperRight.setDestination(powerCollector, false);
-        flapperLeft.setDestination(powerCollector, false);
+        spindexRight = new OmegaCRServoImplEx(hardwareMap.get(CRServoImplEx.class, "dexRight"), powerCollector, true);
+        spindexLeft = new OmegaCRServoImplEx(hardwareMap.get(CRServoImplEx.class, "dexLeft"), powerCollector, true);
+        flapperRight = new OmegaServoImplEx(hardwareMap.get(ServoImplEx.class,"flapperRight"), powerCollector, true);
+        flapperLeft = new OmegaServoImplEx(hardwareMap.get(ServoImplEx.class,"flapperLeft"), powerCollector, true);
 
         spindexEncoder = new RawEncoder(hardwareMap.get(DcMotorEx.class,"frontRight"));
 
         frontColorSensor = hardwareMap.get(RevColorSensorV3.class, "rotaryColorSensorF");
-        ((LynxI2cDeviceSynch) frontColorSensor.getDeviceClient()).setBusSpeed(LynxI2cDeviceSynch.BusSpeed.FAST_400K);
 
-        flapperLeft.setDirection(Servo.Direction.REVERSE);
+        flapperLeft.getServo().setDirection(Servo.Direction.REVERSE);
 
 //        frontColorSensor_Purple = hardwareMap.get(DigitalChannelImpl.class, "rotaryColorSensorF_Purple");
 //        frontColorSensor_Green = hardwareMap.get(DigitalChannelImpl.class, "rotaryColorSensorF_Green");
 
-        flapper = new OracleServoActuator(this, "flapper", flapperMotionProfile,flapperLeft,flapperRight)
+        flapper = new OmegaServoActuator(this, "flapper", flapperMotionProfile,flapperLeft,flapperRight)
         {
             @Override
             public Command reset()
@@ -161,7 +147,7 @@ public class Storage extends Subsystem {
         };
 
 
-        spindexer = new OracleCRActuator(this, "spindexer",  spindexerPID, spindexerMotionProfile, 4.0, minimumPowerServo, integralInducedIncremental, spindexLeft, spindexRight) {
+        spindexer = new OmegaCRActuator(this, "spindexer",  spindexerPID, spindexerMotionProfile, 4.0, spindexLeft, spindexRight) {
             @Override
             public boolean setTarget(double target) {
                 this.ManualSetFromPosition(getPosition().get(0));
@@ -431,43 +417,12 @@ public class Storage extends Subsystem {
                 .build();
     }
 
-    public Command ZoomiesForDogs(double jamTime)
-    {
-        final ElapsedTime timer = new ElapsedTime();
-
-        return Command.builder()
-                .init(() -> timer.reset())
-                .update(() ->
-                {
-                    if (antiJamOn) {
-                        if (!spindexer.isNotInMotion().get() && timer.milliseconds() > jamTime) {
-                            timer.reset(); // Keep track of how long have the actions been in motion
-
-                            double originalTarget = spindexer.getTarget();
-                            double direction = -Math.signum(originalTarget - spindexer.getPosition().get(0));
-
-                            spindexer.setTarget(spindexer.getPosition().get(0) + 60 * direction);
-
-                            while(timer.milliseconds() < 300) telemetry.addLine("AntiJam!!!"); // Waiting...
-
-                            spindexer.setTarget(originalTarget); // Back to our original spot!
-
-                            timer.reset();
-                        } else timer.reset(); // Tick tock...
-                    }
-                })
-                .build();
-    }
-
 
     public Command update()
     {
         return new ParallelCommand(
                 flapper.update(),
                 spindexer.update()
-
-                // If the spindexer has been stuck for at least x, execute AntiJam sequence!!!
-//                ZoomiesForDogs(1000)
 
         );
     }

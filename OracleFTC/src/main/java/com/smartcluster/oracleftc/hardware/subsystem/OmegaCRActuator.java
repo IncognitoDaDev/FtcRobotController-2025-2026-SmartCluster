@@ -1,11 +1,9 @@
 package com.smartcluster.oracleftc.hardware.subsystem;
 
-import com.qualcomm.robotcore.hardware.CRServoImpl;
-import com.qualcomm.robotcore.hardware.CRServoImplEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.InstantCommand;
-import com.smartcluster.oracleftc.hardware.servo.OracleCRServoImplEx;
+import com.smartcluster.oracleftc.hardware.wrappers.OmegaCRServoImplEx;
 import com.smartcluster.oracleftc.math.DualNum;
 import com.smartcluster.oracleftc.math.Time;
 import com.smartcluster.oracleftc.math.control.PIDController;
@@ -14,21 +12,21 @@ import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-public abstract class OracleCRActuator {
+public abstract class OmegaCRActuator {
     private final Subsystem subsystem;
     private final String name;
     public PIDController pid;
 
-    private double minimumVoltagePass;
 
     public TrapezoidalMotionProfile motionProfile;
-    public double tolerance, integralIncrement;
+    public double tolerance;
+
     protected AtomicReference<Double> target = new AtomicReference<>(0.0);
     private final AtomicReference<Double> to = new AtomicReference<>(0.0), from=new AtomicReference<>(0.0);
-    private final OracleCRServoImplEx[] crservos;
+    private final OmegaCRServoImplEx[] crservos;
 
     private final ElapsedTime time = new ElapsedTime();
-    public OracleCRActuator(Subsystem subsystem, String name, PIDController pid, TrapezoidalMotionProfile motionProfile, double tolerance, double minimumVoltagePass, double integralIncrement, OracleCRServoImplEx... motors)
+    public OmegaCRActuator(Subsystem subsystem, String name, PIDController pid, TrapezoidalMotionProfile motionProfile, double tolerance, OmegaCRServoImplEx... motors)
     {
         this.subsystem=subsystem;
         this.name=name;
@@ -36,8 +34,6 @@ public abstract class OracleCRActuator {
         this.motionProfile=motionProfile;
         this.crservos =motors;
         this.tolerance=tolerance;
-        this.minimumVoltagePass=minimumVoltagePass;
-        this.integralIncrement = integralIncrement;
     }
     /**
      * Sets the target of the actuator, the user needs to check for limits
@@ -64,7 +60,7 @@ public abstract class OracleCRActuator {
         return new InstantCommand(()->{
 
             enabled=false;
-            for (OracleCRServoImplEx motor : crservos) {
+            for (OmegaCRServoImplEx motor : crservos) {
                 motor.setPower(0.0);
             }
         });
@@ -100,25 +96,6 @@ public abstract class OracleCRActuator {
                 .build();
     }
 
-    // My silly attempt at making a dynamic minimum voltage regulator for when outside the tolerance
-    private double integralInduced = 0, incrementalIntegral = 0;
-    private long lastTimestamp=0;
-    public double IntegralErrInduced(double distance)
-    {
-        //Add or remove a tiny value (values for ~30hz), fixing itself after overshooting
-        incrementalIntegral += (distance > 0 ? 1 : -1)*integralIncrement;
-
-        long timestamp = System.nanoTime();
-        if (lastTimestamp != 0) {
-            double deltaTime = (timestamp - lastTimestamp) / 1E9;
-            integralInduced += deltaTime * distance;
-            if (Double.isNaN(integralInduced)) integralInduced = 0;
-        }
-        lastTimestamp = timestamp;
-
-        return integralInduced*incrementalIntegral;
-    }
-
     public final Command update() {
 
         return Command.builder()
@@ -145,13 +122,12 @@ public abstract class OracleCRActuator {
 //                        incrementalIntegral = 0;
 //                    }
 
-                    for (OracleCRServoImplEx motor : crservos) {
+                    for (OmegaCRServoImplEx motor : crservos) {
                         if (enabled) motor.setPower(power);
                     }
 
 //                    subsystem.telemetry.addData(String.format("%s.position", name), getPosition().get(0));
                     subsystem.telemetry.addData(String.format("%s.power", name), power);
-                    subsystem.telemetry.addData(String.format("%s.integralInduced", name), integralInduced);
 //                    subsystem.telemetry.addData(String.format("%s.target", name), getTarget());
 //                    subsystem.telemetry.addData(String.format("%s.mp", name), mp.get(0));
                 })

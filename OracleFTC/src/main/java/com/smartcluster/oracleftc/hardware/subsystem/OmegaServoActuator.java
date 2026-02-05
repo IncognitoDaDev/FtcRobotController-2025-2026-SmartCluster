@@ -1,14 +1,13 @@
 package com.smartcluster.oracleftc.hardware.subsystem;
 
-import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.smartcluster.oracleftc.commands.Command;
-import com.smartcluster.oracleftc.hardware.servo.OracleServoImplEx;
+import com.smartcluster.oracleftc.hardware.wrappers.OmegaServoImplEx;
 import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-public abstract class OracleServoActuator {
+public abstract class OmegaServoActuator {
     private final Subsystem subsystem;
     private final String name;
     public final TrapezoidalMotionProfile motionProfile;
@@ -16,9 +15,9 @@ public abstract class OracleServoActuator {
     private final ElapsedTime time = new ElapsedTime();
     private final AtomicReference<Double> to = new AtomicReference<>(0.0), from=new AtomicReference<>(0.0);
 
-    private final OracleServoImplEx[] servos;
+    private final OmegaServoImplEx[] servos;
 
-    public OracleServoActuator(Subsystem subsystem, String name, TrapezoidalMotionProfile motionProfile, OracleServoImplEx... servos)
+    public OmegaServoActuator(Subsystem subsystem, String name, TrapezoidalMotionProfile motionProfile, OmegaServoImplEx... servos)
     {
         this.subsystem=subsystem;
         this.name=name;
@@ -44,11 +43,11 @@ public abstract class OracleServoActuator {
         return Command.builder()
                 .init(()->
                 {
-                    from.set(servos[0].getPosition());
+                    from.set(servos[0].getServo().getPosition());
                     time.reset();
                     setTarget(target.get());
                 })
-                .finished(()->Math.abs(servos[0].getPosition()-getTarget())<0.0001)
+                .finished(()->Math.abs(servos[0].getServo().getPosition()-getTarget())<0.0001)
                 .requires(subsystem)
                 .build();
     }
@@ -57,7 +56,7 @@ public abstract class OracleServoActuator {
     {
         return Command.builder()
                 .init(()->{
-                    from.set(servos[0].getPosition());
+                    from.set(servos[0].getServo().getPosition());
                     to.set(this.target.get());
                     time.reset();
                 })
@@ -68,7 +67,7 @@ public abstract class OracleServoActuator {
                     }
                     final double distance = to.get()-from.get();
                     double position = motionProfile.getMotionState(Math.abs(distance), time.seconds()).get(0) * Math.signum(distance)+from.get();
-                    for(OracleServoImplEx servo: servos)
+                    for(OmegaServoImplEx servo: servos)
                     {
                         servo.setPosition(position);
                     }

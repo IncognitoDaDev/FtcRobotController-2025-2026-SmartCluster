@@ -17,7 +17,6 @@ import com.qualcomm.robotcore.hardware.DcMotorImpl;
 import com.qualcomm.robotcore.hardware.HardwareDevice;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.RobotLog;
-import com.smartcluster.oracleftc.hardware.motor.OracleLynxDcMotorController;
 import com.smartcluster.oracleftc.utils.ReflectionUtils;
 
 import java.util.HashMap;

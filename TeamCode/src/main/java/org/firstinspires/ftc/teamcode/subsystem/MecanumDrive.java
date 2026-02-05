@@ -34,12 +34,13 @@ import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorImplEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.hardware.OmegaPowerCollector;
 import com.smartcluster.oracleftc.hardware.OracleLynxVoltageSensor;
-import com.smartcluster.oracleftc.hardware.motor.OracleDcMotorImplEx;
+import com.smartcluster.oracleftc.hardware.wrappers.OmegaDcMotorImplEx;
 import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.utils.ProcessedGamepad;
 
@@ -116,7 +117,7 @@ public class MecanumDrive {
     public final AccelConstraint defaultAccelConstraint =
             new ProfileAccelConstraint(PARAMS.minProfileAccel, PARAMS.maxProfileAccel);
 
-    public final OracleDcMotorImplEx frontLeft, backLeft, backRight, frontRight;
+    public final OmegaDcMotorImplEx frontLeft, backLeft, backRight, frontRight;
 
     public final OracleLynxVoltageSensor voltageSensor;
 
@@ -290,24 +291,18 @@ public class MecanumDrive {
 
         // TODO: make sure your config has motors with these names (or change them)
         //   see https://ftc-docs.firstinspires.org/en/latest/hardware_and_software_configuration/configuring/index.html
-        frontRight = (OracleDcMotorImplEx) hardwareMap.get(DcMotorEx.class, "frontRight");
-        frontLeft = (OracleDcMotorImplEx) hardwareMap.get(DcMotorEx.class, "frontLeft");
-        backRight = (OracleDcMotorImplEx) hardwareMap.get(DcMotorEx.class, "backRight");
-        backLeft = (OracleDcMotorImplEx) hardwareMap.get(DcMotorEx.class, "backLeft");
+        frontRight = new OmegaDcMotorImplEx(hardwareMap.get(DcMotorImplEx.class, "frontRight"), powerCollector, true);
+        frontLeft = new OmegaDcMotorImplEx(hardwareMap.get(DcMotorImplEx.class, "frontLeft"),powerCollector, true);
+        backRight = new OmegaDcMotorImplEx(hardwareMap.get(DcMotorImplEx.class, "backRight"), powerCollector, true);
+        backLeft = new OmegaDcMotorImplEx(hardwareMap.get(DcMotorImplEx.class, "backLeft"), powerCollector, true);
 
-        frontRight.setDestination(powerCollector, true);
-        frontLeft.setDestination(powerCollector, true);
-        backRight.setDestination(powerCollector, true);
-        backLeft.setDestination(powerCollector, true);
+        frontLeft.getDcMotor().setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        backLeft.getDcMotor().setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        backRight.getDcMotor().setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        frontRight.getDcMotor().setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-
-        frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-        frontRight.setDirection(DcMotorEx.Direction.REVERSE);
-        backRight.setDirection(DcMotorEx.Direction.REVERSE);
+        frontRight.getDcMotor().setDirection(DcMotorEx.Direction.REVERSE);
+        backRight.getDcMotor().setDirection(DcMotorEx.Direction.REVERSE);
 
 
         // TODO: make sure your config has an IMU with this name (can be BNO or BHI)
