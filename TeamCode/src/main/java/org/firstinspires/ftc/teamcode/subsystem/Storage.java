@@ -1,9 +1,8 @@
 package org.firstinspires.ftc.teamcode.subsystem;
 
 import com.acmerobotics.dashboard.config.Config;
-import com.qualcomm.hardware.lynx.LynxI2cDeviceSynch;
-import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
@@ -36,7 +35,9 @@ public class Storage extends Subsystem {
 
     private final CRServoImplEx spindexRight, spindexLeft;
     private final ServoImplEx flapperRight, flapperLeft;
-    private final RevColorSensorV3 frontColorSensor;
+
+    private final AnalogInput frontColorSensor;
+//    private DigitalChannelImpl frontColorSensor_Purple, frontColorSensor_Green;
     public final Encoder spindexEncoder;
 
     public static MotorFeedforward spindexerFeedForward = new MotorFeedforward(0.0285,0.00455,0.0465);
@@ -119,9 +120,7 @@ public class Storage extends Subsystem {
         flapperLeft=hardwareMap.get(ServoImplEx.class,"flapperLeft");
         spindexEncoder = new RawEncoder(hardwareMap.get(DcMotorEx.class,"frontRight"));
 
-        frontColorSensor = hardwareMap.get(RevColorSensorV3.class, "rotaryColorSensorF");
-        ((LynxI2cDeviceSynch) frontColorSensor.getDeviceClient()).setBusSpeed(LynxI2cDeviceSynch.BusSpeed.FAST_400K);
-
+        frontColorSensor = hardwareMap.get(AnalogInput.class, "rotaryColorSensorF_Analog");
 
         flapperLeft.setDirection(Servo.Direction.REVERSE);
 
@@ -176,16 +175,12 @@ public class Storage extends Subsystem {
     public Command flapperDown() { return flapper.move(new AtomicReference<>(flapperDownVal)); }
     public Storage.ArtifactColor identifyObj()
     {
-//        if (frontColorSensor_Purple.getState()) return ArtifactColor.PURPLE;
-//        if (frontColorSensor_Green.getState()) return ArtifactColor.GREEN;
+        double coly = frontColorSensor.getVoltage()*1000;
 
-        NormalizedRGBA data = frontColorSensor.getNormalizedColors();
-        frontColorSensor.setGain(2);
-
-        if (frontColorSensor.getDistance(DistanceUnit.MM)<152) // Is something in front?
+        if (coly>1100) // Is something in front?
         {
-            if (data.blue*256 < data.green*256) return ArtifactColor.GREEN;
-            if(data.blue*256> data.green*256)return ArtifactColor.PURPLE;
+            if (coly>1190 && coly<1208) return ArtifactColor.GREEN;
+            else return ArtifactColor.PURPLE;
         }
 
         return Storage.ArtifactColor.EMPTY;
@@ -273,9 +268,6 @@ public class Storage extends Subsystem {
                 .finished(() -> storage.Slot[0] != ArtifactColor.EMPTY || timer.milliseconds() > maxDuration)
                 .build();
     }
-    public boolean hasBall(){
-        return frontColorSensor.getDistance(DistanceUnit.MM) < 152;
-    }
 
     public Command WaitForBall(int maxBall, double maxDuration)
     {
@@ -325,7 +317,7 @@ public class Storage extends Subsystem {
                             isSpin.set(false);
                     } else { // Spindexer doesn't need to move, so scan all you can!
                         ArtifactColor dataScanned = identifyObj();
-                        if(frontColorSensor.getDistance(DistanceUnit.MM)<152) {
+                        if(identifyObj() != ArtifactColor.EMPTY) {
                             ballCount.getAndIncrement();
 //                            storage.Slot[0] = dataScanned;
 
