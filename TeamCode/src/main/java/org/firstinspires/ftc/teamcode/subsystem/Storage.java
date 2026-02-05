@@ -1,14 +1,10 @@
 package org.firstinspires.ftc.teamcode.subsystem;
 
 import com.acmerobotics.dashboard.config.Config;
-import com.qualcomm.hardware.lynx.LynxI2cDeviceSynch;
-import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DigitalChannel;
-import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -23,12 +19,8 @@ import com.smartcluster.oracleftc.hardware.wrappers.Encoder;
 import com.smartcluster.oracleftc.hardware.wrappers.RawEncoder;
 import com.smartcluster.oracleftc.math.DualNum;
 import com.smartcluster.oracleftc.math.Time;
-import com.smartcluster.oracleftc.math.control.MotionProfile;
 import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
-
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.teamcode.calibration.ColorRangefinder;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -178,13 +170,11 @@ public class Storage extends Subsystem {
     public Storage.ArtifactColor identifyObj()
     {
         double coly = frontColorSensor.getVoltage()*1000;
-
         if (coly>1100) // Is something in front?
         {
             if (coly>1190 && coly<1208) return ArtifactColor.GREEN;
             else return ArtifactColor.PURPLE;
         }
-
         return Storage.ArtifactColor.EMPTY;
     }
 

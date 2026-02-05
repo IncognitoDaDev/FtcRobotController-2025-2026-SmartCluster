@@ -1,9 +1,7 @@
-package org.firstinspires.ftc.teamcode.calibration;
+package org.firstinspires.ftc.teamcode.subsystem;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.I2cDeviceSynchSimple;
 
 
@@ -15,22 +13,22 @@ import com.qualcomm.robotcore.hardware.I2cDeviceSynchSimple;
 *
 * */
 @Config
-//@TeleOp(group="Calibration")
-public class ColorConfiguration extends LinearOpMode {
-    @Override
-    public void runOpMode() throws InterruptedException {
-        ColorRangefinder crf = new ColorRangefinder(
-                hardwareMap.get(RevColorSensorV3.class, "rotaryColorSensorF")
-        );
-        waitForStart();
-        crf.setLedBrightness(50);
-        // Configure Pin0 for analog HSV output
-        crf.setPin0Analog(ColorRangefinder.AnalogMode.HSV);
-        crf.setPin1Digital(ColorRangefinder.DigitalMode.HSV, 100, 140);
-
-
-    }
-}
+////@TeleOp(group="Calibration")
+//public class ColorConfiguration extends LinearOpMode {
+//    @Override
+//    public void runOpMode() throws InterruptedException {
+//        ColorRangefinder crf = new ColorRangefinder(
+//                hardwareMap.get(RevColorSensorV3.class, "rotaryColorSensorF")
+//        );
+//        waitForStart();
+//        crf.setLedBrightness(50);
+//        // Configure Pin0 for analog HSV output
+//        crf.setPin0Analog(ColorRangefinder.AnalogMode.HSV);
+//        crf.setPin1Digital(ColorRangefinder.DigitalMode.HSV, 100, 140);
+//
+//
+//    }
+//}
 
 
 

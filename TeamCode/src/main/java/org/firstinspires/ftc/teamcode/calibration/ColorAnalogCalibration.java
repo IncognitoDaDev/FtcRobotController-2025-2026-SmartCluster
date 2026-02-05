@@ -8,10 +8,10 @@ import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.smartcluster.oracleftc.hardware.OracleLynxVoltageSensor;
 
-import org.firstinspires.ftc.teamcode.subsystem.Robot;
+import org.firstinspires.ftc.teamcode.subsystem.ColorRangefinder;
 
 @Config
-@TeleOp(group="Calibration")
+//@TeleOp(group="Calibration")
 public class ColorAnalogCalibration extends LinearOpMode {
 
     @Override
