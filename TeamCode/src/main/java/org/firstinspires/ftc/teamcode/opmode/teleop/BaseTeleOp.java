@@ -218,6 +218,14 @@ public class BaseTeleOp extends LinearOpMode {
         FSM<TeleOpState> fsm = fsmBuilder.build(scheduler);
 
         waitForStart();
+        robot.cam.reset();
+        scheduler.schedule(
+                new ParallelCommand(
+                        robot.drive.driveFieldCentric(driverGamepad, isRed, cornerCoordinate),
+                        robot.cam.updatePoseFromTags(robot.drive.localizer),
+                        robot.update()
+                )
+        );
 
         List<LynxModule> lynxModules = hardwareMap.getAll(LynxModule.class);
         for (LynxModule lynxModule : lynxModules)

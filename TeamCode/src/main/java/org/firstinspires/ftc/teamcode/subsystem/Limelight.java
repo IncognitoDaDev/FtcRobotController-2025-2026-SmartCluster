@@ -128,6 +128,39 @@ public class Limelight extends Subsystem {
 //        return limelightPose;
 //    }
 
+//    public Pose2d getPose(){
+//        telemetry.addData("Limelight Pose estimate",limelightPose);
+//        return limelightPose;
+//    }
+
+
+    private double normalizeAngle(double angle) {
+        return Math.atan2(Math.sin(angle), Math.cos(angle));
+    }
+
+
+    public Command updatePoseFromTags(Localizer localizer) {
+        return Command.builder()
+                .update(() -> {
+                    LLResult result = limelight.getLatestResult();
+                    if (result == null || !result.isValid()) return;
+                    List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
+                    if (fiducials.isEmpty()) return;
+                    Pose2d llPose = new Pose2d(
+                            result.getBotpose_MT2().getPosition().x,
+                            result.getBotpose_MT2().getPosition().y,
+                            normalizeAngle(
+                                    result.getBotpose_MT2()
+                                            .getOrientation()
+                                            .getYaw(AngleUnit.RADIANS) + Math.PI
+                            )
+                    );
+                    limelightPose = llPose;
+                    localizer.setPose(llPose);
+                })
+                .build();
+    }
+
     public void reset() {
        limelight.start();
     }
