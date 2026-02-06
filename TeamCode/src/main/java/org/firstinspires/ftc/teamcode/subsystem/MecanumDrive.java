@@ -303,10 +303,10 @@ public class MecanumDrive  {
         // TODO: make sure your config has motors with these names (or change them)
         //   see https://ftc-docs.firstinspires.org/en/latest/hardware_and_software_configuration/configuring/index.html
         localizer=new SmartLocalizer(hardwareMap, telemetry);
-        frontRightMotor=hardwareMap.get(DcMotorEx.class, "frontRightMotor");
-        backRightMotor=hardwareMap.get(DcMotorEx.class, "backRightMotor");
-        frontLeftMotor=hardwareMap.get(DcMotorEx.class, "frontLeftMotor");
-        backLeftMotor=hardwareMap.get(DcMotorEx.class, "backLeftMotor");
+        frontRightMotor=hardwareMap.get(DcMotorEx.class, "frontRight");
+        backRightMotor=hardwareMap.get(DcMotorEx.class, "backRight");
+        frontLeftMotor=hardwareMap.get(DcMotorEx.class, "frontLeft");
+        backLeftMotor=hardwareMap.get(DcMotorEx.class, "backLeft");
 
         frontLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         backLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -527,29 +527,6 @@ public class MecanumDrive  {
             c.setStrokeWidth(1);
             c.strokePolyline(xPoints, yPoints);
         }
-    }
-
-    public Command retreatIntoWall()
-    {
-        AtomicReference<Double> retractLastPosition = new AtomicReference<>(getPose().value().position.y);
-        double resetTimeoutDelta = 0.2;
-        double resetTimeout = 50;
-        ElapsedTime retractTimer = new ElapsedTime();
-        return Command.builder()
-                .init(()->{
-                    setDrivePowers(new PoseVelocity2d(new Vector2d(-0.3,0),0));
-                })
-                .finished(()->{
-                    if(Math.abs(getPose().value().position.y-retractLastPosition.get())<resetTimeoutDelta)
-                    {
-                        return retractTimer.milliseconds()>resetTimeout;
-                    }else {
-                        retractLastPosition.set(getPose().value().position.y);
-                        retractTimer.reset();
-                    }
-                    return false;
-                })
-                .build();
     }
     public final class TurnAction implements Action {
         private final TimeTurn turn;

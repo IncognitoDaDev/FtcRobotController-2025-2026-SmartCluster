@@ -97,11 +97,11 @@ public class SmartLocalizer extends Localizer {
         this.telemetry=telemetry;
         canandgyro = hardwareMap.get(AnalogInput.class, "canandgyro");
         pinpoint = hardwareMap.get(OracleGoBildaPinpoint.class, "pinpoint");
-        parallelEncoder = new OverflowEncoder(new RawEncoder(hardwareMap.get(DcMotorEx.class, "backRightMotor")));
+        parallelEncoder = new OverflowEncoder(new RawEncoder(hardwareMap.get(DcMotorEx.class, "backLeft")));
         parallelEncoder.setDirection(DcMotorSimple.Direction.REVERSE);
         lastParallel = new DualNum<>(parallelEncoder.getPositionAndVelocity().position);
 
-        perpendicularEncoder = new OverflowEncoder(new RawEncoder(hardwareMap.get(DcMotorEx.class, "frontLeftMotor")));
+        perpendicularEncoder = new OverflowEncoder(new RawEncoder(hardwareMap.get(DcMotorEx.class, "frontLeft")));
         perpendicularEncoder.setDirection(DcMotorSimple.Direction.REVERSE);
         lastPerpendicular = new DualNum<>(perpendicularEncoder.getPositionAndVelocity().position);
         gyroVoltageOffset = canandgyro.getVoltage();

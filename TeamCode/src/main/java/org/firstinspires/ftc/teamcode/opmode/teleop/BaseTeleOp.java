@@ -51,29 +51,29 @@ public class BaseTeleOp extends LinearOpMode {
     public void runOpMode() throws InterruptedException
     {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
-        telemetry.setMsTransmissionInterval(100);
+//        telemetry.setMsTransmissionInterval(100);
 
-        Robot robot = new Robot(this,isRed);
-        ProcessedGamepad driverGamepad = new ProcessedGamepad(gamepad1),
-                operatorGamepad = new ProcessedGamepad(gamepad2);
+        Robot robot = new Robot(this, isRed);
+        ProcessedGamepad driverGamepad = new ProcessedGamepad(gamepad1);
+
         robot.drive.localizer.setPose(MecanumDrive.currentPose);
+
         scheduler.schedule(
-                new ParallelCommand(
-                        robot.drive.driveFieldCentric(driverGamepad, isRed, cornerCoordinate),
-                         robot.update()
-                ));
+                    robot.update(),
+                    robot.drive.driveFieldCentric(driverGamepad, isRed, cornerCoordinate)
+                );
 
         //Initialize
-        FSM.FSMBuilder<TeleOpState> fsmBuilder =  FSM.<TeleOpState>builder()
+        FSM<TeleOpState> fsm = FSM.<TeleOpState>builder()
                 .initial(TeleOpState.INIT)
                 .transition(TeleOpState.INIT, TeleOpState.IDLE, this::opModeIsActive,
                         new SequentialCommand(
                                 robot.reset(),
-                                new InstantCommand(() -> robot.storage.storage.OuttakeFacing = -1),
-                                new InstantCommand(()->robot.turret.turret.setTarget(0)),
-                                new InstantCommand(()->robot.turret.setTargetVelocity(500))
-
-
+                                new InstantCommand(() -> {
+                                    robot.storage.storage.OuttakeFacing = -1;
+                                    robot.turret.turret.setTarget(0);
+                                    robot.turret.setTargetVelocity(500);
+                                })
                 ))
                 .transition(BaseTeleOp.TeleOpState.IDLE, BaseTeleOp.TeleOpState.INTAKE, driverGamepad.left_bumper.down(),
                         new SequentialCommand(
@@ -82,13 +82,8 @@ public class BaseTeleOp extends LinearOpMode {
                         ))
                 .state(BaseTeleOp.TeleOpState.INTAKE, Command.builder()
                         .update(()->{
-                            // Scan only when it "knows" there is nothing
-                            if (robot.storage.spindexer.isNotInMotion().get()
-                                    && robot.storage.storage.Slot[0] == Storage.ArtifactColor.EMPTY)
-                            {
                                 Storage.ArtifactColor frontScan = robot.storage.identifyObj();
                                 robot.storage.storage.appendBallIntake(frontScan);
-                            }
                         })
                         .build())
 //                .transition(TeleOpState.INTAKE,TeleOpState.INTAKE, robot.storage::hasBall,robot.storage.nextBall())
@@ -212,10 +207,8 @@ public class BaseTeleOp extends LinearOpMode {
                                 new InstantCommand(()->{
                                             robot.turret.setTargetVelocity(500);
                                 })
-                        ));
-
-
-        FSM<TeleOpState> fsm = fsmBuilder.build(scheduler);
+                        ))
+                .build(scheduler);
 
         waitForStart();
 
@@ -224,7 +217,7 @@ public class BaseTeleOp extends LinearOpMode {
             lynxModule.setBulkCachingMode(LynxModule.BulkCachingMode.MANUAL);
 
 
-        MovingAverageFilter loopTimeFilter=new MovingAverageFilter(50);
+        MovingAverageFilter loopTimeFilter=new MovingAverageFilter(100);
 
         while (opModeIsActive()) {
 
@@ -233,7 +226,7 @@ public class BaseTeleOp extends LinearOpMode {
                 lynxModule.clearBulkCache();
                 lynxModule.getBulkData();
             }
-            robot.drive.updatePoseEstimate();
+
             CurrentState = fsm.getCurrentState();
 
             telemetry.addLine("StorageCache:");
@@ -243,8 +236,8 @@ public class BaseTeleOp extends LinearOpMode {
             telemetry.addData("[0]", robot.storage.storage.Slot[0]);
             telemetry.addData("[1]", robot.storage.storage.Slot[1]);
             telemetry.addData("[2]", robot.storage.storage.Slot[2]);
-            telemetry.addData("x", robot.drive.localizer.getPose().position.x);
-            telemetry.addData("y", robot.drive.localizer.getPose().position.y);
+            telemetry.addData("x", robot.drive.localizer.getPose().position.x.get(0));
+            telemetry.addData("y", robot.drive.localizer.getPose().position.y.get(0));
             telemetry.addData("turret shoot speed", robot.turret.getCurrentVelocity());
             telemetry.addData("heading (deg)", robot.drive.localizer.getPose().heading.log().get(0));
             telemetry.addData("state", CurrentState);
@@ -253,7 +246,6 @@ public class BaseTeleOp extends LinearOpMode {
 
             fsm.update();
             driverGamepad.process();
-            operatorGamepad.process();
         }
     }
 }

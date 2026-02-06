@@ -40,7 +40,6 @@ public class storageCalibration extends LinearOpMode {
         scheduler.schedule(
                 new ParallelCommand(
                         robot.drive.drive(driverGamepad),
-                        new InstantCommand(robot.drive.localizer::update),
                         robot.update()
                 ));
 

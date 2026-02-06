@@ -37,11 +37,10 @@ public class Storage extends Subsystem {
     private final ServoImplEx flapperRight, flapperLeft;
 
     private final AnalogInput frontColorSensor;
-//    private DigitalChannelImpl frontColorSensor_Purple, frontColorSensor_Green;
     public final Encoder spindexEncoder;
 
     public static MotorFeedforward spindexerFeedForward = new MotorFeedforward(0.0285,0.00455,0.0465);
-    public static PIDController spindexerPID = new PIDController(0.0031, 0.00000682, 0.000103);
+    public static PIDController spindexerPID = new PIDController(0.0031, 0.00000182, 0.000103);
     public static TrapezoidalMotionProfile spindexerMotionProfile = new TrapezoidalMotionProfile(7800,8800,8700);
 
     public static double flapperDownVal = 0.23, flapperUpVal = 0.5;
@@ -164,10 +163,7 @@ public class Storage extends Subsystem {
 
             @Override
             public Command reset() {
-                return new SequentialCommand(
-                        new InstantCommand(spindexEncoder::reset),
-                        spindexer.move(new AtomicReference<Double>(0.0))
-                );
+                return new InstantCommand(spindexEncoder::reset);
             }
         };
     }
@@ -421,17 +417,3 @@ public class Storage extends Subsystem {
         );
     }
 }
-
-
-
-// max speed = 60/0.155 =  387 degrees/sec = 64.5 RPM * 2 -> 129 RPM
-// max acceleration = (112%*64.5)*2= 72.24 RPM *2 -> 144.48 RPM
-// max decceleration = (95%*60)*2= 57 RPM *2 -> 114 RPM
-
-//kS - 0.05-0.1
-//kV - 0.03-0.04
-// kA -  0.001-0.005
-
-//p - 0.024 * 1.08;  0.0034
-//i - 0.00455 * 0.885;  0.009845
-//d - 0.875

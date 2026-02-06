@@ -3,23 +3,24 @@
     <EthernetDevice name="Webcam Turret" serialNumber="EthernetOverUsb:eth0:172.29.0.22"  port="0" ipAddress="172.29.0.1" />
     <LynxUsbDevice name="Control Hub Portal" serialNumber="(embedded)" parentModuleAddress="173">
         <LynxModule name="Control Hub" port="173">
-            <goBILDA5202SeriesMotor name="frontLeft" port="0" />
-            <goBILDA5202SeriesMotor name="backLeft" port="1" />
+            <goBILDA5202SeriesMotor name="frontLeft" port="0" />  <!-- Odo X encoder -->
+            <goBILDA5202SeriesMotor name="backLeft" port="1" />  <!-- Odo Y encoder -->
             <goBILDA5202SeriesMotor name="backRight" port="2" />
             <goBILDA5202SeriesMotor name="frontRight" port="3" /> <!--New Spindex encoder -->
 
             <ContinuousRotationServo name = "dexLeft" port="0" />
             <ContinuousRotationServo name= "dexRight" port="1"/>
 
-            <RevColorSensorV3 name="rotaryColorSensorF" port="0" bus="3"/>
+<!--            <RevColorSensorV3 name="rotaryColorSensorF" port="0" bus="3"/>-->
+            <AnalogInput name="rotaryColorSensorF_Analog" port="0"/>
 
-            <DigitalDevice name="rotaryColorSensorF_Purple" port="0"/>
-            <DigitalDevice name="rotaryColorSensorF_Green" port="1"/>
-
-            <goBILDAPinpoint name="pinpoint" port="1"/>
+            <OracleGoBildaPinpoint name="pinpoint" port="1"/>
             <LynxEmbeddedIMU name="imu" port="0" bus="0" />
+            <AnalogInput name="canandgyro" port="2"/>
         </LynxModule>
+    </LynxUsbDevice>
 
+    <LynxUsbDevice name="Expansion Hub Portal 1" serialNumber="DQ8P04TT" parentModuleAddress="2">
         <LynxModule name="Expansion Hub 2" port="2">
             <goBILDA5202SeriesMotor name="turretRotate" port="0" /> <!-- TurretRot Encoder -->
             <goBILDA5202SeriesMotor name="turretUp" port="1" /> <!-- Flywheel Encoder -->

@@ -60,7 +60,7 @@ public class Robot {
     {
         return new ParallelCommand(
 //                cam.getPose(color,drive.localizer),
-                Command.builder().update(drive::updatePoseEstimate).build(),
+                drive.update(),
                 turret.update(),
                 storage.update()
         );
