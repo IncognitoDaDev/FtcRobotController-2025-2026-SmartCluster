@@ -11,7 +11,7 @@ import com.smartcluster.oracleftc.hardware.wrappers.OmegaDcMotorImplEx;
 public class Intake extends Subsystem {
 
 
-    private final OmegaDcMotorImplEx intakeMotor;
+    public final OmegaDcMotorImplEx intakeMotor;
     public Intake(OpMode opMode, OmegaPowerCollector powerCollector) {
         super(opMode);
 

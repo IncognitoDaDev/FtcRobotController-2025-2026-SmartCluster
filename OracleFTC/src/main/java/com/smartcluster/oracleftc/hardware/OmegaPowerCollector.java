@@ -54,10 +54,6 @@ public class OmegaPowerCollector {
         voltageSensor = mode.hardwareMap.getAll(OracleLynxVoltageSensor.class).iterator().next();
         voltageSensor.setPolicy(OracleLynxVoltageSensor.OracleLynxVoltageSensorPolicy.CACHED);
         voltageSensor.setVoltageCacheFreshness(100);
-
-        lynxModules = mode.hardwareMap.getAll(LynxModule.class);
-        for (LynxModule lynxModule : lynxModules)
-            lynxModule.setBulkCachingMode(LynxModule.BulkCachingMode.MANUAL);
     }
 
     public double calculateNormalizedVoltage(double nominalVoltage)

@@ -43,6 +43,7 @@ public class OmegaDcMotorImplEx implements DcMotor{
         } else {
             power = adjustPower(power);
         }
+        setPowerValue(power);
     }
 
     @Override

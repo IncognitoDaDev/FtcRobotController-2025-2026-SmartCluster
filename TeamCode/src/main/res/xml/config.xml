@@ -13,10 +13,15 @@
 
             <RevColorSensorV3 name="rotaryColorSensorF" port="0" bus="3"/>
 
+            <DigitalDevice name="rotaryColorSensorF_Purple" port="0"/>
+            <DigitalDevice name="rotaryColorSensorF_Green" port="1"/>
+
             <goBILDAPinpoint name="pinpoint" port="1"/>
             <LynxEmbeddedIMU name="imu" port="0" bus="0" />
         </LynxModule>
+    </LynxUsbDevice>
 
+    <LynxUsbDevice name="Expansion Hub Portal 1" serialNumber="DQ8P04TT" parentModuleAddress="2">
         <LynxModule name="Expansion Hub 2" port="2">
             <goBILDA5202SeriesMotor name="turretRotate" port="0" /> <!-- TurretRot Encoder -->
             <goBILDA5202SeriesMotor name="turretUp" port="1" /> <!-- Flywheel Encoder -->

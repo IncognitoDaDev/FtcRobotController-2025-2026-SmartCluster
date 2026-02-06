@@ -11,6 +11,8 @@ import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.hardware.lynx.LynxNackException;
 import com.qualcomm.hardware.lynx.LynxServoController;
 import com.qualcomm.hardware.lynx.commands.core.LynxGetMotorEncoderPositionCommand;
+import com.qualcomm.hardware.lynx.commands.core.LynxGetServoPulseWidthCommand;
+import com.qualcomm.hardware.lynx.commands.core.LynxSetServoConfigurationCommand;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.ParallelCommand;
@@ -26,7 +28,7 @@ public class Robot {
     public static double nominalVoltage=10.0;
     private final OpMode opMode;
 
-    public final OmegaPowerCollector powerManager;
+    public OmegaPowerCollector powerManager;
     private final boolean color;
     public final Turret flywheel;
     public final MecanumDrive drive;
@@ -51,10 +53,12 @@ public class Robot {
         for (LynxModule lynxModule : lynxModules)
             if (lynxModule.getSerialNumber().isEmbedded()) {
                 ControlHub = lynxModule;
+                break;
             }
         for (LynxModule lynxModule : lynxModules)
             if (!lynxModule.getSerialNumber().isEmbedded()) {
                 ExpansionHub = lynxModule;
+                break;
             }
 
         ControlHub.setBulkCachingMode(LynxModule.BulkCachingMode.OFF);
@@ -63,6 +67,15 @@ public class Robot {
         DcMotorController = opMode.hardwareMap.getAll(LynxDcMotorController.class);
         ServoController = opMode.hardwareMap.getAll(LynxServoController.class);
 
+        try {
+                    new LynxGetServoPulseWidthCommand(ExpansionHub, 0).send();
+                    new LynxGetServoPulseWidthCommand(ExpansionHub, 1).send();
+                    new LynxGetServoPulseWidthCommand(ExpansionHub, 2).send();
+                    new LynxGetServoPulseWidthCommand(ExpansionHub, 3).send();
+        } catch (InterruptedException | LynxNackException e) {
+            throw new RuntimeException(e);
+        }
+
         this.powerManager = new OmegaPowerCollector(mode) {
             @Override
             public void read()
@@ -70,44 +83,69 @@ public class Robot {
                 try {
                     new LynxGetMotorEncoderPositionCommand(ControlHub, 3).send();
 
-                    new LynxGetMotorEncoderPositionCommand(ExpansionHub, 0).send();
-                    new LynxGetMotorEncoderPositionCommand(ExpansionHub, 1).send();
+//                    new LynxGetMotorEncoderPositionCommand(ExpansionHub, 0).send(); //TurrRot Encoder
+                    new LynxGetMotorEncoderPositionCommand(ExpansionHub, 1).send(); //Flywheel Encoder
 //                    new LynxGetMotorEncoderPositionCommand(ExpansionHub, 3).send();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                } catch (LynxNackException e) {
+
+//                    new LynxGetServoPulseWidthCommand(ExpansionHub, 0).send();
+//                    new LynxGetServoPulseWidthCommand(ExpansionHub, 1).send();
+//                    new LynxGetServoPulseWidthCommand(ExpansionHub, 2).send();
+//                    new LynxGetServoPulseWidthCommand(ExpansionHub, 3).send();
+                } catch (InterruptedException | LynxNackException e) {
                     throw new RuntimeException(e);
                 }
-
-                // Use only one servo of two-servo set for position
-                ServoController.get(1).getServoPosition(0); // Flapper Right
-                ServoController.get(1).getServoPosition(1); // Flapper Left
-                ServoController.get(1).getServoPosition(2); // Hood Right
-                ServoController.get(1).getServoPosition(3); // Hood Left
             }
 
             /** @noinspection DataFlowIssue*/
             @Override
             public void write()
             {
-                //Assuming that 0 is the Control Hub and 1 is the Expansion Hub (NOT VERIFIED)
-                DcMotorController.get(0).setMotorPower(0, bulkValues.DcMotorValues.get(0));
-                DcMotorController.get(0).setMotorPower(1, bulkValues.DcMotorValues.get(1));
-                DcMotorController.get(0).setMotorPower(2, bulkValues.DcMotorValues.get(2));
-                DcMotorController.get(0).setMotorPower(3, bulkValues.DcMotorValues.get(3));
-                DcMotorController.get(1).setMotorPower(0, bulkValues.DcMotorValues.get(4));
-                DcMotorController.get(1).setMotorPower(1, bulkValues.DcMotorValues.get(5)*calculateNormalizedVoltage(10.0));
-                DcMotorController.get(1).setMotorPower(2, bulkValues.DcMotorValues.get(6)*calculateNormalizedVoltage(10.0));
-                DcMotorController.get(1).setMotorPower(3, bulkValues.DcMotorValues.get(7));
 
-                ServoController.get(0).setServoPosition(0, bulkValues.ServoValues.get(0));
-                ServoController.get(0).setServoPosition(1, bulkValues.ServoValues.get(1));
+
+                //Assuming that 0 is the Control Hub and 1 is the Expansion Hub (NOT VERIFIED)
+//                DcMotorController.get(1).setMotorPower(0, bulkValues.DcMotorValues.get(0));
+                turret.turretRot.getDcMotor().setPower(bulkValues.DcMotorValues.get(0));
+
+//                DcMotorController.get(1).setMotorPower(1, bulkValues.DcMotorValues.get(1)*calculateNormalizedVoltage(10.0));
+                turret.turretUp.getDcMotor().setPower(bulkValues.DcMotorValues.get(1)*calculateNormalizedVoltage(10.0));
+
+//                DcMotorController.get(1).setMotorPower(2, bulkValues.DcMotorValues.get(2)*calculateNormalizedVoltage(10.0));
+                turret.turretDown.getDcMotor().setPower(bulkValues.DcMotorValues.get(1)*calculateNormalizedVoltage(10.0));
+
+//                DcMotorController.get(1).setMotorPower(3, bulkValues.DcMotorValues.get(3));
+                intake.intakeMotor.getDcMotor().setPower(bulkValues.DcMotorValues.get(3));
+
+//                DcMotorController.get(0).setMotorPower(0, bulkValues.DcMotorValues.get(4));
+                drive.frontLeft.getDcMotor().setPower(bulkValues.DcMotorValues.get(4));
+
+//                DcMotorController.get(0).setMotorPower(1, bulkValues.DcMotorValues.get(5));
+                drive.backLeft.getDcMotor().setPower(bulkValues.DcMotorValues.get(5));
+
+//                DcMotorController.get(0).setMotorPower(2, bulkValues.DcMotorValues.get(6));
+                drive.backRight.getDcMotor().setPower(bulkValues.DcMotorValues.get(6));
+
+//                DcMotorController.get(0).setMotorPower(3, bulkValues.DcMotorValues.get(7));
+                drive.frontRight.getDcMotor().setPower(bulkValues.DcMotorValues.get(7));
+
+
+//                ServoController.get(0).setServoPosition(0, bulkValues.ServoValues.get(0));
+                storage.spindexLeft.getServo().setPower(bulkValues.ServoValues.get(0));
+
+//                ServoController.get(0).setServoPosition(1, bulkValues.ServoValues.get(1));
+                storage.spindexRight.getServo().setPower(bulkValues.ServoValues.get(1));
+
 //                ServoController.get(0).setServoPosition(2, bulkValues.ServoValues.get(2));
 //                ServoController.get(0).setServoPosition(3, bulkValues.ServoValues.get(3));
-                ServoController.get(1).setServoPosition(0, bulkValues.ServoValues.get(4));
-                ServoController.get(1).setServoPosition(1, bulkValues.ServoValues.get(5));
-                ServoController.get(1).setServoPosition(2, bulkValues.ServoValues.get(6));
-                ServoController.get(1).setServoPosition(3, bulkValues.ServoValues.get(7));
+                storage.flapperRight.getServo().setPosition(bulkValues.ServoValues.get(4));
+
+//                ServoController.get(1).setServoPosition(1, bulkValues.ServoValues.get(5));
+                storage.flapperLeft.getServo().setPosition(bulkValues.ServoValues.get(5));
+
+//                ServoController.get(1).setServoPosition(2, bulkValues.ServoValues.get(6));
+                turret.rightHood.getServo().setPosition(bulkValues.ServoValues.get(6));
+
+//                ServoController.get(1).setServoPosition(3, bulkValues.ServoValues.get(7));
+                turret.leftHood.getServo().setPosition(bulkValues.ServoValues.get(7));
             }
         };
 

@@ -34,8 +34,8 @@ import org.firstinspires.ftc.teamcode.roadrunner.Localizer;
 public class Turret extends Subsystem {
 
 
-    private final OmegaDcMotorImplEx turretUp, turretDown,turretRot;
-    private final OmegaServoImplEx rightHood, leftHood;
+    public final OmegaDcMotorImplEx turretUp, turretDown,turretRot;
+    public final OmegaServoImplEx rightHood, leftHood;
     private OmegaPowerCollector powerCollector;
     public static TrapezoidalMotionProfile hoodMotionProfile = new TrapezoidalMotionProfile(12, 16, 16);
     public static TrapezoidalMotionProfile turretMotionProfile = new TrapezoidalMotionProfile(80, 100, 100);

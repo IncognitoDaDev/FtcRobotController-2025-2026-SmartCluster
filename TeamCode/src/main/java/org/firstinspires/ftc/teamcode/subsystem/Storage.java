@@ -35,8 +35,8 @@ import java.util.concurrent.atomic.AtomicReference;
 @Config
 public class Storage extends Subsystem {
 
-    private final OmegaCRServoImplEx spindexRight, spindexLeft;
-    private final OmegaServoImplEx flapperRight, flapperLeft;
+    public final OmegaCRServoImplEx spindexRight, spindexLeft;
+    public final OmegaServoImplEx flapperRight, flapperLeft;
     private final RevColorSensorV3 frontColorSensor;
     public final Encoder spindexEncoder;
     public static TrapezoidalMotionProfile flapperMotionProfile = new TrapezoidalMotionProfile(16, 16, 16);
