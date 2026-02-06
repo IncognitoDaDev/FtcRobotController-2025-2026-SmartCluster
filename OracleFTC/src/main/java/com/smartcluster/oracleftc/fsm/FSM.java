@@ -52,6 +52,7 @@ public class FSM<T extends Enum<T>> {
     }
 
     public void update()  {
+        scheduler.update();
         if (currentTransition != null) {
             if (scheduler.finished(currentTransition.getCommand())) {
                 currentState = currentTransition.getTargetState();

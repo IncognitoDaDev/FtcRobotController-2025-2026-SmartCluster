@@ -32,7 +32,7 @@ import org.firstinspires.ftc.teamcode.roadrunner.Localizer;
 public class Turret extends Subsystem {
 
 
-    private final DcMotorImplEx turretUp, turretDown,turretRot;
+    private final DcMotorImplEx turretUp, turretDown, turretRot;
     private final ServoImplEx rightHood, leftHood;
     private final OracleLynxVoltageSensor voltageSensor;
     public static TrapezoidalMotionProfile hoodMotionProfile = new TrapezoidalMotionProfile(12, 16, 16);

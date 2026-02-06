@@ -47,6 +47,7 @@ import com.smartcluster.oracleftc.math.Pose2d;
 import com.smartcluster.oracleftc.math.Pose2dDual;
 import com.smartcluster.oracleftc.math.Time;
 import com.smartcluster.oracleftc.math.Twist2dDual;
+import com.smartcluster.oracleftc.math.Vector2dDual;
 import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.utils.ProcessedGamepad;
 
@@ -606,7 +607,7 @@ public class MecanumDrive  {
             c.fillCircle(turn.beginPose.position.x, turn.beginPose.position.y, 2);
         }
     }
-    private Twist2dDual<Time> lastTwist;
+    private Twist2dDual<Time> lastTwist=new Twist2dDual<Time>(new Vector2dDual<Time>(new com.smartcluster.oracleftc.math.DualNum<Time>(0.0), new com.smartcluster.oracleftc.math.DualNum<Time>(0.0)), new com.smartcluster.oracleftc.math.DualNum<Time>(0.0));
     public PoseVelocity2d updatePoseEstimate() {
         Twist2dDual<Time> twist = lastTwist;
         PoseVelocity2d velocity = new PoseVelocity2d(
