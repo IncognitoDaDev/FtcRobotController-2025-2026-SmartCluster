@@ -23,8 +23,8 @@
     <LynxUsbDevice name="Expansion Hub Portal 1" serialNumber="DQ8P04TT" parentModuleAddress="2">
         <LynxModule name="Expansion Hub 2" port="2">
             <goBILDA5202SeriesMotor name="turretRotate" port="0" /> <!-- TurretRot Encoder -->
-            <goBILDA5202SeriesMotor name="turretUp" port="1" /> <!-- Flywheel Encoder -->
-            <goBILDA5202SeriesMotor name="turretDown" port="2" />
+            <goBILDA5202SeriesMotor name="turretUp" port="1" />
+            <goBILDA5202SeriesMotor name="turretDown" port="2" /> <!-- Flywheel Encoder -->
             <goBILDA5202SeriesMotor name="intakeMotor" port="3" /> <!-- Back-up Spindexer -->
 
             <Servo name="flapperRight" port="0"/>

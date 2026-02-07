@@ -71,8 +71,8 @@ public class BaseTeleOp extends LinearOpMode {
                                 robot.reset(),
                                 new InstantCommand(() -> {
                                     robot.storage.storage.OuttakeFacing = -1;
-//                                    robot.turret.turret.setTarget(0);
-//                                    robot.turret.setTargetVelocity(500);
+                                    robot.turret.turret.setTarget(0);
+                                    robot.turret.setTargetVelocity(500);
                                 }
                                 )
                 ))
@@ -84,7 +84,11 @@ public class BaseTeleOp extends LinearOpMode {
                 .state(BaseTeleOp.TeleOpState.INTAKE, Command.builder()
                         .update(()->{
                                 Storage.ArtifactColor frontScan = robot.storage.identifyObj();
-                                robot.storage.storage.appendBallIntake(frontScan);
+                                if (frontScan != Storage.ArtifactColor.EMPTY)
+                                {
+                                    gamepad1.rumble(15);
+                                    robot.storage.storage.appendBallIntake(frontScan);
+                                }
                         })
                         .build())
 //                .transition(TeleOpState.INTAKE,TeleOpState.INTAKE, robot.storage::hasBall,robot.storage.nextBall())
@@ -215,23 +219,29 @@ public class BaseTeleOp extends LinearOpMode {
 
         MovingAverageFilter loopTimeFilter=new MovingAverageFilter(100);
 
-//        Command.run(robot.update());
         while (opModeIsActive()) {
             robot.read();
 
             CurrentState = fsm.getCurrentState();
 
-            telemetry.addLine("StorageCache:");
-//            telemetry.addData("Order [0]", robot.cam.getOrder()[0]);
-//            telemetry.addData("Order [1]", robot.cam.getOrder()[1]);
-//            telemetry.addData("Order [2]", robot.cam.getOrder()[2]);
-            telemetry.addData("[0]", robot.storage.storage.Slot[0]);
-            telemetry.addData("[1]", robot.storage.storage.Slot[1]);
-            telemetry.addData("[2]", robot.storage.storage.Slot[2]);
+//            telemetry.addData("Spindexer Dist", Math.abs(robot.storage.spindexer.getPosition().get(0) - robot.storage.spindexer.getTarget()));
+
+            telemetry.addData("Dex Current", robot.storage.spindexer.getPosition().get(0));
+            telemetry.addData("Dex Target", robot.storage.spindexer.getTarget());
+
+
+            telemetry.addData("Order [0]", robot.cam.getOrder()[0]);
+            telemetry.addData("Order [1]", robot.cam.getOrder()[1]);
+            telemetry.addData("Order [2]", robot.cam.getOrder()[2]);
+            telemetry.addData("Slot [0]", robot.storage.storage.Slot[0]);
+            telemetry.addData("Slot [1]", robot.storage.storage.Slot[1]);
+            telemetry.addData("Slot [2]", robot.storage.storage.Slot[2]);
+
+            telemetry.addData("turret shoot speed", robot.turret.getCurrentVelocity());
+
             telemetry.addData("x", robot.drive.localizer.getPose().position.x.get(0));
             telemetry.addData("y", robot.drive.localizer.getPose().position.y.get(0));
-            telemetry.addData("turret shoot speed", robot.turret.getCurrentVelocity());
-            telemetry.addData("heading (deg)", robot.drive.localizer.getPose().heading.log().get(0));
+            telemetry.addData("heading (deg)", Math.toDegrees(robot.drive.localizer.getPose().heading.log().get(0)));
 
             telemetry.addData("state", CurrentState);
 
@@ -239,7 +249,6 @@ public class BaseTeleOp extends LinearOpMode {
             telemetry.update();
 
             fsm.update();
-            robot.write();
 
             driverGamepad.process();
         }

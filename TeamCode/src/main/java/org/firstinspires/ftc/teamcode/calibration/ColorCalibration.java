@@ -20,23 +20,21 @@ public class ColorCalibration extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
 
-        sensor_i2c = hardwareMap.get(RevColorSensorV3.class, "rotaryColorSensorF");
+//        sensor_i2c = hardwareMap.get(RevColorSensorV3.class, "rotaryColorSensorF");
         sensor_Analog = hardwareMap.get(AnalogInput.class, "rotaryColorSensorF_Analog");
 
         waitForStart();
         while(opModeIsActive()){
 
-            NormalizedRGBA data = sensor_i2c.getNormalizedColors();
-
-            telemetry.addData("A", data.alpha*256);
-            telemetry.addData("R", data.red*256);
-            telemetry.addData("G", data.green*256);
-            telemetry.addData("B", data.blue*256);
-            telemetry.addData("Distance", sensor_i2c.getDistance(DistanceUnit.MM));
+//            NormalizedRGBA data = sensor_i2c.getNormalizedColors();
+//
+//            telemetry.addData("A", data.alpha*256);
+//            telemetry.addData("R", data.red*256);
+//            telemetry.addData("G", data.green*256);
+//            telemetry.addData("B", data.blue*256);
+//            telemetry.addData("Distance", sensor_i2c.getDistance(DistanceUnit.MM));
 
             telemetry.addData("Analog output", sensor_Analog.getVoltage());
-
-
 
             telemetry.update();
 

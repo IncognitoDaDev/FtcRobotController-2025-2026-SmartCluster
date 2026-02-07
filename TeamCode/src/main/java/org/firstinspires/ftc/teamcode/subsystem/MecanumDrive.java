@@ -236,32 +236,32 @@ public class MecanumDrive  {
                 RevHubOrientationOnRobot.UsbFacingDirection.UP;
 
         // drive model parameters
-        public double inPerTick = 0.001978956002;
-        public double lateralInPerTick = 0.0011298844648970727;
-        public double trackWidthTicks = 5108.870240574716;
+        public double inPerTick = 0.00198489276065501461101615482164;
+        public double lateralInPerTick = 0.0012626677151045622;
+        public double trackWidthTicks = 6679.434891050771;
 
         // feedforward parameters (in tick units)
-        public double kS = 0.2;
-        public double kV = 0.00027;
-        public double kA = 0.00013;
+        public double kS = 1.781506346064614;
+        public double kV = 0.0001932892381012636;
+        public double kA = 0.000125;
 
         // path profile parameters (in inches)
         public double maxWheelVel = 80;
-        public double minProfileAccel = -100;
-        public double maxProfileAccel = 100;
+        public double minProfileAccel = -80;
+        public double maxProfileAccel = 80;
 
         // turn profile parameters (in radians)
-        public double maxAngVel = 6; // shared with path
-        public double maxAngAccel = 4;
+        public double maxAngVel = Math.PI; // shared with path
+        public double maxAngAccel = Math.PI;
 
         // path controller gains
         public double axialGain = 12;
-        public double lateralGain = 14;
-        public double headingGain = 20; // shared with turn
+        public double lateralGain = 12;
+        public double headingGain = 10; // shared with turn
 
-        public double axialVelGain = 1.2;
-        public double lateralVelGain = 1.5;
-        public double headingVelGain = 1.5; // shared with turn
+        public double axialVelGain = 1.07;
+        public double lateralVelGain = 0.2;
+        public double headingVelGain = 0.4; // shared with turn
     }
 
     public static Params PARAMS = new Params();
@@ -309,8 +309,8 @@ public class MecanumDrive  {
         frontLeftMotor=hardwareMap.get(DcMotorEx.class, "frontLeft");
         backLeftMotor=hardwareMap.get(DcMotorEx.class, "backLeft");
 
-        frontLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-        backLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        frontRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        backRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
 
         frontRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);

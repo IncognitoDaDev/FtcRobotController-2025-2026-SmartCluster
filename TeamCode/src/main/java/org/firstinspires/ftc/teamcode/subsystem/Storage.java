@@ -16,6 +16,7 @@ import com.smartcluster.oracleftc.commands.SequentialCommand;
 import com.smartcluster.oracleftc.hardware.subsystem.CRActuator;
 import com.smartcluster.oracleftc.hardware.subsystem.ServoActuator;
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
+import com.smartcluster.oracleftc.hardware.subsystem.SubsystemFlavor;
 import com.smartcluster.oracleftc.hardware.wrappers.Encoder;
 import com.smartcluster.oracleftc.hardware.wrappers.RawEncoder;
 import com.smartcluster.oracleftc.math.DualNum;
@@ -39,12 +40,14 @@ public class Storage extends Subsystem {
     private final AnalogInput frontColorSensor;
     public final Encoder spindexEncoder;
 
-    public static MotorFeedforward spindexerFeedForward = new MotorFeedforward(0.0285,0.00455,0.0465);
-    public static PIDController spindexerPID = new PIDController(0.0031, 0.00000182, 0.000103);
+    public static MotorFeedforward spindexerFeedForward = new MotorFeedforward(0.09,-0.0009,0.00005);
+    public static PIDController spindexerPID = new PIDController(0.0035, -0.0000003, 0.00008);
     public static TrapezoidalMotionProfile spindexerMotionProfile = new TrapezoidalMotionProfile(7800,8800,8700);
 
+    public static double tolerance = 7.0;
+
     public static double flapperDownVal = 0.23, flapperUpVal = 0.5;
-    public static TrapezoidalMotionProfile flapperMotionProfile = new TrapezoidalMotionProfile(16, 16, 16);
+    public static TrapezoidalMotionProfile flapperMotionProfile = new TrapezoidalMotionProfile(20, 20, 20);
 
     public final ServoActuator flapper;
     public final CRActuator spindexer;
@@ -123,9 +126,6 @@ public class Storage extends Subsystem {
 
         flapperLeft.setDirection(Servo.Direction.REVERSE);
 
-//        frontColorSensor_Purple = hardwareMap.get(DigitalChannelImpl.class, "rotaryColorSensorF_Purple");
-//        frontColorSensor_Green = hardwareMap.get(DigitalChannelImpl.class, "rotaryColorSensorF_Green");
-
         flapper = new ServoActuator(this, "flapper", flapperMotionProfile,flapperLeft,flapperRight)
         {
             @Override
@@ -148,7 +148,7 @@ public class Storage extends Subsystem {
         };
 
 
-        spindexer = new CRActuator(this, "spindexer", spindexerPID, spindexerFeedForward, spindexerMotionProfile, 4.0, spindexLeft, spindexRight) {
+        spindexer = new CRActuator(this, "spindexer", spindexerPID, spindexerFeedForward, spindexerMotionProfile, tolerance, spindexLeft, spindexRight) {
             @Override
             public boolean setTarget(double target) {
                 this.ManualSetFromPosition(getPosition().get(0));
@@ -175,7 +175,7 @@ public class Storage extends Subsystem {
 
         if (coly>1100) // Is something in front?
         {
-            if (coly>1190 && coly<1208) return ArtifactColor.GREEN;
+            if (coly>1186 && coly<1208) return ArtifactColor.GREEN;
             else return ArtifactColor.PURPLE;
         }
 
@@ -415,5 +415,10 @@ public class Storage extends Subsystem {
                 spindexer.update()
 
         );
+    }
+
+    @Override
+    public SubsystemFlavor flavor() {
+        return SubsystemFlavor.Mixed;
     }
 }

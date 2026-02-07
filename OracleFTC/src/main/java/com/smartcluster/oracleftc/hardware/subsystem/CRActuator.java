@@ -113,8 +113,7 @@ public abstract class CRActuator {
 
                     final double distance = to.get() - from.get();
                     DualNum<Time> mp = motionProfile.getMotionState(Math.abs(distance), time.seconds());
-                    double power = feedforward.update(mp.get(0), mp.get(1))
-                            + pid.update(mp.get(0) * Math.signum(distance) + from.get(), getPosition().get(0));
+                    double power = feedforward.update(mp.get(0), mp.get(1)) + pid.update(mp.get(0) * Math.signum(distance) + from.get(), getPosition().get(0));
 
                     for (CRServoImpl motor : crservos) {
                         if (enabled) motor.setPower(power);

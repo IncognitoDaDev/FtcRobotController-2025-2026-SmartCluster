@@ -41,7 +41,7 @@ public class Turret extends Subsystem {
     public static MotorFeedforward turretFeedForward = new MotorFeedforward(0.01, 0.0015, 0);
 
     public final Actuator turret;
-    public final Encoder encoder;
+    public final Encoder encoderRot;
     public final ServoActuator hood;
     private final double m = 8.502;
     private final double n = 1300.98;
@@ -53,11 +53,16 @@ public class Turret extends Subsystem {
         super(opMode);
 
         voltageSensor = hardwareMap.getAll(OracleLynxVoltageSensor.class).iterator().next();
+
         turretUp = hardwareMap.get(DcMotorImplEx.class, "turretUp");
+//        encoderVel = new RawEncoder(hardwareMap.get(DcMotorImplEx.class, "turretUp"));
         turretUp.setDirection(DcMotorSimple.Direction.REVERSE);
-        turretRot = hardwareMap.get(DcMotorImplEx.class, "turretRotate");
-        encoder = new RawEncoder(hardwareMap.get(DcMotorImplEx.class,"turretRotate"));
         turretDown = hardwareMap.get(DcMotorImplEx.class, "turretDown");
+
+
+        turretRot = hardwareMap.get(DcMotorImplEx.class, "turretRotate");
+        encoderRot = new RawEncoder(hardwareMap.get(DcMotorImplEx.class,"turretRotate"));
+
         hardwareMap.get(ServoImplEx.class, "leftHood");
         rightHood = hardwareMap.get(ServoImplEx.class, "rightHood");
         leftHood = hardwareMap.get(ServoImplEx.class, "leftHood");
@@ -86,7 +91,7 @@ public class Turret extends Subsystem {
         turret = new Actuator(this, "turret", turretPID, turretMotionProfile, turretFeedForward, 2, turretRot) {
             @Override
             public Command reset() {
-                return new InstantCommand(encoder::reset);
+                return new InstantCommand(encoderRot::reset);
             }
 
             @Override
@@ -97,7 +102,7 @@ public class Turret extends Subsystem {
 
             @Override
             public DualNum<Time> getPosition() {
-                return encoder.getCurrentPosition().div(28).times(48).div(260).times(103.8);
+                return encoderRot.getCurrentPosition().div(28).times(48).div(260).times(103.8);
             }
 
 
@@ -151,8 +156,9 @@ public class Turret extends Subsystem {
                 .requires(this)
                 .build();
     }
+
     public double getCurrentVelocity() {
-        return velocityFilter.update((turretUp.getVelocity() / 28) * 60);
+        return velocityFilter.update((turretDown.getVelocity() / 28) * 60);
     }
 
     public void setTargetVelocity(double velocity) {
@@ -225,6 +231,6 @@ public class Turret extends Subsystem {
 
     @Override
     public SubsystemFlavor flavor() {
-        return SubsystemFlavor.ControlHubOnly;
+        return SubsystemFlavor.ExpansionHubOnly;
     }
 }

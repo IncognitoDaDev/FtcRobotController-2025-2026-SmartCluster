@@ -88,11 +88,8 @@ public class turretCalibration extends LinearOpMode {
         MovingAverageFilter loopTimeFilter=new MovingAverageFilter(50);
 
         while (opModeIsActive()) {
-            for (LynxModule lynxModule : lynxModules)
-            {
-                lynxModule.clearBulkCache();
-                lynxModule.getBulkData();
-            }
+            robot.read();
+
             telemetry.addLine("Pose:");
             telemetry.addData("x", robot.drive.localizer.getPose().position.x);
             telemetry.addData("y", robot.drive.localizer.getPose().position.y);

@@ -80,9 +80,9 @@ public class SmartLocalizer extends Localizer {
         }
     }
 
-    public static double parallelOffset=-124.50000;
-    public static double perpendicularOffset=0;
-        public static double mmPerTick=1/19.89436789;
+    public static double parallelOffset=-4001.5408638757076*1/19.89436789;
+    public static double perpendicularOffset=864.5412905604903*1/19.89436789;
+    public static double mmPerTick=1/19.89436789;
     public static long pinpointTimeDelta = 1000;
     public static long pinpointRejectionThreshold = 4;
     private final AnalogInput canandgyro;
@@ -98,11 +98,11 @@ public class SmartLocalizer extends Localizer {
         canandgyro = hardwareMap.get(AnalogInput.class, "canandgyro");
         pinpoint = hardwareMap.get(OracleGoBildaPinpoint.class, "pinpoint");
         parallelEncoder = new OverflowEncoder(new RawEncoder(hardwareMap.get(DcMotorEx.class, "backLeft")));
-        parallelEncoder.setDirection(DcMotorSimple.Direction.REVERSE);
+//        parallelEncoder.setDirection(DcMotorSimple.Direction.REVERSE);
         lastParallel = new DualNum<>(parallelEncoder.getPositionAndVelocity().position);
 
         perpendicularEncoder = new OverflowEncoder(new RawEncoder(hardwareMap.get(DcMotorEx.class, "frontLeft")));
-        perpendicularEncoder.setDirection(DcMotorSimple.Direction.REVERSE);
+//        perpendicularEncoder.setDirection(DcMotorSimple.Direction.REVERSE);
         lastPerpendicular = new DualNum<>(perpendicularEncoder.getPositionAndVelocity().position);
         gyroVoltageOffset = canandgyro.getVoltage();
 
@@ -126,15 +126,15 @@ public class SmartLocalizer extends Localizer {
     @Override
     public final Twist2dDual<Time> update() {
 
-        if(BuildConfig.DEBUG)
-        {
-            telemetry.addData("rawGyroAngle", AngleUnit.normalizeDegrees((-canandgyro.getVoltage()) * 360.0 / 3.3));
-            telemetry.addData("offsetGyroAngle", AngleUnit.normalizeDegrees((canandgyro.getVoltage()-gyroVoltageOffset) * 360.0 / 3.3));
-            telemetry.addData("pinpointFrequency", pinpoint.getFrequency());
-
-            telemetry.addData("parallelEncoder", parallelEncoder.getPositionAndVelocity().position);
-            telemetry.addData("perpendicularEncoder", perpendicularEncoder.getPositionAndVelocity().position);
-        }
+//        if(BuildConfig.DEBUG)
+//        {
+//            telemetry.addData("rawGyroAngle", AngleUnit.normalizeDegrees((-canandgyro.getVoltage()) * 360.0 / 3.3));
+//            telemetry.addData("offsetGyroAngle", AngleUnit.normalizeDegrees((canandgyro.getVoltage()-gyroVoltageOffset) * 360.0 / 3.3));
+//            telemetry.addData("pinpointFrequency", pinpoint.getFrequency());
+//
+//            telemetry.addData("parallelEncoder", parallelEncoder.getPositionAndVelocity().position);
+//            telemetry.addData("perpendicularEncoder", perpendicularEncoder.getPositionAndVelocity().position);
+//        }
 
         double canandgyroHeading = Math.toRadians(AngleUnit.normalizeDegrees((canandgyro.getVoltage()-gyroVoltageOffset) * 360.0 / 3.3));
 
@@ -171,7 +171,7 @@ public class SmartLocalizer extends Localizer {
             pinpointTime.reset();
         }
         pose = new Pose2dDual<>(pose.value().plus(updateTwist.value()), pose.value().plus(updateTwist.value()).times(updateTwist.velocity()));
-        telemetry.addData("internalHeading", Math.toDegrees(pose.heading.value().log()));
+//        telemetry.addData("internalHeading", Math.toDegrees(pose.heading.value().log()));
 
         lastHeading=Rotation2dDual.constant(heading,1);
         lastParallel=new DualNum<>(parallel.get(0));

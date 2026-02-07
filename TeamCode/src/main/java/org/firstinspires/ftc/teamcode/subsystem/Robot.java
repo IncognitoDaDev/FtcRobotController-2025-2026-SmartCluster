@@ -78,10 +78,6 @@ public class Robot {
         }
     }
 
-    public void write()
-    {
-
-    }
 
     public Command reset()
     {
@@ -99,7 +95,7 @@ public class Robot {
         return new ParallelCommand(
 //                cam.getPose(color,drive.localizer),
                 drive.update(),
-                new InstantCommand(drive::updatePoseEstimate),
+//                new InstantCommand(drive::updatePoseEstimate),
                 turret.update(),
                 storage.update()
         );

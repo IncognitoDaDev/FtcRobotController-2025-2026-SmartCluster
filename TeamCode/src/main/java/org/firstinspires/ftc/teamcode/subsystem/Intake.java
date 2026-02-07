@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.subsystem;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorImplEx;
 import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.InstantCommand;
@@ -17,6 +18,8 @@ public class Intake extends Subsystem {
         super(opMode);
 
         intakeMotor=hardwareMap.get(DcMotorImplEx.class, "intakeMotor");
+        intakeMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+
         voltageSensor=hardwareMap.getAll(OracleLynxVoltageSensor.class).iterator().next();
     }
 
@@ -34,5 +37,9 @@ public class Intake extends Subsystem {
         return new InstantCommand(()->intakeMotor.setPower(0));
     }
 
+    @Override
+    public SubsystemFlavor flavor() {
+        return SubsystemFlavor.ExpansionHubOnly;
+    }
 
 }

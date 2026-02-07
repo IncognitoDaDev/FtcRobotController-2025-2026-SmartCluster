@@ -7,7 +7,6 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.subsystem.MecanumDrive;
 
-@TeleOp(group="Calibration")
 public final class ManualFeedbackTuner extends LinearOpMode {
     public static double DISTANCE = 64;
 
