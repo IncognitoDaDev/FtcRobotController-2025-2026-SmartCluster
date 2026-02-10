@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.roadrunner.tuning;
 
 import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -8,7 +9,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.teamcode.subsystem.MecanumDrive;
 
 public final class ManualFeedbackTuner extends LinearOpMode {
-    public static double DISTANCE = 64;
+    public static double DISTANCE = 48;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -24,6 +25,7 @@ public final class ManualFeedbackTuner extends LinearOpMode {
                                 .lineToX(0)
                                 .build());
             }
+
         } else {
             throw new RuntimeException();
         }

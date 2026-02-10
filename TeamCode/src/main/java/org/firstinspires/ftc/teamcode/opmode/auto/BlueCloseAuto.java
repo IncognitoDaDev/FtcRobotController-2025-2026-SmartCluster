@@ -110,11 +110,8 @@ public class BlueCloseAuto extends LinearOpMode {
         Robot robot = new Robot(this,true);
 
         scheduler.schedule(robot.update());
-        Command.run(new SequentialCommand(
-                robot.reset()
-        ));
-        SequentialAction autoAction = new SequentialAction
-                (
+        Command.run(robot.reset());
+        SequentialAction autoAction = new SequentialAction(
                         //FIRST SHOOT
                         new ParallelAction( // Move to a better pos for obelisk scan
                                 robot.drive.actionBuilder(startPose)
@@ -274,20 +271,15 @@ public class BlueCloseAuto extends LinearOpMode {
 
         Canvas c = new Canvas();
 
-
         autoAction.preview(c);
 
         boolean running = true;
         while (running && !isStopRequested()) {
-            for (LynxModule lynxModule : lynxModules)
-            {
-                lynxModule.clearBulkCache();
-                lynxModule.getBulkData();
-            }
+            robot.read();
 
             TelemetryPacket p = new TelemetryPacket();
             p.fieldOverlay().getOperations().addAll(c.getOperations());
-            robot.drive.updatePoseEstimate();
+//            robot.drive.updatePoseEstimate();
             running = autoAction.run(p);
             scheduler.update();
 
@@ -307,11 +299,7 @@ public class BlueCloseAuto extends LinearOpMode {
         }
 
         while (opModeIsActive()) {
-            for (LynxModule lynxModule : lynxModules)
-            {
-                lynxModule.clearBulkCache();
-                lynxModule.getBulkData();
-            }
+            robot.read();
 
             scheduler.update();
             telemetry.update();

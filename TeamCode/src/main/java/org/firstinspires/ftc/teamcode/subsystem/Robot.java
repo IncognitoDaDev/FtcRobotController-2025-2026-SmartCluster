@@ -34,24 +34,24 @@ public class Robot {
     public final Turret turret;
     public final Limelight cam;
 
-    class BulkValues
-    {
-        double dexLeftServo = 0, dexRightServo = 0;
-        double flapperLeft = 0, flapperRight = 0;
-        double hoodLeft = 0, hoodRight = 0;
-
-        double turretMotorUp = 0, turretMotorDown = 0;
-        double turretMotorRot = 0;
-
-        double frontLeftMotor = 0, frontRightMotor = 0;
-        double backLeftMotor = 0, backRightMotor = 0;
-    }
+//    class BulkValues
+//    {
+//        double dexLeftServo = 0, dexRightServo = 0;
+//        double flapperLeft = 0, flapperRight = 0;
+//        double hoodLeft = 0, hoodRight = 0;
+//
+//        double turretMotorUp = 0, turretMotorDown = 0;
+//        double turretMotorRot = 0;
+//
+//        double frontLeftMotor = 0, frontRightMotor = 0;
+//        double backLeftMotor = 0, backRightMotor = 0;
+//    }
 
     List<LynxModule> lynxModules;
 
     public Robot(OpMode mode,boolean color)
     {
-        BulkValues bulkValues = new BulkValues();
+//        BulkValues bulkValues = new BulkValues();
 
         this.opMode = mode;
         OracleLynxVoltageSensor voltageSensor = mode.hardwareMap.getAll(OracleLynxVoltageSensor.class).iterator().next();

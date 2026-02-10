@@ -184,7 +184,7 @@ public class Turret extends Subsystem {
                     power = power * (Robot.nominalVoltage / voltageSensor.getVoltage());
                     turretUp.setPower(power);
                     turretDown.setPower(power);
-                    if(currentY>=Math.abs(currentX)+9*1.41 || (currentY>-46+9*1.41 && Math.abs(currentX)<23+9*1.41))inZone = false;
+                    if(currentY>=(Math.abs(currentX)+9)*1.41 || (currentY>(-46+9)*1.41 && Math.abs(currentX)<(23+9)*1.41))inZone = false;
                 })
                 .finished(()->!inZone)
                 .build();

@@ -22,6 +22,7 @@ import com.smartcluster.oracleftc.utils.Performance;
 import com.smartcluster.oracleftc.utils.ProcessedGamepad;
 
 //import org.firstinspires.ftc.teamcode.subsystem.MecanumDrive;
+import org.firstinspires.ftc.teamcode.roadrunner.oraclelocalizer.SmartLocalizer;
 import org.firstinspires.ftc.teamcode.subsystem.MecanumDrive;
 import org.firstinspires.ftc.teamcode.subsystem.Robot;
 import org.firstinspires.ftc.teamcode.subsystem.Storage;
@@ -130,6 +131,7 @@ public class BaseTeleOp extends LinearOpMode {
 
                                 )
                         )
+
                 .transition(TeleOpState.FarShooting,TeleOpState.SHOOT,driverGamepad.square.pressed(),
                         new RaceCommand(
                                 new SequentialCommand(
@@ -223,9 +225,6 @@ public class BaseTeleOp extends LinearOpMode {
             robot.read();
 
             CurrentState = fsm.getCurrentState();
-
-//            telemetry.addData("Spindexer Dist", Math.abs(robot.storage.spindexer.getPosition().get(0) - robot.storage.spindexer.getTarget()));
-
             telemetry.addData("Dex Current", robot.storage.spindexer.getPosition().get(0));
             telemetry.addData("Dex Target", robot.storage.spindexer.getTarget());
 
@@ -241,8 +240,7 @@ public class BaseTeleOp extends LinearOpMode {
 
             telemetry.addData("x", robot.drive.localizer.getPose().position.x.get(0));
             telemetry.addData("y", robot.drive.localizer.getPose().position.y.get(0));
-            telemetry.addData("heading (deg)", Math.toDegrees(robot.drive.localizer.getPose().heading.log().get(0)));
-
+            telemetry.addData("heading (deg)",  Math.toDegrees(robot.drive.localizer.getPose().heading.value().log()));
             telemetry.addData("state", CurrentState);
 
             telemetry.addData("hz", loopTimeFilter.update(1/(Performance.loopTimeNano()/1E9)));

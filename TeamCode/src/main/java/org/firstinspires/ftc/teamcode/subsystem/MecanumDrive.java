@@ -73,7 +73,7 @@ public class MecanumDrive  {
 
     public DcMotorEx frontRightMotor, backRightMotor, frontLeftMotor, backLeftMotor;
     public LynxVoltageSensor voltageSensor;
-    public Localizer localizer;
+    public SmartLocalizer localizer;
 
     public Command update()
     {
@@ -83,6 +83,11 @@ public class MecanumDrive  {
                     FtcDashboard.getInstance().sendTelemetryPacket(drawRobot(getPose()));
 
                 }).build();
+    }
+
+    public void updateManual()
+    {
+        lastTwist =localizer.update();
     }
 
     public TelemetryPacket drawRobot(com.acmerobotics.roadrunner.Pose2dDual<Time> pose) {
@@ -126,7 +131,7 @@ public class MecanumDrive  {
                         )
                 ),
                 com.acmerobotics.roadrunner.Rotation2dDual.exp(new DualNum<>(
-                        new double[] {localizerPose.heading.value().log(), localizerPose.heading.velocity().get(0)}
+                        new double[] {localizer.getPose().heading.value().log(), localizerPose.heading.velocity().get(0)}
                 ))
         );
     }
@@ -181,7 +186,7 @@ public class MecanumDrive  {
                         lockedMode.set(!lockedMode.get());
                     }
 
-                    double botHeading = localizer.getPose().heading.log().get(0);
+                    double botHeading = localizer.getPose().heading.value().log();
                     double boost = (gamepad.right_bumper.get() ? 1 : 0.4);
 
                     double rx;
@@ -237,31 +242,31 @@ public class MecanumDrive  {
 
         // drive model parameters
         public double inPerTick = 0.00198489276065501461101615482164;
-        public double lateralInPerTick = 0.0012626677151045622;
-        public double trackWidthTicks = 6679.434891050771;
+        public double lateralInPerTick = 0.0011379103242589962;
+        public double trackWidthTicks = 6312.526638680137;
 
         // feedforward parameters (in tick units)
-        public double kS = 1.781506346064614;
-        public double kV = 0.0001932892381012636;
-        public double kA = 0.000125;
+        public double kS = 1.3259592293519429;
+        public double kV = 0.0002631804859606018;
+        public double kA = 0.000082;
 
         // path profile parameters (in inches)
-        public double maxWheelVel = 80;
-        public double minProfileAccel = -80;
-        public double maxProfileAccel = 80;
+        public double maxWheelVel = 60;
+        public double minProfileAccel = -60;
+        public double maxProfileAccel = 60;
 
         // turn profile parameters (in radians)
         public double maxAngVel = Math.PI; // shared with path
         public double maxAngAccel = Math.PI;
 
         // path controller gains
-        public double axialGain = 12;
-        public double lateralGain = 12;
-        public double headingGain = 10; // shared with turn
+        public double axialGain = 0;
+        public double lateralGain = 0;
+        public double headingGain = 0; // shared with turn
 
-        public double axialVelGain = 1.07;
-        public double lateralVelGain = 0.2;
-        public double headingVelGain = 0.4; // shared with turn
+        public double axialVelGain = 0;
+        public double lateralVelGain = 0;
+        public double headingVelGain = 0; // shared with turn
     }
 
     public static Params PARAMS = new Params();
@@ -291,10 +296,6 @@ public class MecanumDrive  {
     private final DownsampledWriter mecanumCommandWriter = new DownsampledWriter("MECANUM_COMMAND", 50_000_000);
     private final Telemetry telemetry;
 
-    public MecanumDrive(OpMode opMode)
-    {
-        this(opMode.hardwareMap, opMode.telemetry);
-    }
     public MecanumDrive(HardwareMap hardwareMap, Telemetry telemetry) {
         this.telemetry=telemetry;
 
@@ -386,7 +387,7 @@ public class MecanumDrive  {
 
             telemetry.addData("targetX", target.value().position.x);
             telemetry.addData("targetY", target.value().position.y);
-            telemetry.addData("targetH", Math.toDegrees(target.value().heading.log()));
+            telemetry.addData("targetH", Math.toDegrees(target.heading.value().log()));
             com.acmerobotics.roadrunner.Pose2d error = target.value().minusExp(getPose().value());
 
             if (error.position.norm()<2 && Math.abs(error.heading.log())<Math.toRadians(5)) {
@@ -499,7 +500,7 @@ public class MecanumDrive  {
 
             p.put("x", localizer.getPose().position.x);
             p.put("y", localizer.getPose().position.y);
-            p.put("heading (deg)", Math.toDegrees(localizer.getPose().value().heading.toDouble()));
+            p.put("heading (deg)", Math.toDegrees(localizer.getPose().heading.value().log()));
 
             p.put("xError", error.position.x);
             p.put("yError", error.position.y);
@@ -609,6 +610,7 @@ public class MecanumDrive  {
     }
     private Twist2dDual<Time> lastTwist=new Twist2dDual<Time>(new Vector2dDual<Time>(new com.smartcluster.oracleftc.math.DualNum<Time>(0.0), new com.smartcluster.oracleftc.math.DualNum<Time>(0.0)), new com.smartcluster.oracleftc.math.DualNum<Time>(0.0));
     public PoseVelocity2d updatePoseEstimate() {
+        localizer.update();
         Twist2dDual<Time> twist = lastTwist;
         PoseVelocity2d velocity = new PoseVelocity2d(
                 new com.acmerobotics.roadrunner.Vector2d(

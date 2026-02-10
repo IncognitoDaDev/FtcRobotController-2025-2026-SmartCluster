@@ -9,9 +9,13 @@ import com.acmerobotics.roadrunner.PoseVelocity2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.smartcluster.oracleftc.commands.Command;
+import com.smartcluster.oracleftc.commands.CommandScheduler;
 
 import org.firstinspires.ftc.teamcode.roadrunner.Drawing;
 import org.firstinspires.ftc.teamcode.subsystem.MecanumDrive;
+import org.firstinspires.ftc.teamcode.subsystem.Robot;
+import org.jetbrains.annotations.NotNull;
 
 public class LocalizationTest extends LinearOpMode {
     @Override
@@ -19,7 +23,7 @@ public class LocalizationTest extends LinearOpMode {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
         if (TuningOpModes.DRIVE_CLASS.equals(MecanumDrive.class)) {
-            MecanumDrive drive = new MecanumDrive(this);
+            MecanumDrive drive = new MecanumDrive(hardwareMap, telemetry);
 
             waitForStart();
 
@@ -32,14 +36,13 @@ public class LocalizationTest extends LinearOpMode {
                         -gamepad1.right_stick_x
                 ));
 
-                drive.updatePoseEstimate();
-
                 Pose2d pose = drive.getPose().value();
                 telemetry.addData("x", pose.position.x);
                 telemetry.addData("y", pose.position.y);
-                telemetry.addData("heading (deg)", Math.toDegrees(pose.heading.toDouble()));
+                telemetry.addData("heading", pose.heading.log());
                 telemetry.update();
 
+                drive.updateManual();
                 TelemetryPacket packet = new TelemetryPacket();
                 packet.fieldOverlay().setStroke("#3F51B5");
                 Drawing.drawRobot(packet.fieldOverlay(), pose);
