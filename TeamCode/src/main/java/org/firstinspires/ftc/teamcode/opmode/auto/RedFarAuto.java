@@ -101,7 +101,7 @@ public class RedFarAuto extends LinearOpMode {
     public static double hoodAngle = 0.62;
 
 
-    public VelConstraint slow = (pose2dDual, posePath, v) -> 20;
+    public VelConstraint slow = (pose2dDual, posePath, v) -> 25;
     public VelConstraint normal = (pose2dDual, posePath, v) -> 60;
 
     @Override

@@ -100,7 +100,7 @@ import java.util.concurrent.atomic.AtomicReference;
     private final Pose2d endPose = new Pose2d(-35, -56, Math.toRadians(90));
     public static double hoodAngle = 0.61;
 
-    public VelConstraint slow = (pose2dDual, posePath, v) -> 20;
+    public VelConstraint slow = (pose2dDual, posePath, v) -> 25;
     public VelConstraint normal = (pose2dDual, posePath, v) -> 60;
 
     @Override
