@@ -52,6 +52,7 @@ import org.firstinspires.ftc.teamcode.roadrunner.messages.DriveCommandMessage;
 import org.firstinspires.ftc.teamcode.roadrunner.messages.MecanumCommandMessage;
 import org.firstinspires.ftc.teamcode.roadrunner.messages.PoseMessage;
 import org.firstinspires.ftc.teamcode.roadrunner.oraclelocalizer.Localizer;
+import org.firstinspires.ftc.teamcode.roadrunner.oraclelocalizer.SmartLocalizer;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -83,7 +84,7 @@ public class MecanumDrive {
 
     public DcMotorEx frontRightMotor, backRightMotor, frontLeftMotor, backLeftMotor;
     public LynxVoltageSensor voltageSensor;
-    public Localizer localizer;
+    public SmartLocalizer localizer;
     public final LazyImu lazyImu;
     private final Telemetry telemetry;
 
@@ -167,12 +168,7 @@ public class MecanumDrive {
         LynxFirmware.throwIfModulesAreOutdated(hardwareMap);
 
         // Initialize localizer
-        localizer = new Localizer(hardwareMap, telemetry) {
-            @Override
-            public Twist2dDual<Time> update() {
-                return null;
-            }
-        };
+        localizer = new SmartLocalizer(hardwareMap, telemetry);
 
         // Initialize motors
         frontRightMotor = hardwareMap.get(DcMotorEx.class, "frontRightMotor");

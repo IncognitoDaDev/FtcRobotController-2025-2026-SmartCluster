@@ -138,18 +138,23 @@ public class MYteleop extends LinearOpMode {
 //                .transition(TeleOpState.CLOSE_SHOOTING, TeleOpState.IDLE, driverGamepad.square.pressed(),
 //                        new InstantCommand(() -> robot.turret.setTargetVelocity(500)))
 
-                .transition(TeleOpState.IDLE, TeleOpState.LIFT, driverGamepad.touchpad.pressed(),
+                .transition(TeleOpState.IDLE, TeleOpState.LIFT, driverGamepad.dpad_right.down(),
                         new ParallelCommand(
                                 robot.lift.liftUp(),
                                 robot.turret.blockShooter(),
-                                new InstantCommand(() ->robot.turret.setRawPower(0)),
-                                new InstantCommand(() -> robot.turret.hoodact.setTarget(0.0)),
+                                new InstantCommand(() -> {
+                                robot.turret.setRawPower(0);
+                                robot.turret.hoodact.setTarget(0.0);
+                                }),
                                 robot.intake.stop()
-                        )                )
+                        ))
 
-                .transition(TeleOpState.LIFT, TeleOpState.GOJO, ()-> CurrentState==TeleOpState.LIFT,
-                       robot.lift.hold()
-                )
+//                .state(TeleOpState.LIFT, robot.lift.liftUp())
+
+                .transition(TeleOpState.LIFT, TeleOpState.GOJO, driverGamepad.dpad_right.up(),
+                        robot.lift.hold())
+
+//                .state(TeleOpState.GOJO, robot.lift.hold())
 
 
                 .build(scheduler);
