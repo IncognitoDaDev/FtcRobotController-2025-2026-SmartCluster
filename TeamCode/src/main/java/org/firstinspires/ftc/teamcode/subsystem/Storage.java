@@ -13,6 +13,7 @@ import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.commands.ParallelCommand;
 import com.smartcluster.oracleftc.commands.SequentialCommand;
+import com.smartcluster.oracleftc.commands.WaitCommand;
 import com.smartcluster.oracleftc.hardware.subsystem.CRActuator;
 import com.smartcluster.oracleftc.hardware.subsystem.ServoActuator;
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
@@ -49,7 +50,7 @@ public class Storage extends Subsystem {
     public static double tolerance = 7.0;
 
     public static double flapperDownVal = 0.23, flapperUpVal = 0.5;
-    public static TrapezoidalMotionProfile flapperMotionProfile = new TrapezoidalMotionProfile(20, 20, 20);
+    public static TrapezoidalMotionProfile flapperMotionProfile = new TrapezoidalMotionProfile(10000, 10000, 10000);
 
     public final ServoActuator flapper;
     public final CRActuator spindexer;
@@ -216,6 +217,7 @@ public class Storage extends Subsystem {
     {
         return new SequentialCommand(
                 flapperUp(),
+                new WaitCommand(50),
                 flapperDown(),
                 new InstantCommand(() -> storage.removeBallOuttake())
         );
@@ -292,10 +294,10 @@ public class Storage extends Subsystem {
                             ballCount.getAndIncrement();
                             storage.Slot[0] = dataScanned;
 
-                            if (!storage.isFull())
+                            if (!storage.isFull() || ballCount.get() < maxBall)
                             {
                                 isSpin.set(true);
-                                spindexer.setTarget(spindexer.getPosition().get(0)+120);
+                                spindexer.setTarget(spindexer.getTarget()+120);
                                 storage.next();
                             }
                         }
@@ -321,14 +323,14 @@ public class Storage extends Subsystem {
                             isSpin.set(false);
                     } else { // Spindexer doesn't need to move, so scan all you can!
                         ArtifactColor dataScanned = identifyObj();
-                        if(identifyObj() != ArtifactColor.EMPTY) {
+                        if(dataScanned != ArtifactColor.EMPTY) {
                             ballCount.getAndIncrement();
 //                            storage.Slot[0] = dataScanned;
 
-                            if (!storage.isFull())
+                            if (!storage.isFull() || ballCount.get() < maxBall)
                             {
                                 isSpin.set(true);
-                                spindexer.setTarget(spindexer.getPosition().get(0)+120);
+                                spindexer.setTarget(spindexer.getTarget()+120);
                                 storage.next();
                             }
                         }

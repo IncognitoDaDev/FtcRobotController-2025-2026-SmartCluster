@@ -93,12 +93,12 @@ public class RedFarAuto extends LinearOpMode {
     private final Pose2d startPose = new Pose2d(13,-59, Math.toRadians(-90));
     private final Pose2d shootPose = new Pose2d(15,-54,Math.toRadians(-122));
 
-    private final Pose2d stack1 = new Pose2d(28.5,-35.5,Math.toRadians(0));
+    private final Pose2d stack1 = new Pose2d(28.5,-35,Math.toRadians(0));
     private final Pose2d stack2 = new Pose2d(28.5,-11,Math.toRadians(0));
     private final Pose2d stack3 = new Pose2d(28,12.5,Math.toRadians(0));
 
     private final Pose2d endPose = new Pose2d(35, -56, Math.toRadians(90));
-    public static double hoodAngle = 0.62;
+    public static double hoodAngle = 0.58;
 
 
     public VelConstraint slow = (pose2dDual, posePath, v) -> 25;
@@ -144,23 +144,23 @@ public class RedFarAuto extends LinearOpMode {
 
                                         new InstantCommand(() -> {
                                             robot.turret.setTargetVelocity(3300);
-                                            robot.turret.hood.setTarget(hoodAngle);
+                                            robot.turret.hood.setTarget(0.57);
                                         }),
 
                                         robot.storage.sort(0),
-                                        robot.turret.WaitForRPM(1000),
+//                                        new InstantCommand(()->robot.turret.hood.setTarget(hoodAngle)),
+                                        robot.turret.WaitForRPM(2000),
                                         robot.storage.BallToOuttake(),
-                                        new WaitCommand(50),
                                         robot.storage.sort(1),
+                                        new InstantCommand(()->robot.turret.hood.setTarget(hoodAngle)),
                                         robot.turret.WaitForRPM(1000),
                                         robot.storage.BallToOuttake(),
-                                        new WaitCommand(50),
                                         robot.storage.sort(2),
+//                                        new InstantCommand(()->robot.turret.hood.setTarget(hoodAngle+0.04)),
                                         robot.turret.WaitForRPM(1000),
-                                        new WaitCommand(50),
                                         robot.storage.BallToOuttake(),
 
-                                        new InstantCommand(() -> robot.turret.setTargetVelocity(0))
+                                        new InstantCommand(() -> robot.turret.setTargetVelocity(1000))
                                 )
                         ),
 
@@ -182,7 +182,7 @@ public class RedFarAuto extends LinearOpMode {
 
                                 commandToAction(new SequentialCommand(
                                         robot.intake.intake(),
-                                        robot.storage.distanceSwitch(3, 3000),
+                                        robot.storage.distanceSwitch(3, 2200),
                                         new InstantCommand(() ->
                                         {
                                             robot.storage.storage.Slot[0]= Storage.ArtifactColor.PURPLE;
@@ -204,25 +204,26 @@ public class RedFarAuto extends LinearOpMode {
 
                         commandToAction(
                                 new SequentialCommand(
+
                                         new InstantCommand(() -> {
                                             robot.turret.setTargetVelocity(3300);
-                                            robot.turret.hood.setTarget(hoodAngle);
+                                            robot.turret.hood.setTarget(0.57);
                                         }),
 
                                         robot.storage.sort(0),
-                                        robot.turret.WaitForRPM(1000),
+//                                        new InstantCommand(()->robot.turret.hood.setTarget(hoodAngle)),
+                                        robot.turret.WaitForRPM(2000),
                                         robot.storage.BallToOuttake(),
-                                        new WaitCommand(50),
                                         robot.storage.sort(1),
+                                        new InstantCommand(()->robot.turret.hood.setTarget(hoodAngle)),
                                         robot.turret.WaitForRPM(1000),
                                         robot.storage.BallToOuttake(),
-                                        new WaitCommand(50),
                                         robot.storage.sort(2),
+//                                        new InstantCommand(()->robot.turret.hood.setTarget(hoodAngle+0.04)),
                                         robot.turret.WaitForRPM(1000),
-                                        new WaitCommand(50),
                                         robot.storage.BallToOuttake(),
 
-                                        new InstantCommand(() -> robot.turret.setTargetVelocity(0))
+                                        new InstantCommand(() -> robot.turret.setTargetVelocity(1000))
                                 )
                         ),
 
@@ -244,7 +245,7 @@ public class RedFarAuto extends LinearOpMode {
 
                                 commandToAction(new SequentialCommand(
                                         robot.intake.intake(),
-                                        robot.storage.distanceSwitch(3, 3000),
+                                        robot.storage.distanceSwitch(3, 2200),
                                         new InstantCommand(() ->
                                         {
                                             robot.storage.storage.Slot[0]= Storage.ArtifactColor.PURPLE;
@@ -266,25 +267,26 @@ public class RedFarAuto extends LinearOpMode {
 
                         commandToAction(
                                 new SequentialCommand(
+
                                         new InstantCommand(() -> {
                                             robot.turret.setTargetVelocity(3300);
-                                            robot.turret.hood.setTarget(hoodAngle);
+                                            robot.turret.hood.setTarget(0.57);
                                         }),
 
                                         robot.storage.sort(0),
-                                        robot.turret.WaitForRPM(1000),
+//                                        new InstantCommand(()->robot.turret.hood.setTarget(hoodAngle)),
+                                        robot.turret.WaitForRPM(2000),
                                         robot.storage.BallToOuttake(),
-                                        new WaitCommand(50),
                                         robot.storage.sort(1),
+                                        new InstantCommand(()->robot.turret.hood.setTarget(hoodAngle)),
                                         robot.turret.WaitForRPM(1000),
                                         robot.storage.BallToOuttake(),
-                                        new WaitCommand(50),
                                         robot.storage.sort(2),
+//                                        new InstantCommand(()->robot.turret.hood.setTarget(hoodAngle+0.04)),
                                         robot.turret.WaitForRPM(1000),
-                                        new WaitCommand(50),
                                         robot.storage.BallToOuttake(),
 
-                                        new InstantCommand(() -> robot.turret.setTargetVelocity(0))
+                                        new InstantCommand(() -> robot.turret.setTargetVelocity(1000))
                                 )
                         ),
 
@@ -337,6 +339,11 @@ public class RedFarAuto extends LinearOpMode {
             telemetry.addData("Stock [2]", robot.storage.storage.Slot[2]);
             telemetry.addData("Flywheel speed", robot.turret.getCurrentVelocity());
             telemetry.addData("Hood angle", hoodAngle);
+            telemetry.addData("DEX position",robot.storage.spindexer.getPosition());
+            telemetry.addData("DEX target",robot.storage.spindexer.getTarget());
+            telemetry.addData("SERVO 1 pow", robot.storage.spindexer.crservos[0].getPower());
+            telemetry.addData("SERVO 2 pow", robot.storage.spindexer.crservos[1].getPower());
+
 
             telemetry.addData("hz", loopTimeFilter.update(1 / (Performance.loopTimeNano() / 1E9)));
             telemetry.update();
