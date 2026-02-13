@@ -125,16 +125,16 @@ public class SmartLocalizer extends Localizer {
     private final IMURotationTracker tracker = new IMURotationTracker();
     @Override
     public final Twist2dDual<Time> update() {
-
-        if(BuildConfig.DEBUG)
-        {
-            telemetry.addData("rawGyroAngle", AngleUnit.normalizeDegrees((-canandgyro.getVoltage()) * 360.0 / 3.3));
-            telemetry.addData("offsetGyroAngle", AngleUnit.normalizeDegrees((canandgyro.getVoltage()-gyroVoltageOffset) * 360.0 / 3.3));
-            telemetry.addData("pinpointFrequency", pinpoint.getFrequency());
-
-            telemetry.addData("parallelEncoder", parallelEncoder.getPositionAndVelocity().position);
-            telemetry.addData("perpendicularEncoder", perpendicularEncoder.getPositionAndVelocity().position);
-        }
+//
+//        if(BuildConfig.DEBUG)
+//        {
+//            telemetry.addData("rawGyroAngle", AngleUnit.normalizeDegrees((-canandgyro.getVoltage()) * 360.0 / 3.3));
+//            telemetry.addData("offsetGyroAngle", AngleUnit.normalizeDegrees((canandgyro.getVoltage()-gyroVoltageOffset) * 360.0 / 3.3));
+//            telemetry.addData("pinpointFrequency", pinpoint.getFrequency());
+//
+//            telemetry.addData("parallelEncoder", parallelEncoder.getPositionAndVelocity().position);
+//            telemetry.addData("perpendicularEncoder", perpendicularEncoder.getPositionAndVelocity().position);
+//        }
 
         double canandgyroHeading = Math.toRadians(AngleUnit.normalizeDegrees((canandgyro.getVoltage()-gyroVoltageOffset) * 360.0 / 3.3));
 
@@ -171,7 +171,7 @@ public class SmartLocalizer extends Localizer {
             pinpointTime.reset();
         }
         pose = new Pose2dDual<>(pose.value().plus(updateTwist.value()), pose.value().plus(updateTwist.value()).times(updateTwist.velocity()));
-        telemetry.addData("internalHeading", pose.heading.value().log());
+//        telemetry.addData("internalHeading", pose.heading.value().log());
 
         lastHeading=Rotation2dDual.constant(heading,1);
         lastParallel=new DualNum<>(parallel.get(0));

@@ -40,8 +40,10 @@ public class Storage extends Subsystem {
     private final AnalogInput frontColorSensor;
     public final Encoder spindexEncoder;
 
-    public static MotorFeedforward spindexerFeedForward = new MotorFeedforward(0.1,0.00004,0);
-    public static PIDController spindexerPID = new PIDController(0.0043, 0.000078, 0.00007);
+    public static double offsetPower = 0.08;
+
+    public static MotorFeedforward spindexerFeedForward = new MotorFeedforward(0,0,0);
+    public static PIDController spindexerPID = new PIDController(0.0055, 0.00000, 0.00014);
     public static TrapezoidalMotionProfile spindexerMotionProfile = new TrapezoidalMotionProfile(7800,8800,8800);
 
     public static double tolerance = 7.0;
@@ -148,10 +150,10 @@ public class Storage extends Subsystem {
         };
 
 
-        spindexer = new CRActuator(this, "spindexer", spindexerPID, spindexerFeedForward, spindexerMotionProfile, tolerance, spindexLeft, spindexRight) {
+        spindexer = new CRActuator(this, "spindexer", spindexerPID, spindexerFeedForward, spindexerMotionProfile, tolerance, offsetPower, spindexLeft, spindexRight) {
             @Override
             public boolean setTarget(double target) {
-                this.ManualSetFromPosition(getPosition().get(0));
+//                this.ManualSetFromPosition(getPosition().get(0));
                 this.target.set(target);
                 return true;
             }

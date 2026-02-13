@@ -113,7 +113,7 @@ public class Turret extends Subsystem {
     public static LowPassFilter velocityFilter = new LowPassFilter(0.5);
     private double targetVelocity = 0; // RPM
 
-    private final double Tolerance = 100;
+    private final double Tolerance = 150;
     //angle between -180 and 180 to corespond with the robot heading values
 
     public Command trackCorner(Localizer localizer, Pose2d corner){

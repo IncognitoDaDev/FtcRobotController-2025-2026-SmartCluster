@@ -21,13 +21,14 @@ public abstract class CRActuator {
     public MotorFeedforward feedforward;
 
     double tolerance;
+    double offset = 0.03;
     public TrapezoidalMotionProfile motionProfile;
     protected AtomicReference<Double> target = new AtomicReference<>(0.0);
     private final AtomicReference<Double> to = new AtomicReference<>(0.0), from=new AtomicReference<>(0.0);
-    private final CRServoImplEx[] crservos;
+    public final CRServoImplEx[] crservos;
 
     private final ElapsedTime time = new ElapsedTime();
-    public CRActuator(Subsystem subsystem, String name, PIDController pid, MotorFeedforward Kvs, TrapezoidalMotionProfile motionProfile, double tolerance, CRServoImplEx... motors)
+    public CRActuator(Subsystem subsystem, String name, PIDController pid, MotorFeedforward Kvs, TrapezoidalMotionProfile motionProfile, double tolerance, double offsetPower, CRServoImplEx... motors)
     {
         this.subsystem=subsystem;
         this.name=name;
@@ -36,6 +37,7 @@ public abstract class CRActuator {
         this.motionProfile=motionProfile;
         this.crservos =motors;
         this.tolerance=tolerance;
+        this.offset = offsetPower;
     }
     /**
      * Sets the target of the actuator, the user needs to check for limits
@@ -116,7 +118,8 @@ public abstract class CRActuator {
                     double power = feedforward.update(mp.get(0), mp.get(1)) + pid.update(mp.get(0) * Math.signum(distance) + from.get(), getPosition().get(0));
 
                     for (CRServoImpl motor : crservos) {
-                        if (enabled) motor.setPower(power);
+                        offset= -offset;
+                        if (enabled) motor.setPower(power+offset);
                     }
 
 //                    subsystem.telemetry.addData(String.format("%s.position", name), getPosition().get(0));

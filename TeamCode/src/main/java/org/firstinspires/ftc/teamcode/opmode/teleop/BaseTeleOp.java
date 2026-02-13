@@ -48,7 +48,6 @@ public class BaseTeleOp extends LinearOpMode {
         SHOOT,FarShooting,CloseShooting,PARKING,
     }
     private TeleOpState CurrentState = TeleOpState.INIT;
-    public PIDController PIDController = new PIDController(0.0041, 0.00078, 0.00008);
 
 
     @Override
@@ -73,7 +72,6 @@ public class BaseTeleOp extends LinearOpMode {
                 .transition(TeleOpState.INIT, TeleOpState.IDLE, ()->true,
                         new SequentialCommand(
                                 robot.reset(),
-                                new InstantCommand(()->robot.storage.PID_Selector(PIDController.p,PIDController.i,PIDController.d)),
                                 new InstantCommand(() -> {
                                     robot.storage.storage.OuttakeFacing = -1;
                                     robot.turret.turret.setTarget(0);
@@ -232,6 +230,8 @@ public class BaseTeleOp extends LinearOpMode {
             telemetry.addData("Dex Current", robot.storage.spindexer.getPosition().get(0));
             telemetry.addData("Dex Target", robot.storage.spindexer.getTarget());
 
+//            telemetry.addData("CRServo1", robot.storage.spindexer.crservos[0].getPower());
+//            telemetry.addData("CRServo2", robot.storage.spindexer.crservos[1].getPower());
 
             telemetry.addData("Order [0]", robot.cam.getOrder()[0]);
             telemetry.addData("Order [1]", robot.cam.getOrder()[1]);

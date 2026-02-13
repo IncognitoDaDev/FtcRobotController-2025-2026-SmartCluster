@@ -35,7 +35,7 @@ public class PIDController {
         if (lastTimestamp != 0) {
             double deltaTime = (timestamp - lastTimestamp) / 1E9;
             integral += deltaTime * error;
-            if(Double.isNaN(integral))
+            if(Double.isNaN(integral) || error < 5)
             {
                 integral=0;
             }

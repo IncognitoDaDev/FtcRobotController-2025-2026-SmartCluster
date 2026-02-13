@@ -103,7 +103,7 @@ public class RedFarAuto extends LinearOpMode {
 
     public VelConstraint slow = (pose2dDual, posePath, v) -> 25;
     public VelConstraint normal = (pose2dDual, posePath, v) -> 60;
-    public static PIDController pidController = new PIDController(0.0041, 0.00078, 0.00008);
+    public static PIDController pidController = new PIDController(0.0055, 0.0000, 0.00014);
 
 
     @Override
