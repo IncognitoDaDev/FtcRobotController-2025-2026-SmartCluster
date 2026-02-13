@@ -37,13 +37,16 @@ public class FlywheelCalibration extends LinearOpMode {
 
         while(opModeIsActive())
         {
+            for (LynxModule lynxModule : lynxModules)
+                lynxModule.clearBulkCache();
+
+            flywheel.getCurrentVelocity();  // This reads the encoder position/velocity
+
             telemetry.addData("targetVelocity", targetVelocity);
             telemetry.addData("Current velocity", flywheel.getCurrentVelocity());
             flywheel.setTargetVelocity(targetVelocity);
             scheduler.update();
             telemetry.update();
-            for (LynxModule lynxModule : lynxModules)
-                lynxModule.clearBulkCache();
         }
     }
 }

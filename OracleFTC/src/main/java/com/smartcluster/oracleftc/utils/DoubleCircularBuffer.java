@@ -21,21 +21,27 @@ public class DoubleCircularBuffer implements RandomAccess {
         return size;
     }
 
+    public boolean isFull() {
+        return size == data.length;
+    }
+
+    public boolean isEmpty() {
+        return size == 0;
+    }
 
     public double getFirst() {
+        if (isEmpty()) {
+            throw new IllegalStateException("Buffer is empty.");
+        }
         return data[front];
     }
 
-
     public double getLast() {
-        // If there are no elements in the buffer, do nothing
-        if (size == 0) {
-            return 0.0;
+        if (isEmpty()) {
+            throw new IllegalStateException("Buffer is empty.");
         }
-
         return data[(front + size - 1) % data.length];
     }
-
 
     public void addFirst(double value) {
         if (data.length == 0) {
@@ -43,14 +49,12 @@ public class DoubleCircularBuffer implements RandomAccess {
         }
 
         front = moduloDec(front);
-
         data[front] = value;
 
         if (size < data.length) {
             size++;
         }
     }
-
 
     public void addLast(double value) {
         if (data.length == 0) {
@@ -62,15 +66,13 @@ public class DoubleCircularBuffer implements RandomAccess {
         if (size < data.length) {
             size++;
         } else {
-            // Increment front if buffer is full to maintain size
-            front = moduloInc(front);
+            front = moduloInc(front); // Move front when buffer is full
         }
     }
 
     public double removeFirst() {
-        // If there are no elements in the buffer, do nothing
-        if (size == 0) {
-            return 0.0;
+        if (isEmpty()) {
+            throw new IllegalStateException("Buffer is empty.");
         }
 
         double temp = data[front];
@@ -80,18 +82,17 @@ public class DoubleCircularBuffer implements RandomAccess {
     }
 
     public double removeLast() {
-        // If there are no elements in the buffer, do nothing
-        if (size == 0) {
-            return 0.0;
+        if (isEmpty()) {
+            throw new IllegalStateException("Buffer is empty.");
         }
 
         size--;
         return data[(front + size) % data.length];
     }
 
-    public void resize(int size) {
-        double[] newBuffer = new double[size];
-        this.size = Math.min(this.size, size);
+    public void resize(int newSize) {
+        double[] newBuffer = new double[newSize];
+        this.size = Math.min(this.size, newSize);
         for (int i = 0; i < this.size; i++) {
             newBuffer[i] = data[(front + i) % data.length];
         }
@@ -106,19 +107,17 @@ public class DoubleCircularBuffer implements RandomAccess {
     }
 
     public double get(int index) {
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException("Index out of bounds: " + index);
+        }
         return data[(front + index) % data.length];
     }
-
 
     private int moduloInc(int index) {
         return (index + 1) % data.length;
     }
 
     private int moduloDec(int index) {
-        if (index == 0) {
-            return data.length - 1;
-        } else {
-            return index - 1;
-        }
+        return (index == 0) ? data.length - 1 : index - 1;
     }
 }

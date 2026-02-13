@@ -1,6 +1,7 @@
 package com.smartcluster.oracleftc.hardware;
 
 import android.content.Context;
+
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.hardware.lynx.LynxVoltageSensor;
 import com.qualcomm.robotcore.exception.RobotCoreException;
@@ -14,6 +15,7 @@ public class OracleLynxVoltageSensor extends LynxVoltageSensor {
         MANUAL,
         NAIVE
     }
+    public static double normalizationVoltage = 12.0;
 
     private static final Object lock = new Object();
 

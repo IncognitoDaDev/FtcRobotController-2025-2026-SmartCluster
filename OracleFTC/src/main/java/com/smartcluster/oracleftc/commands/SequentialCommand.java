@@ -1,6 +1,7 @@
 package com.smartcluster.oracleftc.commands;
 
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
+
 import java.util.Set;
 
 @SuppressWarnings("unused")
@@ -52,11 +53,15 @@ public class SequentialCommand extends Command {
 
     @Override
     public void end(boolean interrupted) {
-        if (!interrupted)
-            commands[commandIndex - 1].end(false);
-        else {
-            commands[commandIndex].end(true);
+        if (commandIndex < commands.length)
+        {
+            if (!interrupted)
+                commands[commandIndex].end(false);
+            else {
+                commands[commandIndex].end(true);
+            }
         }
+
     }
 
     @Override

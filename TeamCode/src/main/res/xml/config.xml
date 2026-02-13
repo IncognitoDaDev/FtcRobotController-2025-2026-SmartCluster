@@ -1,35 +1,38 @@
 <?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
 <Robot type="FirstInspires-FTC">
-    <EthernetDevice name="Webcam Turret" serialNumber="EthernetOverUsb:eth0:172.29.0.22"  port="0" ipAddress="172.29.0.1" />
-    <LynxUsbDevice name="Control Hub Portal" serialNumber="(embedded)" parentModuleAddress="173">
-        <LynxModule name="Control Hub" port="173">
-            <goBILDA5202SeriesMotor name="frontLeft" port="0" />
-            <goBILDA5202SeriesMotor name="backLeft" port="1" />
-            <goBILDA5202SeriesMotor name="backRight" port="2" />
-            <goBILDA5202SeriesMotor name="frontRight" port="3" /> <!--New Spindex encoder -->
+<LynxUsbDevice name="Control Hub Portal" serialNumber="(embedded)" parentModuleAddress="173">
 
-            <ContinuousRotationServo name = "dexLeft" port="0" />
-            <ContinuousRotationServo name= "dexRight" port="1"/>
 
-            <RevColorSensorV3 name="rotaryColorSensorF" port="0" bus="3"/>
+    <LynxModule name="Control Hub" port="173">
+        <ControlHubImuBHI260AP name="imu" port="0" bus="0" />
 
-            <DigitalDevice name="rotaryColorSensorF_Purple" port="0"/>
-            <DigitalDevice name="rotaryColorSensorF_Green" port="1"/>
+        <goBILDA5202SeriesMotor name="frontRightMotor" port="0" />  <!--x encoder odo-->
+        <goBILDA5202SeriesMotor name="frontLeftMotor" port="1" />
+        <goBILDA5202SeriesMotor name="backLeftMotor" port="2" />
+        <goBILDA5202SeriesMotor name="backRightMotor" port="3" />   <!-- y encoder odo -->
 
-            <goBILDAPinpoint name="pinpoint" port="1"/>
-            <LynxEmbeddedIMU name="imu" port="0" bus="0" />
-        </LynxModule>
+        <AnalogInput name = "canandgyro" port = "0"/>
 
-        <LynxModule name="Expansion Hub 2" port="2">
-            <goBILDA5202SeriesMotor name="turretRotate" port="0" /> <!-- TurretRot Encoder -->
-            <goBILDA5202SeriesMotor name="turretUp" port="1" /> <!-- Flywheel Encoder -->
-            <goBILDA5202SeriesMotor name="turretDown" port="2" />
-            <goBILDA5202SeriesMotor name="intakeMotor" port="3" /> <!-- Back-up Spindexer -->
+        <Servo name = "lever" port="0" />
+        
+        <ContinuousRotationServo name = "backLeftLift" port="1" />
+        <ContinuousRotationServo name = "frontLeftLift" port="2" />
+        <Servo name="hood" port="3"/>
+        <ContinuousRotationServo name = "backRightLift" port="4" />
+        <ContinuousRotationServo name = "frontRightLift" port="5" />
 
-            <Servo name="flapperRight" port="0"/>
-            <Servo name="flapperLeft" port="1"/>
-            <Servo name="rightHood" port="2"/>
-            <Servo name="leftHood" port="3"/>
-        </LynxModule>
-    </LynxUsbDevice>
+        <OracleGoBildaPinpoint name="pinpoint" port="0"/>
+    </LynxModule>
+
+
+
+    <LynxModule name="Expansion Hub 2" port="2">
+        <goBILDA5202SeriesMotor name="shooter1" port="0" />
+        <goBILDA5202SeriesMotor name="shooter2" port="1" />
+        <goBILDA5202SeriesMotor name="intake" port="2" />
+
+    </LynxModule>
+
+
+</LynxUsbDevice>
 </Robot>

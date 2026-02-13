@@ -1,8 +1,9 @@
 package org.firstinspires.ftc.teamcode.subsystem;
-
+//iar avem variabile care vor modificate
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorImplEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -13,14 +14,9 @@ import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.commands.ParallelCommand;
 import com.smartcluster.oracleftc.commands.SequentialCommand;
 import com.smartcluster.oracleftc.hardware.OracleLynxVoltageSensor;
-import com.smartcluster.oracleftc.hardware.subsystem.Actuator;
 import com.smartcluster.oracleftc.hardware.subsystem.ServoActuator;
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
 import com.smartcluster.oracleftc.hardware.subsystem.SubsystemFlavor;
-import com.smartcluster.oracleftc.hardware.wrappers.Encoder;
-import com.smartcluster.oracleftc.hardware.wrappers.RawEncoder;
-import com.smartcluster.oracleftc.math.DualNum;
-import com.smartcluster.oracleftc.math.Time;
 import com.smartcluster.oracleftc.math.control.MotorFeedforward;
 import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
@@ -31,200 +27,228 @@ import org.firstinspires.ftc.teamcode.roadrunner.Localizer;
 @Config
 public class Turret extends Subsystem {
 
-
-    private final DcMotorImplEx turretUp, turretDown,turretRot;
-    private final ServoImplEx rightHood, leftHood;
+    // Hardware
+    private final DcMotorImplEx shooter1, shooter2;
+    private final ServoImplEx mainhood, lever;
     private final OracleLynxVoltageSensor voltageSensor;
-    public static TrapezoidalMotionProfile hoodMotionProfile = new TrapezoidalMotionProfile(12, 16, 16);
-    public static TrapezoidalMotionProfile turretMotionProfile = new TrapezoidalMotionProfile(80, 100, 100);
-    public static PIDController turretPID = new PIDController(0.025, 0.00002, 0.0019, 1);
-    public static MotorFeedforward turretFeedForward = new MotorFeedforward(0.01, 0.0015, 0);
 
-    public final Actuator turret;
-    public final Encoder encoder;
-    public final ServoActuator hood;
-    private final double m = 8.502;
-    private final double n = 1300.98;
+    // Motion profiles
+    public static TrapezoidalMotionProfile hoodMotionProfile = new TrapezoidalMotionProfile(12, 16, 16);
+    public static TrapezoidalMotionProfile leverMotionProfile = new TrapezoidalMotionProfile(12, 16, 16);
+
+    // Servo actuators
+    public final ServoActuator hoodact, leveract;
+
+    // Flywheel control
+    public static MotorFeedforward flywheelFeedforward = new MotorFeedforward(0.135000, 0.000170, 0);
+    //
+    //optional: Kv (Velocity): 0.000173
+    public static PIDController flywheelPID = new PIDController( 0.000006, 0, 0.0000008, 0.5);
+    public static LowPassFilter velocityFilter = new LowPassFilter(0.5);
+    private double targetVelocity = 0; // RPM
+    private static final double RPM_TOLERANCE = 100;
+
+    // Distance-based velocity calculation
+// Velocity linear regression constants
+    private static final double VELOCITY_SLOPE = 5.687797;
+    private static final double VELOCITY_INTERCEPT = 2400.620519;
+
+    // Hood angle linear regression constants
+    private static final double HOOD_SLOPE = 0.002533;
+    private static final double HOOD_INTERCEPT = 0.024227;
+
     private boolean inZone;
 
-
+    public static double HOOD_MIN_POSITION = 0.0;
+    public static double HOOD_MAX_POSITION = 0.45;
+    public static double LEVER_BLOCK_POSITION = 0.0;  // Position that blocks the flywheel
+    public static double LEVER_RELEASE_POSITION = 0.15; // Position that allows shooting
 
     public Turret(OpMode opMode) {
         super(opMode);
 
         voltageSensor = hardwareMap.getAll(OracleLynxVoltageSensor.class).iterator().next();
-        turretUp = hardwareMap.get(DcMotorImplEx.class, "turretUp");
-        turretUp.setDirection(DcMotorSimple.Direction.REVERSE);
-        turretRot = hardwareMap.get(DcMotorImplEx.class, "turretRotate");
-        encoder = new RawEncoder(hardwareMap.get(DcMotorImplEx.class,"turretRotate"));
-        turretDown = hardwareMap.get(DcMotorImplEx.class, "turretDown");
-        hardwareMap.get(ServoImplEx.class, "leftHood");
-        rightHood = hardwareMap.get(ServoImplEx.class, "rightHood");
-        leftHood = hardwareMap.get(ServoImplEx.class, "leftHood");
 
-        leftHood.setDirection(Servo.Direction.REVERSE);
-        hood = new ServoActuator(this, "hood", hoodMotionProfile, rightHood, leftHood) {
+        // Initialize flywheel motors
+        shooter1 = hardwareMap.get(DcMotorImplEx.class, "shooter1");
+        shooter1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        shooter2 = hardwareMap.get(DcMotorImplEx.class, "shooter2");
+        shooter2.setDirection(DcMotorSimple.Direction.REVERSE);
+        shooter2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        // Initialize servos
+        mainhood = hardwareMap.get(ServoImplEx.class, "hood");
+        mainhood.setDirection(Servo.Direction.REVERSE);
+        lever = hardwareMap.get(ServoImplEx.class, "lever");
+
+        // Hood actuator
+        hoodact = new ServoActuator(this, "hood", hoodMotionProfile, mainhood) {
             @Override
             public Command reset() {
-
                 return new InstantCommand(() -> {
-                    setTarget(0.4);
-                    rightHood.setPosition(this.target.get());
-                    leftHood.setPosition(this.target.get());
+                    setTarget(HOOD_MIN_POSITION);
+                    mainhood.setPosition(this.target.get());
                 });
             }
 
             @Override
             public boolean setTarget(double target) {
-                if(target<0.25)target = 0.25;
-                if(target>0.9)target = 0.9;
+                target = Math.max(HOOD_MIN_POSITION, Math.min(HOOD_MAX_POSITION, target));
                 this.target.set(target);
                 return true;
             }
         };
 
-        turret = new Actuator(this, "turret", turretPID, turretMotionProfile, turretFeedForward, 2, turretRot) {
+        // Lever actuator (blocks/releases flywheel)
+        leveract = new ServoActuator(this, "lever", leverMotionProfile, lever) {
             @Override
             public Command reset() {
-                return new InstantCommand(encoder::reset);
+                return new InstantCommand(() -> {
+                    setTarget(LEVER_BLOCK_POSITION);
+                    lever.setPosition(this.target.get());
+                });
             }
 
             @Override
             public boolean setTarget(double target) {
+                // Lever only needs two positions: block or release
                 this.target.set(target);
                 return true;
             }
-
-            @Override
-            public DualNum<Time> getPosition() {
-                return encoder.getCurrentPosition().div(28).times(48).div(260).times(103.8);
-            }
-
-
         };
+
+
     }
-    public static MotorFeedforward flywheelFeedforward = new MotorFeedforward(0.1, 0.00024, 0);
-    public static PIDController flywheelPID = new PIDController(0.0012, 0, 0, 0.5);
-    public static LowPassFilter velocityFilter = new LowPassFilter(0.5);
-    private double targetVelocity = 0; // RPM
 
-    private final double Tolerance = 100;
-    //angle between -180 and 180 to corespond with the robot heading values
-
-    public Command trackCorner(Localizer localizer, Pose2d corner){
-        return Command.builder()
-                .init(()->inZone = true)
-               .update(()->{
-                    localizer.update();
-                    Pose2d robotPose = localizer.getPose();
-                   double currentX = robotPose.position.x;
-                   double currentY = robotPose.position.y;
-
-                    // Calculate vector from robot to corner
-                    double dx = corner.position.x - robotPose.position.x;
-                    double dy = corner.position.y - robotPose.position.y;
-                   double distance = (Math.sqrt(Math.pow((corner.position.x - currentX), 2)
-                           + Math.pow((corner.position.y - currentY), 2)))*2.54;
-                   double velocity = m * distance + n;
-                   double currentVelocity = getCurrentVelocity(); //RPM
-                   double power = flywheelPID.update(velocity, currentVelocity) + flywheelFeedforward.update(velocity, 0);
-                   power = power * (Robot.nominalVoltage / voltageSensor.getVoltage());
-                   turretUp.setPower(power);
-                   turretDown.setPower(power);
-
-                    // Angle to the corner in world space (degrees)
-                    double worldAngle = Math.toDegrees(Math.atan2(dy, dx));
-                    // Robot heading in degrees
-                    double robotAngle = Math.toDegrees(robotPose.heading.log());
-                    // Target turret angle relative to robot
-                    double targetAngle =180-(worldAngle - robotAngle);
-
-                    // Normalize the angle to -180 to 180 (shortest path)
-                    while (targetAngle > 180) targetAngle -= 180;
-                    while (targetAngle <= -180) targetAngle += 180;
-
-                    turret.setTarget(targetAngle);
-                   if(currentY>=Math.abs(currentX)+9*1.41 || (currentY>-46+9*1.41 && Math.abs(currentX)<23+9*1.41))inZone = false;
-
-               })
-                .finished(()->!inZone)
-                .requires(this)
-                .build();
-    }
+    /**
+     * Get current flywheel velocity in RPM
+     */
     public double getCurrentVelocity() {
-        return velocityFilter.update((turretUp.getVelocity() / 28) * 60);
+        return velocityFilter.update((shooter2.getVelocity() / 28) * 60);
     }
 
-    public void setTargetVelocity(double velocity) {
-        if (velocity < 0) velocity = 0;
-        if (velocity > 6000) velocity = 6000;
-        targetVelocity = velocity;
+    // Add this to your Turret.java class
+    public void setRawPower(double power) {
+        shooter1.setPower(power);
+        shooter2.setPower(power);
     }
-    public Command setVelocityByDistance(Localizer localizer, Pose2d corner){
+
+    /**
+     * Set target flywheel velocity with safety limits
+     */
+    public void setTargetVelocity(double velocity) {
+        targetVelocity = Math.max(0, Math.min(6000, velocity));
+    }
+
+    public Command setVelocityByDistance(Localizer localizer, Pose2d corner) {
         return Command.builder()
-                .init(()-> {
-                    inZone = true;
-                })
-                .update(()-> {
+                .init(() -> inZone = true)
+                .update(() -> {
                     localizer.update();
                     Pose2d currentPose = localizer.getPose();
+
+                    // Calculate distance to corner in cm
+                    double dx = corner.position.x - currentPose.position.x;
+                    double dy = corner.position.y - currentPose.position.y;
+                    double distance = Math.sqrt(dx * dx + dy * dy) * 2.54;
+
+                    // Calculate velocity based on distance
+                    double velocity = VELOCITY_SLOPE * distance + VELOCITY_INTERCEPT;
+
+                    // Calculate hood position based on distance
+                    double hoodPosition = HOOD_SLOPE * distance + HOOD_INTERCEPT;
+                    hoodact.setTarget(hoodPosition);
+
+                    // Update flywheel power
+                    double currentVelocity = getCurrentVelocity();
+                    double power = flywheelPID.update(velocity, currentVelocity)
+                            + flywheelFeedforward.update(velocity, 0);
+                    power *= (Robot.nominalVoltage / voltageSensor.getVoltage());
+
+                    shooter1.setPower(power);
+                    shooter2.setPower(power);
+
+                    // Check if robot is in valid shooting zone
                     double currentX = currentPose.position.x;
                     double currentY = currentPose.position.y;
-                    double distance = (Math.sqrt(Math.pow((corner.position.x - currentX), 2)
-                                    + Math.pow((corner.position.y - currentY), 2)))*2.54;
-                    double velocity = m * distance + n;
-                    double currentVelocity = getCurrentVelocity(); //RPM
-                    double power = flywheelPID.update(velocity, currentVelocity) + flywheelFeedforward.update(velocity, 0);
-                    power = power * (Robot.nominalVoltage / voltageSensor.getVoltage());
-                    turretUp.setPower(power);
-                    turretDown.setPower(power);
-                    if(currentY>=Math.abs(currentX)+9*1.41 || (currentY>-46+9*1.41 && Math.abs(currentX)<23+9*1.41))inZone = false;
+                    if (currentY >= Math.abs(currentX) + 9 * 1.41
+                            || (currentY > -46 + 9 * 1.41 && Math.abs(currentX) < 23 + 9 * 1.41)) {
+                        inZone = false;
+                    }
                 })
-                .finished(()->!inZone)
+                .finished(() -> !inZone)
                 .build();
     }
 
+    /**
+     * Block the flywheel with lever
+     */
+    public Command blockShooter() {
+        return new InstantCommand(() -> leveract.setTarget(LEVER_BLOCK_POSITION));
+    }
+
+    /**
+     * Release the lever to allow shooting
+     */
+    public Command releaseShooter() {
+        return new InstantCommand(() -> leveract.setTarget(LEVER_RELEASE_POSITION));
+    }
+
+    /**
+     * Main update command - runs flywheel control and actuator updates
+     */
     public Command update() {
         return new ParallelCommand(
-                hood.update(),
-//                Experimental
-//                turret.update(),
+                hoodact.update(),
+                leveract.update(),
                 Command.builder()
                         .update(() -> {
-                            double currentVelocity = getCurrentVelocity(); //RPM
-                            double power = flywheelPID.update(targetVelocity, currentVelocity) + flywheelFeedforward.update(targetVelocity, 0);
-                            power = power * (Robot.nominalVoltage / voltageSensor.getVoltage());
-                            turretUp.setPower(power);
-                            turretDown.setPower(power);
+                            double currentVelocity = getCurrentVelocity();
+                            double power = flywheelPID.update(targetVelocity, currentVelocity)
+                                    + flywheelFeedforward.update(targetVelocity, 0);
+                            power *= (Robot.nominalVoltage / voltageSensor.getVoltage());
+
+                            shooter1.setPower(power);
+                            shooter2.setPower(power);
                         })
                         .requires(this)
                         .build()
         );
     }
 
-    public Command WaitForRPM(double maxMinisecond)
-    {
+    /**
+     * Wait for flywheel to reach target RPM (with timeout)
+     */
+    public Command WaitForRPM(double maxMilliseconds) {
         ElapsedTime timer = new ElapsedTime();
         return Command.builder()
                 .init(timer::reset)
-                .update(() ->
-                {
-                    telemetry.addData("VelocityErrDist", Math.abs(targetVelocity-getCurrentVelocity()));
+                .update(() -> {
+                    double error = Math.abs(targetVelocity - getCurrentVelocity());
+                    telemetry.addData("Velocity Error", error);
+                    telemetry.addData("Target Velocity", targetVelocity);
+                    telemetry.addData("Current Velocity", getCurrentVelocity());
                 })
-                .finished(() -> Math.abs(targetVelocity-getCurrentVelocity())<Tolerance || timer.milliseconds() > maxMinisecond)
+                .finished(() -> {
+                    double error = Math.abs(targetVelocity - getCurrentVelocity());
+                    return error < RPM_TOLERANCE || timer.milliseconds() > maxMilliseconds;
+                })
                 .build();
     }
 
-    public Command reset()
-    {
+    /**
+     * Reset turret to safe starting position
+     */
+    public Command reset() {
         return new SequentialCommand(
-                hood.reset(),
-                turret.reset()
-                );
+                hoodact.reset(),
+                leveract.reset()
+        );
     }
 
     @Override
     public SubsystemFlavor flavor() {
-        return SubsystemFlavor.ControlHubOnly;
+        return SubsystemFlavor.ExpansionHubOnly;
     }
 }

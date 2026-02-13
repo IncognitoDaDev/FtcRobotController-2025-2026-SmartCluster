@@ -1,7 +1,7 @@
 package org.firstinspires.ftc.teamcode.calibration;
 
-import com.ThermalEquilibrium.homeostasis.Controllers.Feedforward.BasicFeedforward;
-import com.ThermalEquilibrium.homeostasis.Parameters.FeedforwardCoefficients;
+//import com.ThermalEquilibrium.homeostasis.Controllers.Feedforward.BasicFeedforward;
+//import com.ThermalEquilibrium.homeostasis.Parameters.FeedforwardCoefficients;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
@@ -19,7 +19,7 @@ import com.smartcluster.oracleftc.math.filters.MovingAverageFilter;
 import com.smartcluster.oracleftc.utils.Performance;
 import com.smartcluster.oracleftc.utils.ProcessedGamepad;
 
-import org.firstinspires.ftc.teamcode.opmode.teleop.BaseTeleOp;
+import org.firstinspires.ftc.teamcode.opmode.teleop.MYteleop;
 import org.firstinspires.ftc.teamcode.subsystem.Robot;
 
 import java.util.List;
@@ -40,8 +40,8 @@ public class turretCalibration extends LinearOpMode {
     public static double Kv = 1.1;
     public static double Ka = 0.2;
     public static double Ks = 0.001;
-    FeedforwardCoefficients coefficients = new FeedforwardCoefficients(Kv, Ka, Ks);
-    BasicFeedforward shootController = new BasicFeedforward(coefficients);
+//    FeedforwardCoefficients coefficients = new FeedforwardCoefficients(Kv, Ka, Ks);
+//    BasicFeedforward shootController = new BasicFeedforward(coefficients);
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -59,40 +59,37 @@ public class turretCalibration extends LinearOpMode {
         scheduler.schedule(
                robot.update()
         );
-        FSM.FSMBuilder<BaseTeleOp.TeleOpState> fsmBuilder =  FSM.<BaseTeleOp.TeleOpState>builder()
-                .initial(BaseTeleOp.TeleOpState.INIT)
-                .transition(BaseTeleOp.TeleOpState.INIT, BaseTeleOp.TeleOpState.IDLE,this::opModeIsActive,
+        FSM.FSMBuilder<MYteleop.TeleOpState> fsmBuilder =  FSM.<MYteleop.TeleOpState>builder()
+                .initial(MYteleop.TeleOpState.INIT)
+                .transition(MYteleop.TeleOpState.INIT, MYteleop.TeleOpState.IDLE,this::opModeIsActive,
                         new SequentialCommand(
-                                robot.storage.spindexer.reset(),
+//                                robot.storage.spindexer.reset(),
                                 new InstantCommand(()->robot.drive.localizer.setPose(new Pose2d(0,0,0))),
                                 robot.reset(),
                                 robot.turret.reset()
                         ))
-                .transition(BaseTeleOp.TeleOpState.IDLE, BaseTeleOp.TeleOpState.IDLE,driverGamepad.cross.pressed(),
+                .transition(MYteleop.TeleOpState.IDLE, MYteleop.TeleOpState.IDLE,driverGamepad.cross.pressed(),
                             new SequentialCommand(
-                            robot.turret.WaitForRPM(1000),
-                            robot.storage.flapperUp()
+                            robot.turret.WaitForRPM(1000)
+//                            robot.storage.flapperUp()
                 ))
-                .transition(BaseTeleOp.TeleOpState.IDLE, BaseTeleOp.TeleOpState.IDLE,driverGamepad.cross.released(),
-                        robot.storage.flapperDown()
-                )
-                .transition(BaseTeleOp.TeleOpState.IDLE, BaseTeleOp.TeleOpState.IDLE,driverGamepad.triangle.pressed(), robot.storage.outtakeMode(1))
-                .transition(BaseTeleOp.TeleOpState.IDLE, BaseTeleOp.TeleOpState.IDLE,driverGamepad.square.pressed(), robot.storage.nextBall())
-                .transition(BaseTeleOp.TeleOpState.IDLE, BaseTeleOp.TeleOpState.IDLE,driverGamepad.circle.pressed(),
+//                .transition(MYteleop.TeleOpState.IDLE, MYteleop.TeleOpState.IDLE,driverGamepad.cross.released(),
+//                       robot.storage.flapperDown()
+//                )
+//                .transition(MYteleop.TeleOpState.IDLE, MYteleop.TeleOpState.IDLE,driverGamepad.triangle.pressed(), robot.storage.outtakeMode(1))
+//                .transition(MYteleop.TeleOpState.IDLE, MYteleop.TeleOpState.IDLE,driverGamepad.square.pressed(), robot.storage.nextBall())
+                .transition(MYteleop.TeleOpState.IDLE, MYteleop.TeleOpState.IDLE,driverGamepad.circle.pressed(),
                         new InstantCommand(()->robot.turret.setTargetVelocity(velocity))
                 )
-                .transition(BaseTeleOp.TeleOpState.IDLE, BaseTeleOp.TeleOpState.IDLE,driverGamepad.dpad_up.pressed(),
-                        new InstantCommand(()->robot.turret.hood.setTarget(angle))
+                .transition(MYteleop.TeleOpState.IDLE, MYteleop.TeleOpState.IDLE,driverGamepad.dpad_up.pressed(),
+                        new InstantCommand(()->robot.turret.hoodact.setTarget(angle))
                 );
-        FSM<BaseTeleOp.TeleOpState> fsm = fsmBuilder.build(scheduler);
+        FSM<MYteleop.TeleOpState> fsm = fsmBuilder.build(scheduler);
         MovingAverageFilter loopTimeFilter=new MovingAverageFilter(50);
 
         while (opModeIsActive()) {
-            for (LynxModule lynxModule : lynxModules)
-            {
-                lynxModule.clearBulkCache();
-                lynxModule.getBulkData();
-            }
+            robot.read();
+
             telemetry.addLine("Pose:");
             telemetry.addData("x", robot.drive.localizer.getPose().position.x);
             telemetry.addData("y", robot.drive.localizer.getPose().position.y);
@@ -102,7 +99,7 @@ public class turretCalibration extends LinearOpMode {
             telemetry.addData("velocity", velocity);
             telemetry.addData("current speed", robot.turret.getCurrentVelocity());
             telemetry.addData("angle", angle);
-            telemetry.addData("current angle", robot.turret.hood.getTarget());
+            telemetry.addData("current angle", robot.turret.hoodact.getTarget());
 
 
             telemetry.update();

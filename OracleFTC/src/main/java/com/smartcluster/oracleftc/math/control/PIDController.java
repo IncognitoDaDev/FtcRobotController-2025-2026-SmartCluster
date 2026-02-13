@@ -1,11 +1,8 @@
 package com.smartcluster.oracleftc.math.control;
 
-import com.qualcomm.robotcore.robot.RobotState;
 import com.smartcluster.oracleftc.math.filters.LowPassFilter;
-import java.lang.reflect.Field;
-import java.util.function.Supplier;
 
-public class PIDController implements Cloneable{
+public class PIDController {
 
     public double p;
     public double i;
@@ -68,20 +65,5 @@ public class PIDController implements Cloneable{
         integral=0;
         lastError=0;
         derivativeFilter.reset();
-    }
-
-
-    @Override
-    public PIDController clone() {
-        try {
-            PIDController clone = (PIDController) super.clone();
-            // TODO: copy mutable state here, so the clone can't change the internals of the original
-            clone.p=p;
-            clone.i=i;
-            clone.d=d;
-            return clone;
-        } catch (CloneNotSupportedException e) {
-            throw new AssertionError();
-        }
     }
 }

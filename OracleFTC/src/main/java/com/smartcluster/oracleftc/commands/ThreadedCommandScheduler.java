@@ -3,6 +3,7 @@ package com.smartcluster.oracleftc.commands;
 import com.qualcomm.robotcore.util.RobotLog;
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
 import com.smartcluster.oracleftc.hardware.subsystem.SubsystemFlavor;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -141,15 +142,24 @@ public class ThreadedCommandScheduler extends CommandScheduler{
                 break;
         }
     }
+    @Override
+    public void schedule(Command... commands) {
+        for (Command command: commands)
+            schedule(command);
+    }
 
     @Override
-    public void update() throws InterruptedException {
-        for (Future<Void> future : commandExecutor.invokeAll(hubSpecificCallables)) {
-            try {
-                future.get();
-            } catch (ExecutionException e) {
-                RobotLog.logStackTrace(e);
+    public void update()  {
+        try {
+            for (Future<Void> future : commandExecutor.invokeAll(hubSpecificCallables)) {
+                try {
+                    future.get();
+                } catch (ExecutionException e) {
+                    RobotLog.logStackTrace(e);
+                }
             }
+        } catch (InterruptedException e) {
+            RobotLog.logStackTrace(e);
         }
 
         for (Command command :

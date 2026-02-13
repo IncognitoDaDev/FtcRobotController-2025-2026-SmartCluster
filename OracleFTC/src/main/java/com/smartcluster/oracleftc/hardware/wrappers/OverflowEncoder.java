@@ -1,6 +1,5 @@
 package com.smartcluster.oracleftc.hardware.wrappers;
 
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.smartcluster.oracleftc.math.DualNum;
@@ -27,12 +26,12 @@ public class OverflowEncoder implements Encoder {
 
     @Override
     public void setDirection(Direction direction) {
-        this.direction = direction;
+        encoder.setDirection(direction);
     }
 
     @Override
     public Direction getDirection() {
-        return direction;
+        return encoder.getDirection();
     }
 
     @Override
@@ -42,7 +41,7 @@ public class OverflowEncoder implements Encoder {
         double v = medianFilter.update((encoderPosition.get(0) - this.lastPosition) / dt);
         lastPosition = (int) encoderPosition.get(0);
         lastUpdate.reset();
-        return new DualNum<>(encoderPosition.get(0),inverseOverflow((int) v, encoderPosition.get(1)));
+        return new DualNum<>(encoderPosition.get(0),inverseOverflow((int) encoderPosition.get(1), v));
     }
 
     @Override
@@ -50,6 +49,7 @@ public class OverflowEncoder implements Encoder {
         encoder.reset();
         medianFilter.reset();
         lastUpdate.reset();
+        lastPosition=0;
     }
 
     @Override
@@ -57,6 +57,7 @@ public class OverflowEncoder implements Encoder {
         encoder.reset(position);
         medianFilter.reset();
         lastUpdate.reset();
+        lastPosition= (int) position;
     }
 
     private static final int CPS_STEP = 65536;

@@ -1,6 +1,7 @@
 package com.smartcluster.oracleftc.commands;
 
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
+
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -18,6 +19,9 @@ public class ConditionalCommand extends Command {
 
     public ConditionalCommand(Supplier<Boolean> condition, Command ifCommand, Command elseCommand) {
         this(() -> (condition.get()) ? 0 : 1, ifCommand, elseCommand);
+    }
+    public ConditionalCommand(Supplier<Boolean> condition, Command ifCommand) {
+        this(() -> (condition.get()) ? 0 : 1, ifCommand, new InstantCommand(()->{}));
     }
 
     @Override

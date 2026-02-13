@@ -1,9 +1,19 @@
 package com.smartcluster.oracleftc.commands;
 
 
+import android.content.Context;
+
+import com.qualcomm.ftccommon.FtcEventLoop;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.OpModeManagerImpl;
+import com.qualcomm.robotcore.util.RobotLog;
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
+
+import org.firstinspires.ftc.ftccommon.external.OnCreateEventLoop;
+
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -52,13 +62,63 @@ public abstract class Command {
     public static CommandBuilder builder() {
         return new CommandBuilder();
     }
+    private static OpModeManagerImpl opModeManager;
+
+    @OnCreateEventLoop
+    public static void attachEventLoop(Context context, FtcEventLoop eventLoop) {
+        opModeManager=eventLoop.getOpModeManager();
+    }
+
+    public static Command wrap(Supplier<Command> command)
+    {
+        AtomicReference<Command> generatedCommand = new AtomicReference<>();
+        return Command.builder()
+                .init(()->
+                {
+                    generatedCommand.set(command.get());
+                    generatedCommand.get().init();
+                })
+                .update(()-> generatedCommand.get().update())
+                .finished(()->
+                    generatedCommand.get().finished()
+                )
+                .end((interrupted)-> generatedCommand.get().end(interrupted))
+
+                .build();
+    }
 
     public static void run(Command command) {
         command.init();
-        while (!command.finished()) {
+        while (!command.finished() && !Thread.currentThread().isInterrupted()) {
             command.update();
         }
         command.end(false);
+    }
+    public static void run(Command... commands) {
+        for(Command command: commands)
+            command.init();
+
+        int commandsFinished = 0;
+        boolean[] commandFinished = new boolean[commands.length];
+
+        while (commandsFinished<commands.length)
+        {
+            for(int i=0;i<commands.length;i++)
+            {
+                if(!commandFinished[i])
+                {
+                    commands[i].update();
+                    if(commands[i].finished())
+                    {
+                        commands[i].end(false);
+                        commandFinished[i]=true;
+                        commandsFinished++;
+                    }
+                }
+            }
+        }
+
+
     }
 
     public void init() {

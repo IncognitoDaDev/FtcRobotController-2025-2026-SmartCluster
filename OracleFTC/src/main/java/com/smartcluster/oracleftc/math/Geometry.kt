@@ -35,9 +35,10 @@ data class Vector2d(@JvmField open val x: Double, @JvmField val y: Double) {
     operator fun div(z: Double) = Vector2d(x / z, y / z)
 
     infix fun dot(v: Vector2d) = x * v.x + y * v.y
+    infix fun cross(v: Vector2d) = x * v.y - y*v.x;
     fun sqrNorm() = this dot this
     fun norm() = sqrt(sqrNorm())
-
+    fun normalized() = this / norm()
     // precondition: this is normalized
     fun angleCast() = Rotation2d(x, y)
 }
@@ -49,7 +50,7 @@ data class Vector2dDual<Param>(@JvmField val x: DualNum<Param>, @JvmField val y:
     companion object {
         @JvmStatic
         fun <Param> constant(v: Vector2d, n: Int) =
-            Vector2dDual<Param>(DualNum.constant(v.x, n), DualNum.constant(v.y, n))
+            Vector2dDual<Param>(DualNum(v.x), DualNum(v.y))
     }
 
     operator fun plus(v: Vector2d) = Vector2dDual(x + v.x, y + v.y)
@@ -61,7 +62,7 @@ data class Vector2dDual<Param>(@JvmField val x: DualNum<Param>, @JvmField val y:
 
     infix fun dot(v: Vector2dDual<Param>) = x * v.x + y * v.y
     fun sqrNorm() = this dot this
-    fun norm() = sqrNorm().sqrt()
+    fun norm() = sqrt(sqrNorm())
 
     fun bind() = Vector2dDual(x, y)
 
@@ -69,7 +70,7 @@ data class Vector2dDual<Param>(@JvmField val x: DualNum<Param>, @JvmField val y:
         Vector2dDual(x.reparam(oldParam), y.reparam(oldParam))
 
     fun drop(n: Int) = Vector2dDual(x.drop(n), y.drop(n))
-    fun value() = Vector2d(x.value(), y.value())
+    fun value() = Vector2d(x[0], y[0])
 
     // precondition: this is normalized
     fun angleCast() = Rotation2dDual(x, y)
@@ -128,23 +129,24 @@ data class Rotation2d(@JvmField val real: Double, @JvmField val imag: Double) {
  */
 data class Rotation2dDual<Param>(@JvmField val real: DualNum<Param>, @JvmField val imag: DualNum<Param>) {
     init {
-        require(real.size() == imag.size())
-        require(real.size() <= 3)
+        require(real.size == imag.size)
+        require(real.size <= 3)
     }
 
     companion object {
         @JvmStatic
-        fun <Param> exp(theta: DualNum<Param>) = Rotation2dDual(theta.cos(), theta.sin())
+        fun <Param> exp(theta: DualNum<Param>) = Rotation2dDual(cos(theta), sin(theta))
 
         @JvmStatic
         fun <Param> constant(r: Rotation2d, n: Int) =
-            Rotation2dDual<Param>(DualNum.constant(r.real, n), DualNum.constant(r.imag, n))
+            Rotation2dDual<Param>(DualNum(r.real), DualNum(r.imag))
     }
 
-    fun size() = real.size()
+    fun size() = real.size
 
     operator fun plus(x: Double) = this * Rotation2d.exp(x)
     operator fun plus(d: DualNum<Param>) = this * exp(d)
+    operator fun minus(r: Rotation2dDual<Param>) = (r.inverse() * this)
 
     operator fun times(pv: PoseVelocity2dDual<Param>) = PoseVelocity2dDual(this * pv.linearVel, pv.angVel)
     operator fun times(v: Vector2dDual<Param>) = Vector2dDual(real * v.x - imag * v.y, imag * v.x + real * v.y)
@@ -156,13 +158,13 @@ data class Rotation2dDual<Param>(@JvmField val real: DualNum<Param>, @JvmField v
     operator fun times(p: Pose2d) = Pose2dDual(this * p.position, this * p.heading)
 
     fun inverse() = Rotation2dDual(real, -imag)
-
+    fun log(): DualNum<Param> = atan2(imag,real)
     fun <NewParam> reparam(oldParam: DualNum<NewParam>) =
         Rotation2dDual(real.reparam(oldParam), imag.reparam(oldParam))
 
     // derivative of atan2 under unit norm assumption
     fun velocity() = real * imag.drop(1) - imag * real.drop(1)
-    fun value() = Rotation2d(real.value(), imag.value())
+    fun value() = Rotation2d(real[0], imag[0])
 }
 
 /**
@@ -207,8 +209,6 @@ data class Pose2d(
         }
     }
 
-    @JvmField
-    var getHeading: Any = TODO("initialize me")
     val x: Double
         get() = position.x
     val y: Double
@@ -248,6 +248,14 @@ data class Pose2dDual<Param>(
     @JvmField
     val heading: Rotation2dDual<Param>,
 ) {
+    constructor(pose: Pose2d, velocity:PoseVelocity2d) :
+            this(
+                Vector2dDual(
+                    DualNum(pose.position.x, velocity.linearVel.x),
+                    DualNum(pose.position.y, velocity.linearVel.y)
+                ),
+                Rotation2dDual.exp(DualNum(pose.heading.log(), velocity.angVel))
+            )
     constructor(positionX: DualNum<Param>, positionY: DualNum<Param>, heading: Rotation2dDual<Param>) :
             this(Vector2dDual(positionX, positionY), heading)
     constructor(positionX: DualNum<Param>, positionY: DualNum<Param>, heading: DualNum<Param>) :
@@ -263,7 +271,7 @@ data class Pose2dDual<Param>(
 
     operator fun times(p: Pose2d) = Pose2dDual(heading * p.position + position, heading * p.heading)
     operator fun times(p: Pose2dDual<Param>) = Pose2dDual(heading * p.position + position, heading * p.heading)
-    operator fun times(pv: PoseVelocity2dDual<Param>) = PoseVelocity2dDual(heading * pv.linearVel, pv.angVel)
+    operator fun times(pv: PoseVelocity2d) = PoseVelocity2d(heading.value() * pv.linearVel, pv.angVel)
 
     fun inverse() = heading.inverse().let {
         Pose2dDual(it * -position, it)
@@ -279,6 +287,7 @@ data class Pose2dDual<Param>(
 data class PoseVelocity2d(@JvmField val linearVel: Vector2d, @JvmField val angVel: Double) {
     operator fun minus(pv: PoseVelocity2d) = PoseVelocity2d(linearVel - pv.linearVel, angVel - pv.angVel)
     operator fun unaryMinus() = PoseVelocity2d(linearVel.unaryMinus(), -angVel)
+    operator fun div(d:Double) = PoseVelocity2d(linearVel.div(d), angVel/d)
 }
 
 /**
@@ -291,12 +300,12 @@ data class PoseVelocity2dDual<Param>(
     companion object {
         @JvmStatic
         fun <Param> constant(pv: PoseVelocity2d, n: Int) =
-            PoseVelocity2dDual<Param>(Vector2dDual.constant(pv.linearVel, n), DualNum.constant(pv.angVel, n))
+            PoseVelocity2dDual<Param>(Vector2dDual.constant(pv.linearVel, n), DualNum(pv.angVel))
     }
 
     operator fun plus(other: PoseVelocity2d) = PoseVelocity2dDual(linearVel + other.linearVel, angVel + other.angVel)
 
-    fun value() = PoseVelocity2d(linearVel.value(), angVel.value())
+    fun value() = PoseVelocity2d(linearVel.value(), angVel[0])
 }
 
 data class Twist2d(@JvmField val line: Vector2d, @JvmField val angle: Double)
@@ -305,37 +314,7 @@ data class Twist2dDual<Param>(
     @JvmField val line: Vector2dDual<Param>,
     @JvmField val angle: DualNum<Param>
 ) {
-    fun value() = Twist2d(line.value(), angle.value())
-    fun velocity() = PoseVelocity2dDual(line.drop(1), angle.drop(1))
+    fun value() = Twist2d(line.value(), angle[0])
+    fun velocity() = PoseVelocity2d(line.drop(1).value(), angle[1])
 }
 
-
-fun compute(
-    targetPose: Pose2dDual<Time>,
-    actualPose: Pose2d,
-    actualVelActual: PoseVelocity2d,
-): PoseVelocity2dDual<Time> {
-    // TODO: Are these names useful for anyone else?
-    val targetVelWorld = targetPose.velocity()
-    val txTargetWorld = Pose2dDual.constant<Time>(targetPose.value().inverse(), 2)
-    val targetVelTarget = txTargetWorld * targetVelWorld
-
-    val velErrorActual = targetVelTarget.value() - actualVelActual
-
-    val error = targetPose.value().minusExp(actualPose)
-    return targetVelTarget +
-            PoseVelocity2d(
-                Vector2d(
-                    error.position.x,
-                    error.position.y,
-                ),
-                 error.heading.log(),
-            ) +
-            PoseVelocity2d(
-                Vector2d(
-                     velErrorActual.linearVel.x,
-                     velErrorActual.linearVel.y,
-                ),
-                 velErrorActual.angVel,
-            )
-}

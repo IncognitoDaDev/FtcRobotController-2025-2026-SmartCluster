@@ -18,7 +18,7 @@ public class TrapezoidalMotionProfile extends MotionProfile {
     }
 
     @Override
-    public DualNum<Time> getMotionState(double distance, double time) {
+    public DualNum<Time> getMotionState(double distance, double  time) {
         // Math to determine proper acceleration and deceleration periods
         double accelerationTime = Math.min(Math.sqrt((distance / (1 - maxAcceleration / -maxDeceleration)) / (maxAcceleration / 2)), maxVelocity / maxAcceleration);
         double decelerationTime = Math.min(Math.sqrt((distance / (1 - maxDeceleration / -maxAcceleration)) / (maxDeceleration / 2)), maxVelocity / maxDeceleration);
@@ -31,20 +31,19 @@ public class TrapezoidalMotionProfile extends MotionProfile {
 
         double currentAccelerationDistance = maxAcceleration / 2 * Math.pow(Math.min(time, accelerationTime), 2);
         if (time < accelerationTime) // Acceleration time
-        {
-
-            return  DualNum.Companion.vars(currentAccelerationDistance, maxAcceleration * time, maxAcceleration);
-        } else if (time < accelerationTime + cruiseTime) // Cruise time
+            return new DualNum<>(currentAccelerationDistance, maxAcceleration * time, maxAcceleration);
+        else if (time < accelerationTime + cruiseTime) // Cruise time
         {
             time -= accelerationTime;
-            return DualNum.Companion.vars(currentAccelerationDistance + cruiseVelocity * time, cruiseVelocity, 0);
-        } else if (time < accelerationTime + cruiseTime + decelerationTime) // Deceleration time
+            return new DualNum<>(currentAccelerationDistance + cruiseVelocity * time, cruiseVelocity, 0);
+        }
+        else if (time < accelerationTime + cruiseTime + decelerationTime) // Deceleration time
         {
             time -= accelerationTime;
             time -= cruiseTime;
-            return DualNum.Companion.vars(currentAccelerationDistance + cruiseDistance + cruiseVelocity * time - maxDeceleration / 2 * Math.pow(time, 2), cruiseVelocity - maxDeceleration * time, -maxDeceleration);
-        } else { // Out of bounds
-            return DualNum.Companion.vars(distance, 0, 0);
+            return new DualNum<>(currentAccelerationDistance + cruiseDistance + cruiseVelocity * time - maxDeceleration / 2 * Math.pow(time, 2), cruiseVelocity - maxDeceleration * time, -maxDeceleration);
         }
+        else return new DualNum<>(distance, 0, 0); // Out of bounds
+
     }
 }

@@ -1,9 +1,8 @@
 package com.smartcluster.oracleftc.fsm;
 
-
 import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.CommandScheduler;
-import com.smartcluster.oracleftc.commands.ThreadedCommandScheduler;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -52,7 +51,7 @@ public class FSM<T extends Enum<T>> {
         return new FSMBuilder<>();
     }
 
-    public void update() throws InterruptedException {
+    public void update()  {
         scheduler.update();
         if (currentTransition != null) {
             if (scheduler.finished(currentTransition.getCommand())) {
@@ -65,7 +64,7 @@ public class FSM<T extends Enum<T>> {
             }
         } else {
             for (Transition<T> transition : Objects.requireNonNull(
-                transitions.getOrDefault(currentState, new ArrayList<>()))) {
+                    transitions.getOrDefault(currentState, new ArrayList<>()))) {
                 if (transition.getCondition()) {
                     currentTransition = transition;
                     scheduler.schedule(currentTransition.getCommand());
@@ -107,7 +106,7 @@ public class FSM<T extends Enum<T>> {
         public FSMBuilder<T> state(T state, Command command) {
             if (!command.interruptable()) {
                 throw new IllegalArgumentException(
-                    "FSM state commands are required to be interruptable");
+                        "FSM state commands are required to be interruptable");
             }
 
             stateCommands.put(state, command);

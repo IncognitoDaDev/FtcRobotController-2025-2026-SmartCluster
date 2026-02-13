@@ -4,7 +4,7 @@ import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 @TeleOp(group = "TeleOp")
-public class RedTeleOp extends BaseTeleOp{
+public class RedTeleOp extends MYteleop{
     {
 
         endPose = new Pose2d(61.25, -61.25, Math.toRadians(0));

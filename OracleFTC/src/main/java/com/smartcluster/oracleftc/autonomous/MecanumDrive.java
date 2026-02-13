@@ -1,61 +1,78 @@
-package com.smartcluster.oracleftc.autonomous;
-
-import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.smartcluster.oracleftc.autonomous.follower.PIDToPointFollower;
-import com.smartcluster.oracleftc.autonomous.localization.Localizer;
-import com.smartcluster.oracleftc.autonomous.localization.MecanumDriveLocalizer;
-import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
-import com.smartcluster.oracleftc.math.Pose2d;
-import com.smartcluster.oracleftc.math.Pose2dDual;
-import com.smartcluster.oracleftc.math.Time;
-import com.smartcluster.oracleftc.math.control.MecanumKinematics;
-import com.smartcluster.oracleftc.math.control.MotorFeedforward;
-import org.jetbrains.annotations.Nullable;
-
-public abstract class MecanumDrive extends Subsystem {
-
-    /**
-     * Localizer used by this mecanum drive
-     */
-    protected Localizer localizer;
-
-    /**
-     * Motor feedforward for the drivetrain motors
-     */
-    protected MotorFeedforward feedforward;
-
-    /**
-     * Kinematics for the mecanum drive
-     */
-    protected MecanumKinematics kinematics;
-
-    public PIDToPointFollower p2p;
-//    public PurePursuitFollower pp;
-//    public RoadRunnerFollower rr;
-//    public GVFFollower gvf;
-//    public UnprofiledBezierFollower ubf;
-
-    public MecanumDrive(OpMode opMode) {
-        super(opMode);
-    }
-
-    public Pose2dDual<Time> getPose()
-    {
-        return localizer.getPose();
-    }
-
-    public void update()
-    {
-        localizer.update();
-    }
-
-    public final void setMotorPowers(double[] motorPowers)
-    {
-        setMotorPowers(motorPowers[0], motorPowers[1], motorPowers[2], motorPowers[3]);
-    }
-
-    public abstract void setMotorPowers(double frontRightPower, double backRightPower, double frontLeftPower, double backLeftPower);
-
-    public abstract boolean defaultEndCondition(Pose2d target);
-
-}
+//package com.smartcluster.oracleftc.autonomous;
+//
+//
+//
+//import com.qualcomm.hardware.lynx.LynxVoltageSensor;
+//import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+//import com.qualcomm.robotcore.hardware.DcMotorEx;
+//import com.smartcluster.oracleftc.commands.Command;
+//import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
+//import com.smartcluster.oracleftc.math.Pose2dDual;
+//import com.smartcluster.oracleftc.math.Time;
+//
+//public abstract class MecanumDrive extends Subsystem {
+//
+//    protected DcMotorEx frontRightMotor, backRightMotor, frontLeftMotor, backLeftMotor;
+//    protected LynxVoltageSensor voltageSensor;
+//    protected Localizer localizer;
+//
+//    public MecanumDrive(OpMode opMode) {
+//        super(opMode);
+//    }
+//
+//    public abstract void drawRobot(Pose2dDual<Time> pose);
+//
+//    public final Command update()
+//    {
+//        return Command.builder()
+//                .update(()->{
+//                    localizer.update();
+//                    drawRobot(localizer.getPose());
+//
+//                })
+//                .requires(this)
+//                .build();
+//    }
+//
+////    public final Command follow(PathSegment... pathSegments)
+////    {
+////        AtomicInteger pathSegmentIndex= new AtomicInteger();
+////        return Command.builder()
+////                .init(()->{
+////                    pathSegmentIndex.set(0);
+////                })
+////                .update(()->{
+////                    Pose2dDual<Time> currentPose = getPose();
+////                    PathSegment currentPathSegment = pathSegments[pathSegmentIndex.get()];
+////                    double closestPointT = pathSegments[pathSegmentIndex.get()].curve.getClosestT(currentPose.position.value());
+////
+////                    Vector2d translationalVector = currentPathSegment.curve.getPoint(closestPointT).minus(currentPose.value().position);
+////                    Vector2d correctionVector = mass * centripetalForceScaling * currentPathSegment.curve.getCurvature(closestPointT) * Math.pow(currentPose.velocity().value().linearVel.dot(currentPathSegment.curve.getDerivative(closestPointT).normalized()), 2) *currentPathSegment.curve.getCurvature(closestPointT);
+////
+////
+////                })
+////                .finished(()->{
+////                    if(pathSegmentIndex.get()!=pathSegments.length) return false;
+////                })
+////                .end((interrupted)->{
+////
+////                })
+////                .requires(this)
+////                .build();
+////    }
+////
+////    public final Command hold(Pose2d pose)
+////    {
+////
+////    }
+//
+//
+//
+//
+//    public final void setPose(Pose2dDual<Time> pose)
+//    {
+//        localizer.setPose(pose);
+//    }
+//
+//    public final Pose2dDual<Time> getPose() { return localizer.getPose(); }
+//}
