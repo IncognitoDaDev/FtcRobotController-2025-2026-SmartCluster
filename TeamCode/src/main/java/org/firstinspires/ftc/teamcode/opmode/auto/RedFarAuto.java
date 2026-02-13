@@ -28,6 +28,7 @@ import com.smartcluster.oracleftc.commands.SequentialCommand;
 import com.smartcluster.oracleftc.commands.ThreadedCommandScheduler;
 import com.smartcluster.oracleftc.commands.WaitCommand;
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
+import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.math.filters.MovingAverageFilter;
 import com.smartcluster.oracleftc.utils.Performance;
 
@@ -89,11 +90,10 @@ public class RedFarAuto extends LinearOpMode {
             public Set<Subsystem> requires() { return super.requires(); }
         };
     }
-    final double [] turretpoz = {0,115};
     private final Pose2d startPose = new Pose2d(13,-59, Math.toRadians(-90));
     private final Pose2d shootPose = new Pose2d(15,-54,Math.toRadians(-122));
 
-    private final Pose2d stack1 = new Pose2d(28.5,-36,Math.toRadians(0));
+    private final Pose2d stack1 = new Pose2d(28.5,-35.5,Math.toRadians(0));
     private final Pose2d stack2 = new Pose2d(28.5,-11,Math.toRadians(0));
     private final Pose2d stack3 = new Pose2d(28,12.5,Math.toRadians(0));
 
@@ -103,6 +103,8 @@ public class RedFarAuto extends LinearOpMode {
 
     public VelConstraint slow = (pose2dDual, posePath, v) -> 25;
     public VelConstraint normal = (pose2dDual, posePath, v) -> 60;
+    public static PIDController pidController = new PIDController(0.0041, 0.00078, 0.00008);
+
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -120,6 +122,7 @@ public class RedFarAuto extends LinearOpMode {
                         commandToAction(
                                 new SequentialCommand(
                                         robot.cam.scanOrder(),
+                                        new InstantCommand(()->robot.storage.PID_Selector(pidController.p,pidController.i,pidController.d)),
                                         new InstantCommand(() ->
                                         {
                                             robot.storage.storage.OuttakeFacing = -1;
@@ -182,9 +185,9 @@ public class RedFarAuto extends LinearOpMode {
                                         robot.storage.distanceSwitch(3, 3000),
                                         new InstantCommand(() ->
                                         {
-                                            robot.storage.storage.Slot[0]= Storage.ArtifactColor.GREEN;
+                                            robot.storage.storage.Slot[0]= Storage.ArtifactColor.PURPLE;
                                             robot.storage.storage.Slot[1]= Storage.ArtifactColor.PURPLE;
-                                            robot.storage.storage.Slot[2]= Storage.ArtifactColor.PURPLE;
+                                            robot.storage.storage.Slot[2]= Storage.ArtifactColor.GREEN;
 
                                         }),
                                         robot.intake.stop()

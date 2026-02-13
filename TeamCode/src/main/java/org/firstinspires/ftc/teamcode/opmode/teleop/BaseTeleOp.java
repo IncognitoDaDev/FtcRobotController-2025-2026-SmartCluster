@@ -17,6 +17,7 @@ import com.smartcluster.oracleftc.commands.RaceCommand;
 import com.smartcluster.oracleftc.commands.SequentialCommand;
 import com.smartcluster.oracleftc.commands.WaitCommand;
 import com.smartcluster.oracleftc.fsm.FSM;
+import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.math.filters.MovingAverageFilter;
 import com.smartcluster.oracleftc.utils.Performance;
 import com.smartcluster.oracleftc.utils.ProcessedGamepad;
@@ -47,6 +48,8 @@ public class BaseTeleOp extends LinearOpMode {
         SHOOT,FarShooting,CloseShooting,PARKING,
     }
     private TeleOpState CurrentState = TeleOpState.INIT;
+    public PIDController PIDController = new PIDController(0.0041, 0.00078, 0.00008);
+
 
     @Override
     public void runOpMode() throws InterruptedException
@@ -70,12 +73,13 @@ public class BaseTeleOp extends LinearOpMode {
                 .transition(TeleOpState.INIT, TeleOpState.IDLE, ()->true,
                         new SequentialCommand(
                                 robot.reset(),
+                                new InstantCommand(()->robot.storage.PID_Selector(PIDController.p,PIDController.i,PIDController.d)),
                                 new InstantCommand(() -> {
                                     robot.storage.storage.OuttakeFacing = -1;
                                     robot.turret.turret.setTarget(0);
                                     robot.turret.setTargetVelocity(500);
-                                }
-                                )
+
+                                })
                 ))
                 .transition(BaseTeleOp.TeleOpState.IDLE, BaseTeleOp.TeleOpState.INTAKE, driverGamepad.left_bumper.down(),
                         new SequentialCommand(
@@ -118,7 +122,7 @@ public class BaseTeleOp extends LinearOpMode {
                 .transition(TeleOpState.FarShooting,TeleOpState.SHOOT,driverGamepad.cross.pressed(),
                         new SequentialCommand(
                                 robot.turret.WaitForRPM(500),
-                                new InstantCommand(()->robot.turret.hood.setTarget(0.62)),
+                                new InstantCommand(()->robot.turret.hood.setTarget(0.6)),
                                 robot.storage.BallToOuttake(),
                                 robot.storage.nextBall(),
                                 robot.turret.WaitForRPM(500),

@@ -40,9 +40,9 @@ public class Storage extends Subsystem {
     private final AnalogInput frontColorSensor;
     public final Encoder spindexEncoder;
 
-    public static MotorFeedforward spindexerFeedForward = new MotorFeedforward(0.09,-0.0009,0.00005);
-    public static PIDController spindexerPID = new PIDController(0.0035, -0.0000003, 0.00008);
-    public static TrapezoidalMotionProfile spindexerMotionProfile = new TrapezoidalMotionProfile(7800,8800,8700);
+    public static MotorFeedforward spindexerFeedForward = new MotorFeedforward(0.1,0.00004,0);
+    public static PIDController spindexerPID = new PIDController(0.0043, 0.000078, 0.00007);
+    public static TrapezoidalMotionProfile spindexerMotionProfile = new TrapezoidalMotionProfile(7800,8800,8800);
 
     public static double tolerance = 7.0;
 
@@ -166,6 +166,12 @@ public class Storage extends Subsystem {
                 return new InstantCommand(spindexEncoder::reset);
             }
         };
+    }
+    public void PID_Selector(double p,double i,double d){
+        spindexerPID.p = p;
+        spindexerPID.i = i;
+        spindexerPID.d = d;
+
     }
     public Command flapperUp() { return flapper.move(new AtomicReference<>(flapperUpVal)); }
     public Command flapperDown() { return flapper.move(new AtomicReference<>(flapperDownVal)); }
@@ -376,13 +382,13 @@ public class Storage extends Subsystem {
                 .init(()->{
                     if (storage.OuttakeFacing == -1)
                     {
-                        if (storage.Slot[1] == storage.Order[order]); // Ball is here
-                        else if (storage.Slot[2] == storage.Order[order])
+                        if (storage.Slot[1] == StorageState.Order[order]); // Ball is here
+                        else if (storage.Slot[2] == StorageState.Order[order])
                         {
                             storage.next();
                             spindexer.setTarget(spindexer.getTarget()+120);
                         }
-                        else if (storage.Slot[0] == storage.Order[order])
+                        else if (storage.Slot[0] == StorageState.Order[order])
                         {
                             storage.previous();
                             spindexer.setTarget(spindexer.getTarget()-120);
@@ -390,20 +396,20 @@ public class Storage extends Subsystem {
                     }
                     else if (storage.OuttakeFacing == 1)
                     {
-                        if (storage.Slot[2] == storage.Order[order]); // Ball is here
-                        else if (storage.Slot[0] == storage.Order[order])
+                        if (storage.Slot[2] == StorageState.Order[order]); // Ball is here
+                        else if (storage.Slot[0] == StorageState.Order[order])
                         {
                             storage.next();
                             spindexer.setTarget(spindexer.getTarget()+120);
                         }
-                        else if (storage.Slot[1] == storage.Order[order])
+                        else if (storage.Slot[1] == StorageState.Order[order])
                         {
                             storage.previous();
                             spindexer.setTarget(spindexer.getTarget()-120);
                         }
                     }
                 })
-                .update(() -> telemetry.addData("Looking for", storage.Order[order]))
+                .update(() -> telemetry.addData("Looking for", StorageState.Order[order]))
                 .finished(spindexer.isNotInMotion())
                 .build();
     }
