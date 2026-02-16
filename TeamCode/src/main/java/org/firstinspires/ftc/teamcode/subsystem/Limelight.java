@@ -21,8 +21,8 @@ import org.firstinspires.ftc.teamcode.subsystem.Storage.ArtifactColor;
 public class Limelight extends Subsystem {
 
     private final Limelight3A limelight;
-    private ArtifactColor[] order = {ArtifactColor.PURPLE, ArtifactColor.PURPLE, ArtifactColor.GREEN};
-    private Pose2d limelightPose = new Pose2d(0,0,0);
+    public static ArtifactColor[] order = {ArtifactColor.EMPTY, ArtifactColor.EMPTY, ArtifactColor.EMPTY};
+//    private Pose2d limelightPose = new Pose2d(0,0,0);
     public Limelight(OpMode opMode) {
         super(opMode);
         limelight = hardwareMap.get(Limelight3A.class, "Webcam Turret");
@@ -44,19 +44,24 @@ public class Limelight extends Subsystem {
                 Command.builder()
                         .init(() ->
                         {
+                            limelight.pipelineSwitch(0);
                             limelight.start();
                             isFinished = false;
                             timer.reset();
+
                         })
                         .update(() ->
                         {
                             LLResult result = limelight.getLatestResult();
                             if (result != null && result.isValid())
                             {
+
                                 List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
                                 if (!fiducials.isEmpty())
                                 {
                                     for (LLResultTypes.FiducialResult tag : fiducials) {
+
+
                                         switch (tag.getFiducialId()) {
                                             case 21:
                                                 order = new ArtifactColor[]{ArtifactColor.GREEN, ArtifactColor.PURPLE, ArtifactColor.PURPLE};

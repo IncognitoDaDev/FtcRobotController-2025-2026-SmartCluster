@@ -82,7 +82,7 @@ public class Turret extends Subsystem {
             @Override
             public boolean setTarget(double target) {
                 if(target<0.25)target = 0.25;
-                if(target>0.9)target = 0.9;
+                if(target>0.9)target = 1;
                 this.target.set(target);
                 return true;
             }

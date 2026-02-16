@@ -92,16 +92,18 @@ public class RedFarAuto extends LinearOpMode {
     }
     private final Pose2d startPose = new Pose2d(13,-59, Math.toRadians(-90));
     private final Pose2d shootPose = new Pose2d(15,-54,Math.toRadians(-122));
+    private final Pose2d closePose = new Pose2d(-15, -54,Math.toRadians(-62));
 
-    private final Pose2d stack1 = new Pose2d(28.5,-35,Math.toRadians(0));
-    private final Pose2d stack2 = new Pose2d(28.5,-11,Math.toRadians(0));
-    private final Pose2d stack3 = new Pose2d(28,12.5,Math.toRadians(0));
+
+    private final Pose2d stack1 = new Pose2d(28.5,-34,Math.toRadians(-2));
+    private final Pose2d stack2 = new Pose2d(28.5,-11,Math.toRadians(-2));
+    private final Pose2d stack3 = new Pose2d(28,12.5,Math.toRadians(-2));
 
     private final Pose2d endPose = new Pose2d(35, -56, Math.toRadians(90));
     public static double hoodAngle = 0.58;
 
 
-    public VelConstraint slow = (pose2dDual, posePath, v) -> 25;
+    public VelConstraint slow = (pose2dDual, posePath, v) -> 30;
     public VelConstraint normal = (pose2dDual, posePath, v) -> 60;
     public static PIDController pidController = new PIDController(0.0055, 0.0000, 0.00014);
 
@@ -168,8 +170,8 @@ public class RedFarAuto extends LinearOpMode {
                         //Second shoot, 1st stack
                         new ParallelAction(
                                 robot.drive.actionBuilder(shootPose)
-                                        .setTangent(Math.toRadians(60))
-                                        .splineToLinearHeading(stack1, Math.toRadians(45))
+                                        .setTangent(Math.toRadians(90))
+                                        .splineToLinearHeading(stack1, Math.toRadians(90))
                                         .build(),
                                 commandToAction(robot.storage.intakeMode())
                         ),
@@ -185,9 +187,9 @@ public class RedFarAuto extends LinearOpMode {
                                         robot.storage.distanceSwitch(3, 2200),
                                         new InstantCommand(() ->
                                         {
-                                            robot.storage.storage.Slot[0]= Storage.ArtifactColor.PURPLE;
+                                            robot.storage.storage.Slot[0]= Storage.ArtifactColor.GREEN;
                                             robot.storage.storage.Slot[1]= Storage.ArtifactColor.PURPLE;
-                                            robot.storage.storage.Slot[2]= Storage.ArtifactColor.GREEN;
+                                            robot.storage.storage.Slot[2]= Storage.ArtifactColor.PURPLE;
 
                                         }),
                                         robot.intake.stop()
@@ -195,9 +197,9 @@ public class RedFarAuto extends LinearOpMode {
                         ),
 
                         new ParallelAction(
-                                robot.drive.actionBuilder(new Pose2d(65, stack1.position.y, Math.toRadians(0)))
+                                robot.drive.actionBuilder(new Pose2d(65, stack3.position.y, Math.toRadians(0)))
                                         .setTangent(Math.toRadians(-140))
-                                        .splineToLinearHeading(shootPose, Math.toRadians(-140), normal)
+                                        .splineToLinearHeading(shootPose, Math.toRadians(0), normal)
                                         .build(),
                                 commandToAction(robot.storage.outtakeMode(-1))
                         ),
@@ -260,7 +262,7 @@ public class RedFarAuto extends LinearOpMode {
                         new ParallelAction(
                                 robot.drive.actionBuilder(new Pose2d(65, stack2.position.y, Math.toRadians(0)))
                                         .setTangent(Math.toRadians(-120))
-                                        .splineToLinearHeading(shootPose, Math.toRadians(-120), normal)
+                                        .splineToLinearHeading(shootPose, Math.toRadians(0), normal)
                                         .build(),
                                 commandToAction(robot.storage.outtakeMode(-1))
                         ),
@@ -290,10 +292,32 @@ public class RedFarAuto extends LinearOpMode {
                                 )
                         ),
 
+                        //Third stack, Fourth shoot?
+
                         robot.drive.actionBuilder(shootPose)
                                 .setTangent(Math.toRadians(90))
-                                .splineToLinearHeading(endPose, Math.toRadians(0))
-                                .build()
+                                .splineToLinearHeading(stack3, Math.toRadians(0))
+                                .build(),
+                        commandToAction(robot.storage.intakeMode()),
+                        new ParallelAction(
+                                robot.drive.actionBuilder(stack3)
+                                        .setTangent(Math.toRadians(0))
+                                        .splineToConstantHeading(new Vector2d(65, stack3.position.y), Math.toRadians(0), slow)
+                                        .build(),
+
+                                commandToAction(new SequentialCommand(
+                                        robot.intake.intake(),
+                                        robot.storage.distanceSwitch(3, 2200),
+                                        new InstantCommand(() ->
+                                        {
+                                            robot.storage.storage.Slot[0]= Storage.ArtifactColor.GREEN;
+                                            robot.storage.storage.Slot[1]= Storage.ArtifactColor.PURPLE;
+                                            robot.storage.storage.Slot[2]= Storage.ArtifactColor.PURPLE;
+
+                                        }),
+                                        robot.intake.stop()
+                                ))
+                        )
 
                         //HYPERRION EMAIL- hyperion.cnme@gmail.com
                         //HYPERRION EMAIL- hyperion.cnme@gmail.com

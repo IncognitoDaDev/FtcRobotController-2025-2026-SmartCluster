@@ -120,6 +120,20 @@ public class SPINDEX extends LinearOpMode {
                 (
                         commandToAction(
                                 new SequentialCommand(
+//                                        robot.cam.scanOrder(),
+                                        new InstantCommand(()->robot.storage.PID_Selector(pidController.p,pidController.i,pidController.d)),
+                                        new InstantCommand(() ->
+                                        {
+                                            robot.storage.storage.OuttakeFacing = -1;
+                                            Storage.StorageState.Order = robot.cam.getOrder();
+                                            robot.storage.storage.Slot[0]= Storage.ArtifactColor.PURPLE;
+                                            robot.storage.storage.Slot[1]= Storage.ArtifactColor.PURPLE;
+                                            robot.storage.storage.Slot[2]= Storage.ArtifactColor.GREEN;
+
+                                        })
+                                )),
+                        commandToAction(
+                                new SequentialCommand(
                                         new InstantCommand(()->robot.storage.PID_Selector(pidController.p,pidController.i,pidController.d)),
                                         robot.cam.scanOrder(),
 
@@ -142,41 +156,22 @@ public class SPINDEX extends LinearOpMode {
                                         robot.storage.nextBall(),
                                         new WaitCommand(2000),
 
-                                        robot.storage.nextBall(),                                        new WaitCommand(2000),
-
-                                        robot.storage.nextBall(),                                        new WaitCommand(2000),
-
-                                        robot.storage.nextBall(),                                        new WaitCommand(2000),
-
-                                        robot.storage.nextBall(),                                        new WaitCommand(2000),
-
-                                        robot.storage.nextBall(),                                        new WaitCommand(2000),
-
-                                        robot.storage.nextBall(),                                        new WaitCommand(2000),
+                                        robot.storage.nextBall(),
+                                        new WaitCommand(2000),
 
                                         robot.storage.nextBall(),
+                                        new WaitCommand(2000),
                                         robot.storage.nextBall(),
+                                        new WaitCommand(2000),
+
                                         robot.storage.nextBall(),
+                                        new WaitCommand(2000),
+
                                         robot.storage.nextBall(),
+                                        new WaitCommand(2000),
+
                                         robot.storage.nextBall(),
-                                        robot.storage.nextBall(),
-                                        robot.storage.nextBall(),
-                                        robot.storage.nextBall(),
-                                        robot.storage.nextBall(),
-                                        robot.storage.nextBall(),
-                                        robot.storage.nextBall(),
-                                        robot.storage.nextBall(),
-                                        robot.storage.nextBall(),
-                                        robot.storage.nextBall(),
-                                        robot.storage.nextBall(),
-                                        robot.storage.nextBall(),
-                                        robot.storage.nextBall(),
-                                        robot.storage.nextBall(),
-                                        robot.storage.nextBall(),
-                                        robot.storage.nextBall(),
-                                        robot.storage.nextBall(),
-                                        robot.storage.nextBall(),
-                                        robot.storage.nextBall()
+                                        new WaitCommand(2000)
 
 
                                         ))
@@ -216,6 +211,7 @@ public class SPINDEX extends LinearOpMode {
 
 //            Storage.ArtifactColor[] order = robot.cam.getOrder();
             FtcDashboard.getInstance().sendTelemetryPacket(p);
+            telemetry.addData("CAM reading", robot.cam.getOrder());
             telemetry.addData("Current pose", robot.drive.localizer.getPose().position);
             telemetry.addData("Order [0]", robot.cam.getOrder()[0]);
             telemetry.addData("Order [1]", robot.cam.getOrder()[1]);

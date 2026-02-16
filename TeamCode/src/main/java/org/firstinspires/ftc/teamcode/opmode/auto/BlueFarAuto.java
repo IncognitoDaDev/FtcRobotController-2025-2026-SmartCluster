@@ -28,6 +28,7 @@ import com.smartcluster.oracleftc.commands.SequentialCommand;
 import com.smartcluster.oracleftc.commands.ThreadedCommandScheduler;
 import com.smartcluster.oracleftc.commands.WaitCommand;
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
+import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.math.filters.MovingAverageFilter;
 import com.smartcluster.oracleftc.utils.Performance;
 
@@ -92,16 +93,20 @@ import java.util.concurrent.atomic.AtomicReference;
 
     private final Pose2d startPose = new Pose2d(-13, -59, Math.toRadians(-90));
     private final Pose2d shootPose = new Pose2d(-15, -54,Math.toRadians(-62));
+    private final Pose2d farPose = new Pose2d(15,-54,Math.toRadians(-122));
+
 
     private final Pose2d stack1 = new Pose2d(-28.5,-35,Math.toRadians(180));
     private final Pose2d stack2 = new Pose2d(-28.5,-11,Math.toRadians(180));
     private final Pose2d stack3 = new Pose2d(-28,12.5,Math.toRadians(180));
 
     private final Pose2d endPose = new Pose2d(-35, -56, Math.toRadians(90));
-    public static double hoodAngle = 0.61;
+    public static double hoodAngle = 0.58;
 
     public VelConstraint slow = (pose2dDual, posePath, v) -> 25;
     public VelConstraint normal = (pose2dDual, posePath, v) -> 60;
+    public static PIDController pidController = new PIDController(0.0055, 0.0000, 0.00014);
+
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -116,17 +121,19 @@ import java.util.concurrent.atomic.AtomicReference;
 
         SequentialAction autoAction = new SequentialAction
         (
-                commandToAction( new SequentialCommand(
-                        robot.cam.scanOrder(),
-                        new InstantCommand(() ->
-                        {
-                            robot.storage.storage.OuttakeFacing = -1;
-                            Storage.StorageState.Order = robot.cam.getOrder();
-                            robot.storage.storage.Slot[0]= Storage.ArtifactColor.PURPLE;
-                            robot.storage.storage.Slot[1]= Storage.ArtifactColor.PURPLE;
-                            robot.storage.storage.Slot[2]= Storage.ArtifactColor.GREEN;
+                commandToAction(
+                        new SequentialCommand(
+//                                robot.cam.scanOrder(),
+                                new InstantCommand(()->robot.storage.PID_Selector(pidController.p,pidController.i,pidController.d)),
+                                new InstantCommand(() ->
+                                {
+                                    robot.storage.storage.OuttakeFacing = -1;
+                                    Storage.StorageState.Order = robot.cam.getOrder();
+                                    robot.storage.storage.Slot[0]= Storage.ArtifactColor.PURPLE;
+                                    robot.storage.storage.Slot[1]= Storage.ArtifactColor.PURPLE;
+                                    robot.storage.storage.Slot[2]= Storage.ArtifactColor.GREEN;
 
-                        })
+                                })
                 )),
 
                 robot.drive.actionBuilder(startPose)
@@ -141,16 +148,18 @@ import java.util.concurrent.atomic.AtomicReference;
                         }),
 
                         robot.storage.sort(0),
+//                                        new InstantCommand(()->robot.turret.hood.setTarget(hoodAngle)),
                         robot.turret.WaitForRPM(2000),
                         robot.storage.BallToOuttake(),
                         robot.storage.sort(1),
                         robot.turret.WaitForRPM(1000),
                         robot.storage.BallToOuttake(),
                         robot.storage.sort(2),
+//                                        new InstantCommand(()->robot.turret.hood.setTarget(hoodAngle+0.04)),
                         robot.turret.WaitForRPM(1000),
                         robot.storage.BallToOuttake(),
 
-                        new InstantCommand(() -> robot.turret.setTargetVelocity(0))
+                        new InstantCommand(() -> robot.turret.setTargetVelocity(1000))
                 )),
 
                 //Second shoot, 1st stack
@@ -198,16 +207,18 @@ import java.util.concurrent.atomic.AtomicReference;
                                 }),
 
                                 robot.storage.sort(0),
-                                robot.turret.WaitForRPM(1000),
+//                                        new InstantCommand(()->robot.turret.hood.setTarget(hoodAngle)),
+                                robot.turret.WaitForRPM(2000),
                                 robot.storage.BallToOuttake(),
                                 robot.storage.sort(1),
                                 robot.turret.WaitForRPM(1000),
                                 robot.storage.BallToOuttake(),
                                 robot.storage.sort(2),
+//                                        new InstantCommand(()->robot.turret.hood.setTarget(hoodAngle+0.04)),
                                 robot.turret.WaitForRPM(1000),
                                 robot.storage.BallToOuttake(),
 
-                                new InstantCommand(() -> robot.turret.setTargetVelocity(0))
+                                new InstantCommand(() -> robot.turret.setTargetVelocity(1000))
                         )
                 ),
                 //Third shoot, 2nd stack
@@ -255,12 +266,14 @@ import java.util.concurrent.atomic.AtomicReference;
                                 }),
 
                                 robot.storage.sort(0),
-                                robot.turret.WaitForRPM(1000),
+//                                        new InstantCommand(()->robot.turret.hood.setTarget(hoodAngle)),
+                                robot.turret.WaitForRPM(2000),
                                 robot.storage.BallToOuttake(),
                                 robot.storage.sort(1),
                                 robot.turret.WaitForRPM(1000),
                                 robot.storage.BallToOuttake(),
                                 robot.storage.sort(2),
+//                                        new InstantCommand(()->robot.turret.hood.setTarget(hoodAngle+0.04)),
                                 robot.turret.WaitForRPM(1000),
                                 robot.storage.BallToOuttake(),
 
