@@ -73,6 +73,7 @@ public class ProcessedGamepad {
         right_trigger.process();
         left_stick.process();
         right_stick.process();
+        touchpad.process();
         options.process();
     }
 

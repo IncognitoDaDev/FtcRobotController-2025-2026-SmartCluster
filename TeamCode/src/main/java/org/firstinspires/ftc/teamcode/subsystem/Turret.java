@@ -20,6 +20,7 @@ import com.smartcluster.oracleftc.hardware.subsystem.SubsystemFlavor;
 import com.smartcluster.oracleftc.hardware.wrappers.Encoder;
 import com.smartcluster.oracleftc.hardware.wrappers.RawEncoder;
 import com.smartcluster.oracleftc.math.DualNum;
+import com.smartcluster.oracleftc.math.Pose2dDual;
 import com.smartcluster.oracleftc.math.Time;
 import com.smartcluster.oracleftc.math.control.MotorFeedforward;
 import com.smartcluster.oracleftc.math.control.PIDController;
@@ -27,6 +28,7 @@ import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
 import com.smartcluster.oracleftc.math.filters.LowPassFilter;
 
 import org.firstinspires.ftc.teamcode.roadrunner.Localizer;
+import org.firstinspires.ftc.teamcode.roadrunner.oraclelocalizer.SmartLocalizer;
 
 @Config
 public class Turret extends Subsystem {
@@ -166,16 +168,15 @@ public class Turret extends Subsystem {
         if (velocity > 6000) velocity = 6000;
         targetVelocity = velocity;
     }
-    public Command setVelocityByDistance(Localizer localizer, Pose2d corner){
+    public Command setVelocityByDistance(SmartLocalizer localizer, Pose2d corner){
         return Command.builder()
                 .init(()-> {
                     inZone = true;
                 })
                 .update(()-> {
-                    localizer.update();
-                    Pose2d currentPose = localizer.getPose();
-                    double currentX = currentPose.position.x;
-                    double currentY = currentPose.position.y;
+                    Pose2dDual<Time> currentPose = localizer.getPose();
+                    double currentX = currentPose.position.x.get(0);
+                    double currentY = currentPose.position.y.get(0);
                     double distance = (Math.sqrt(Math.pow((corner.position.x - currentX), 2)
                                     + Math.pow((corner.position.y - currentY), 2)))*2.54;
                     double velocity = m * distance + n;
