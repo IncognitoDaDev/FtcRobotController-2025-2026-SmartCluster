@@ -32,19 +32,15 @@ public abstract class Localizer  {
     {
         this.pose=pose;
     }
+
     public void setPose(Pose2d pose)
     {
-        com.smartcluster.oracleftc.math.Pose2d convertedPose = new com.smartcluster.oracleftc.math.Pose2d(
-                pose.position.x, pose.position.y, pose.heading.log()
-        );
-        this.pose=new Pose2dDual<>(
-                convertedPose, new PoseVelocity2d(new Vector2d(0,0), 0)
-        );
+        com.smartcluster.oracleftc.math.Pose2d convertedPose =
+                new com.smartcluster.oracleftc.math.Pose2d(pose.position.x, pose.position.y, pose.heading.log());
+        this.pose = new Pose2dDual<>(convertedPose, new PoseVelocity2d(new Vector2d(0,0), 0));
     }
     public void setPose(com.smartcluster.oracleftc.math.Pose2d pose)
     {
-        this.pose=new Pose2dDual<>(
-                pose, new PoseVelocity2d(new Vector2d(0,0), 0)
-        );
+        this.pose = new Pose2dDual<>(pose, new PoseVelocity2d(new Vector2d(0,0), 0));
     }
 }

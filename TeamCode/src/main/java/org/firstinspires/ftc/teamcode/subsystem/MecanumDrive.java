@@ -176,9 +176,10 @@ public class MecanumDrive  {
                 .update(()->{
                     ProcessedGamepad.Joystick.JoystickData leftStick = gamepad.left_stick.get();
                     ProcessedGamepad.Joystick.JoystickData rightStick = gamepad.right_stick.get();
-                    if (gamepad.touchpad.pressed().get()) {
-                        currentPose=new com.acmerobotics.roadrunner.Pose2d(0,0, Math.toRadians(90));
-                        localizer.setPose(new com.acmerobotics.roadrunner.Pose2d(0,0, Math.toRadians(90)));
+                    if (gamepad.options.get()) {
+                        currentPose= new com.acmerobotics.roadrunner.Pose2d(0,0, Math.toRadians(90));
+                        localizer.setPose(new Pose2d(0,0, Math.toRadians(90)));
+                        telemetry.addLine("LOCALIZER RESETED!");
                     }
 
                     if(gamepad.triangle.pressed().get())
@@ -197,16 +198,24 @@ public class MecanumDrive  {
                         dir=dir.div(dir.norm());
                         double angle = Math.atan2(dir.y, dir.x);
 
-
                         rx = rotationPID.update(0, AngleUnit.normalizeRadians(angle-botHeading));
                     }else {
                         rx = rightStick.x * boost;
                     }
+
                     double y,x;
-                    if(!flipRed)y=-leftStick.y * boost;
-                    else y=leftStick.y*boost;
-                    if(!flipRed)x = leftStick.x * boost;
-                    else x=-leftStick.x*boost;
+
+                    if(!flipRed)
+                    {
+                        y = -leftStick.y * boost;
+                        x = leftStick.x * boost;
+                    }
+                    else
+                    {
+                        y=leftStick.y*boost;
+                        x=-leftStick.x*boost;
+                    }
+
                     double rotX = x * Math.cos(-botHeading) - y * Math.sin(-botHeading);
                     double rotY = x * Math.sin(-botHeading) + y * Math.cos(-botHeading);
 

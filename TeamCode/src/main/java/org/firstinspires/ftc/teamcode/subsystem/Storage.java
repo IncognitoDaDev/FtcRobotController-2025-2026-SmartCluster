@@ -16,12 +16,15 @@ import com.smartcluster.oracleftc.commands.SequentialCommand;
 import com.smartcluster.oracleftc.commands.WaitCommand;
 import com.smartcluster.oracleftc.hardware.subsystem.CRActuator;
 import com.smartcluster.oracleftc.hardware.subsystem.ServoActuator;
+import com.smartcluster.oracleftc.hardware.subsystem.SimpleCRActuator;
+import com.smartcluster.oracleftc.hardware.subsystem.SimpleServoActuator;
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
 import com.smartcluster.oracleftc.hardware.subsystem.SubsystemFlavor;
 import com.smartcluster.oracleftc.hardware.wrappers.Encoder;
 import com.smartcluster.oracleftc.hardware.wrappers.RawEncoder;
 import com.smartcluster.oracleftc.math.DualNum;
 import com.smartcluster.oracleftc.math.Time;
+import com.smartcluster.oracleftc.math.control.MotionProfile;
 import com.smartcluster.oracleftc.math.control.MotorFeedforward;
 import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
@@ -43,17 +46,15 @@ public class Storage extends Subsystem {
 
     public static double offsetPower = 0.08;
 
-    public static MotorFeedforward spindexerFeedForward = new MotorFeedforward(0,0,0);
     public static PIDController spindexerPID = new PIDController(0.0055, 0.00000, 0.00014);
-    public static TrapezoidalMotionProfile spindexerMotionProfile = new TrapezoidalMotionProfile(7800,8800,8800);
-
     public static double tolerance = 7.0;
 
-    public static double flapperDownVal = 0.23, flapperUpVal = 0.5;
-    public static TrapezoidalMotionProfile flapperMotionProfile = new TrapezoidalMotionProfile(10000, 10000, 10000);
+    public static TrapezoidalMotionProfile flapperProfile = new TrapezoidalMotionProfile(100000, 100000, 100000);
 
+
+    public static double flapperDownVal = 0.23, flapperUpVal = 0.5;
     public final ServoActuator flapper;
-    public final CRActuator spindexer;
+    public final SimpleCRActuator spindexer;
 
     public enum ArtifactColor{
         GREEN,
@@ -129,7 +130,7 @@ public class Storage extends Subsystem {
 
         flapperLeft.setDirection(Servo.Direction.REVERSE);
 
-        flapper = new ServoActuator(this, "flapper", flapperMotionProfile,flapperLeft,flapperRight)
+        flapper = new ServoActuator(this, "flapper", flapperProfile, flapperLeft, flapperRight)
         {
             @Override
             public Command reset()
@@ -151,10 +152,9 @@ public class Storage extends Subsystem {
         };
 
 
-        spindexer = new CRActuator(this, "spindexer", spindexerPID, spindexerFeedForward, spindexerMotionProfile, tolerance, offsetPower, spindexLeft, spindexRight) {
+        spindexer = new SimpleCRActuator(this, "spindexer", spindexerPID, tolerance, offsetPower, spindexLeft, spindexRight) {
             @Override
             public boolean setTarget(double target) {
-//                this.ManualSetFromPosition(getPosition().get(0));
                 this.target.set(target);
                 return true;
             }
@@ -217,7 +217,7 @@ public class Storage extends Subsystem {
     {
         return new SequentialCommand(
                 flapperUp(),
-                new WaitCommand(50),
+                new WaitCommand(85),
                 flapperDown(),
                 new InstantCommand(() -> storage.removeBallOuttake())
         );

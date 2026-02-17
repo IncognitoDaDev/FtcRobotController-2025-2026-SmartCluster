@@ -30,10 +30,11 @@ android {
 }
 
 dependencies {
-    compileOnly 'org.firstinspires.ftc:RobotCore:10.2.0'
-    compileOnly 'org.firstinspires.ftc:Hardware:10.2.0'
-    compileOnly 'org.firstinspires.ftc:FtcCommon:10.2.0'
-    compileOnly 'org.firstinspires.ftc:RobotServer:10.2.0'
+    //noinspection Aligned16KB
+    compileOnly 'org.firstinspires.ftc:RobotCore:11.1.0'
+    compileOnly 'org.firstinspires.ftc:Hardware:11.1.0'
+    compileOnly 'org.firstinspires.ftc:FtcCommon:11.1.0'
+    compileOnly 'org.firstinspires.ftc:RobotServer:11.1.0'
     api 'gov.nist.math:jama:1.0.3'
 
 

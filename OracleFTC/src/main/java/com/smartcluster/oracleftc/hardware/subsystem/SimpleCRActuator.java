@@ -1,0 +1,125 @@
+package com.smartcluster.oracleftc.hardware.subsystem;
+
+import com.qualcomm.robotcore.hardware.CRServoImpl;
+import com.qualcomm.robotcore.hardware.CRServoImplEx;
+import com.qualcomm.robotcore.util.ElapsedTime;
+import com.smartcluster.oracleftc.commands.Command;
+import com.smartcluster.oracleftc.commands.InstantCommand;
+import com.smartcluster.oracleftc.math.DualNum;
+import com.smartcluster.oracleftc.math.Time;
+import com.smartcluster.oracleftc.math.control.MotorFeedforward;
+import com.smartcluster.oracleftc.math.control.PIDController;
+import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
+
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
+
+public abstract class SimpleCRActuator {
+    private final Subsystem subsystem;
+    private final String name;
+    public PIDController pid;
+    double tolerance;
+    double offset = 0.03;
+    protected AtomicReference<Double> target = new AtomicReference<>(0.0);
+    private final AtomicReference<Double> to = new AtomicReference<>(0.0), from=new AtomicReference<>(0.0);
+    public final CRServoImplEx[] crservos;
+
+    private final ElapsedTime time = new ElapsedTime();
+    public SimpleCRActuator(Subsystem subsystem, String name, PIDController pid, double tolerance, double offsetPower, CRServoImplEx... motors)
+    {
+        this.subsystem=subsystem;
+        this.name=name;
+        this.pid=pid;
+        this.crservos =motors;
+        this.tolerance=tolerance;
+        this.offset = offsetPower;
+    }
+    /**
+     * Sets the target of the actuator, the user needs to check for limits
+     * @param target target of the actuator
+     * @return if the operation succeeded
+     */
+    public abstract boolean setTarget(double target);
+
+    public abstract DualNum<Time> getPosition();
+    public final double getTarget()
+    {
+        return target.get();
+    }
+
+    public abstract Command reset();
+    private boolean enabled=true;
+
+    public final Command enable()
+    {
+        return new InstantCommand(()->enabled=true);
+    }
+    public final Command disable()
+    {
+        return new InstantCommand(()->{
+
+            enabled=false;
+            for (CRServoImpl motor : crservos) {
+                motor.setPower(0.0);
+            }
+        });
+    }
+
+    public final void ManualSetFromPosition(double initialPosition)
+    {
+        from.set(initialPosition);
+        time.reset();
+    }
+
+    public final Supplier<Boolean> isNotInMotion()
+    {
+        return () -> Math.abs(getPosition().get(0)-getTarget()) <= tolerance;
+    }
+
+
+    public final Command move(AtomicReference<Double> target)
+    {
+        return Command.builder()
+                .init(()->
+                {
+                    from.set(getPosition().get(0));
+                    time.reset();
+                    setTarget(target.get());
+                })
+                .finished(isNotInMotion())
+                .end((interrupted)->{
+                    from.set(getPosition().get(0));
+                    time.reset();
+                })
+                .requires(subsystem)
+                .build();
+    }
+
+    public final Command update() {
+
+        return Command.builder()
+                .init(() -> {
+                    from.set(getPosition().get(0));
+                    to.set(getTarget());
+                    time.reset();
+                })
+                .update(() -> {
+                    if (to.get() != getTarget()) {
+                        to.set(getTarget());
+                    }
+
+//                    final double distance = to.get() - from.get();
+                    double power = pid.update(to.get(), getPosition().get(0));
+
+                    for (CRServoImpl motor : crservos) {
+                        offset= -offset;
+                        if (enabled) motor.setPower(power+offset);
+                    }
+
+//                    subsystem.telemetry.addData(String.format("%s.position", name), getPosition().get(0));
+//                    subsystem.telemetry.addData(String.format("%s.power", name), power);
+//                    subsystem.telemetry.addData(String.format("%s.target", name), getTarget());
+                })
+                .build();
+    }
+}

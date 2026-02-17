@@ -79,6 +79,7 @@ public class BaseTeleOp extends LinearOpMode {
 
                                 })
                 ))
+
                 .transition(BaseTeleOp.TeleOpState.IDLE, BaseTeleOp.TeleOpState.INTAKE, driverGamepad.left_bumper.down(),
                         new SequentialCommand(
                                 robot.storage.intakeMode(),
@@ -89,24 +90,23 @@ public class BaseTeleOp extends LinearOpMode {
                                 Storage.ArtifactColor frontScan = robot.storage.identifyObj();
                                 if (frontScan != Storage.ArtifactColor.EMPTY)
                                 {
-                                    gamepad1.rumble(15);
+                                    gamepad1.rumble(25);
                                     robot.storage.storage.appendBallIntake(frontScan);
                                 }
                         })
                         .build())
-//                .transition(TeleOpState.INTAKE,TeleOpState.INTAKE, robot.storage::hasBall,robot.storage.nextBall())
                 .transition(TeleOpState.INTAKE, TeleOpState.INTAKE, driverGamepad.square::get,
                                 robot.storage.nextBall())
                 .transition(TeleOpState.INTAKE,TeleOpState.INTAKE,driverGamepad.circle.pressed(),
                         robot.storage.previousBall())
-
                 .transition(TeleOpState.INTAKE,TeleOpState.IDLE, driverGamepad.left_bumper.up(),
                         new SequentialCommand(
                             robot.intake.outake(),
-                            new WaitCommand(200),
+                            new WaitCommand(100),
                             robot.intake.stop(),
                             robot.storage.outtakeMode(-1)
                 ))
+
                 .transition(TeleOpState.IDLE,TeleOpState.IDLE,driverGamepad.square.pressed(),
                         robot.storage.nextBall())
                 .transition(TeleOpState.IDLE,TeleOpState.IDLE,driverGamepad.circle.pressed(),
@@ -119,15 +119,13 @@ public class BaseTeleOp extends LinearOpMode {
 
                 .transition(TeleOpState.FarShooting,TeleOpState.SHOOT,driverGamepad.cross.pressed(),
                         new SequentialCommand(
-                                robot.turret.WaitForRPM(500),
+                                robot.turret.WaitForRPM(2000),
                                 new InstantCommand(()->robot.turret.hood.setTarget(0.6)),
                                 robot.storage.BallToOuttake(),
                                 robot.storage.nextBall(),
-                                robot.turret.WaitForRPM(500),
                                 new InstantCommand(()->robot.turret.hood.setTarget(0.62)),
                                 robot.storage.BallToOuttake(),
                                 robot.storage.nextBall(),
-                                robot.turret.WaitForRPM(500),
                                 new InstantCommand(()->robot.turret.hood.setTarget(0.62)),
                                 robot.storage.BallToOuttake()
 
@@ -136,20 +134,15 @@ public class BaseTeleOp extends LinearOpMode {
 
                 .transition(TeleOpState.FarShooting,TeleOpState.SHOOT,driverGamepad.square.pressed(),
                         new SequentialCommand(
-                                robot.turret.WaitForRPM(500),
+                                robot.turret.WaitForRPM(2000),
                                 new InstantCommand(()->robot.turret.hood.setTarget(0.6)),
                                 robot.storage.BallToOuttake(),
                                 robot.storage.nextBall(),
-                                robot.turret.WaitForRPM(500),
                                 new InstantCommand(()->robot.turret.hood.setTarget(0.62)),
                                 robot.storage.BallToOuttake(),
                                 robot.storage.nextBall(),
-                                robot.turret.WaitForRPM(500),
                                 new InstantCommand(()->robot.turret.hood.setTarget(0.62)),
                                 robot.storage.BallToOuttake()
-
-
-
                         ))
 
 
@@ -168,15 +161,13 @@ public class BaseTeleOp extends LinearOpMode {
 
                 .transition(TeleOpState.CloseShooting,TeleOpState.SHOOT,driverGamepad.cross.pressed(),
                         new SequentialCommand(
-                                robot.turret.WaitForRPM(500),
+                                robot.turret.WaitForRPM(2000),
                                 new InstantCommand(()->robot.turret.hood.setTarget(0.46)),
                                 robot.storage.BallToOuttake(),
                                 robot.storage.nextBall(),
-                                robot.turret.WaitForRPM(500),
                                 new InstantCommand(()->robot.turret.hood.setTarget(0.47)),
                                 robot.storage.BallToOuttake(),
                                 robot.storage.nextBall(),
-                                robot.turret.WaitForRPM(500),
                                 new InstantCommand(()->robot.turret.hood.setTarget(0.47)),
                                 robot.storage.BallToOuttake(),
                                 new InstantCommand(()->robot.turret.hood.setTarget(0.55))
@@ -191,11 +182,9 @@ public class BaseTeleOp extends LinearOpMode {
                                         new InstantCommand(()->robot.turret.hood.setTarget(0.46)),
                                         robot.storage.BallToOuttake(),
                                         robot.storage.sort(1),
-                                        robot.turret.WaitForRPM(1000),
                                         new InstantCommand(()->robot.turret.hood.setTarget(0.47)),
                                         robot.storage.BallToOuttake(),
                                         robot.storage.sort(2),
-                                        robot.turret.WaitForRPM(1000),
                                         new InstantCommand(()->robot.turret.hood.setTarget(0.47)),
                                         robot.storage.BallToOuttake(),
 
@@ -203,7 +192,6 @@ public class BaseTeleOp extends LinearOpMode {
 
                                 ),
                                 robot.storage.BroPleaseStopItsEmpty()
-
                         ))
 
                 .transition(TeleOpState.SHOOT, TeleOpState.IDLE, () -> CurrentState == TeleOpState.SHOOT,
