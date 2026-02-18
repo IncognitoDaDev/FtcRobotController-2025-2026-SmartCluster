@@ -20,15 +20,14 @@ import com.smartcluster.oracleftc.hardware.subsystem.SubsystemFlavor;
 import com.smartcluster.oracleftc.hardware.wrappers.Encoder;
 import com.smartcluster.oracleftc.hardware.wrappers.RawEncoder;
 import com.smartcluster.oracleftc.math.DualNum;
-import com.smartcluster.oracleftc.math.Pose2dDual;
 import com.smartcluster.oracleftc.math.Time;
 import com.smartcluster.oracleftc.math.control.MotorFeedforward;
 import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
 import com.smartcluster.oracleftc.math.filters.LowPassFilter;
 
-import org.firstinspires.ftc.teamcode.roadrunner.Localizer;
-import org.firstinspires.ftc.teamcode.roadrunner.oraclelocalizer.SmartLocalizer;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 @Config
 public class Turret extends Subsystem {
@@ -45,10 +44,18 @@ public class Turret extends Subsystem {
     public final Actuator turret;
     public final Encoder encoderRot;
     public final ServoActuator hood;
-    private final double m = 8.502;
-    private final double n = 1300.98;
-    private boolean inZone;
 
+    public MecanumDrive drive;
+    private Pose2d goal;
+    public AtomicBoolean isAboutToShot = new AtomicBoolean(false);
+
+    // velocity = VELOCITY_SLOPE * distance_cm + VELOCITY_INTERCEPT
+    private static final double VELOCITY_SLOPE = 5.245323;
+    private static final double VELOCITY_INTERCEPT = 1670.528036;
+
+    // hood = HOOD_SLOPE * velocity + HOOD_INTERCEPT
+    private static final double HOOD_SLOPE = 0.000286;
+    private static final double HOOD_INTERCEPT = -0.322233;
 
 
     public Turret(OpMode opMode) {
@@ -83,8 +90,8 @@ public class Turret extends Subsystem {
 
             @Override
             public boolean setTarget(double target) {
-                if(target<0.25)target = 0.25;
-                if(target>0.9)target = 1;
+                if(target<0.25) target = 0.25;
+                if(target>0.9) target = 0.9;
                 this.target.set(target);
                 return true;
             }
@@ -106,58 +113,21 @@ public class Turret extends Subsystem {
             public DualNum<Time> getPosition() {
                 return encoderRot.getCurrentPosition().div(28).times(48).div(260).times(103.8);
             }
-
-
         };
     }
+
+    public void setTracking(MecanumDrive drive, Pose2d goal)
+    {
+        this.drive = drive;
+        this.goal = goal;
+    }
+
     public static MotorFeedforward flywheelFeedforward = new MotorFeedforward(0.1, 0.00024, 0);
     public static PIDController flywheelPID = new PIDController(0.0012, 0, 0, 0.5);
     public static LowPassFilter velocityFilter = new LowPassFilter(0.5);
     private double targetVelocity = 0; // RPM
 
-    private final double Tolerance = 150;
-    //angle between -180 and 180 to corespond with the robot heading values
-
-    public Command trackCorner(Localizer localizer, Pose2d corner){
-        return Command.builder()
-                .init(()->inZone = true)
-               .update(()->{
-                    localizer.update();
-                    Pose2d robotPose = localizer.getPose();
-                   double currentX = robotPose.position.x;
-                   double currentY = robotPose.position.y;
-
-                    // Calculate vector from robot to corner
-                    double dx = corner.position.x - robotPose.position.x;
-                    double dy = corner.position.y - robotPose.position.y;
-                   double distance = (Math.sqrt(Math.pow((corner.position.x - currentX), 2)
-                           + Math.pow((corner.position.y - currentY), 2)))*2.54;
-                   double velocity = m * distance + n;
-                   double currentVelocity = getCurrentVelocity(); //RPM
-                   double power = flywheelPID.update(velocity, currentVelocity) + flywheelFeedforward.update(velocity, 0);
-                   power = power * (Robot.nominalVoltage / voltageSensor.getVoltage());
-                   turretUp.setPower(power);
-                   turretDown.setPower(power);
-
-                    // Angle to the corner in world space (degrees)
-                    double worldAngle = Math.toDegrees(Math.atan2(dy, dx));
-                    // Robot heading in degrees
-                    double robotAngle = Math.toDegrees(robotPose.heading.log());
-                    // Target turret angle relative to robot
-                    double targetAngle =180-(worldAngle - robotAngle);
-
-                    // Normalize the angle to -180 to 180 (shortest path)
-                    while (targetAngle > 180) targetAngle -= 180;
-                    while (targetAngle <= -180) targetAngle += 180;
-
-                    turret.setTarget(targetAngle);
-                   if(currentY>=Math.abs(currentX)+9*1.41 || (currentY>-46+9*1.41 && Math.abs(currentX)<23+9*1.41))inZone = false;
-
-               })
-                .finished(()->!inZone)
-                .requires(this)
-                .build();
-    }
+    private final double Tolerance = 100;
 
     public double getCurrentVelocity() {
         return velocityFilter.update((turretDown.getVelocity() / 28) * 60);
@@ -168,34 +138,39 @@ public class Turret extends Subsystem {
         if (velocity > 6000) velocity = 6000;
         targetVelocity = velocity;
     }
-    public Command setVelocityByDistance(SmartLocalizer localizer, Pose2d corner){
-        return Command.builder()
-                .init(()-> {
-                    inZone = true;
-                })
-                .update(()-> {
-                    Pose2dDual<Time> currentPose = localizer.getPose();
-                    double currentX = currentPose.position.x.get(0);
-                    double currentY = currentPose.position.y.get(0);
-                    double distance = (Math.sqrt(Math.pow((corner.position.x - currentX), 2)
-                                    + Math.pow((corner.position.y - currentY), 2)))*2.54;
-                    double velocity = m * distance + n;
-                    double currentVelocity = getCurrentVelocity(); //RPM
-                    double power = flywheelPID.update(velocity, currentVelocity) + flywheelFeedforward.update(velocity, 0);
-                    power = power * (Robot.nominalVoltage / voltageSensor.getVoltage());
-                    turretUp.setPower(power);
-                    turretDown.setPower(power);
-                    if(currentY>=(Math.abs(currentX)+9)*1.41 || (currentY>(-46+9)*1.41 && Math.abs(currentX)<(23+9)*1.41))inZone = false;
-                })
-                .finished(()->!inZone)
-                .build();
+
+    public double getDistanceToTarget(Pose2d currPos, com.acmerobotics.roadrunner.Pose2d corner){
+        double currentX = currPos.position.x;
+        double currentY = currPos.position.y;
+
+        double dx = corner.position.x - currentX;
+        double dy = corner.position.y - currentY;
+        return Math.sqrt(dx * dx + dy * dy) * 2.54; // returns distance in cm
+    }
+
+    public void setVelocityAndAngleByDist(Pose2d currPos, Pose2d corner){
+        double velocity = VELOCITY_SLOPE * getDistanceToTarget(currPos, corner) + VELOCITY_INTERCEPT;
+        double angle = getCurrentVelocity()*HOOD_SLOPE + HOOD_INTERCEPT;
+
+        // No longer in zone so stop wasting energy
+        if (!isInsideTheZone(currPos).get()) velocity = 500;
+
+        setTargetVelocity(velocity);
+        hood.setTarget(angle);
+    }
+
+    public Supplier<Boolean> isInsideTheZone(Pose2d coord)
+    {
+        double BigTriangle = -Math.abs(coord.position.x);
+        double TinyTriangle = -Math.abs(coord.position.x);
+        return () -> !(coord.position.y >= BigTriangle);
+
+//        return () -> !(coord.position.y>=Math.abs(coord.position.x)+9*1.41 || (coord.position.y>-46+9*1.41 && Math.abs(coord.position.x)<23+9*1.41));
     }
 
     public Command update() {
         return new ParallelCommand(
                 hood.update(),
-//                Experimental
-//                turret.update(),
                 Command.builder()
                         .update(() -> {
                             double currentVelocity = getCurrentVelocity(); //RPM
@@ -203,6 +178,15 @@ public class Turret extends Subsystem {
                             power = power * (Robot.nominalVoltage / voltageSensor.getVoltage());
                             turretUp.setPower(power);
                             turretDown.setPower(power);
+                            
+                            if (isAboutToShot.get())
+                            {
+                                setVelocityAndAngleByDist(drive.getPose().value(), goal);
+                            } else
+                            {
+                                setTargetVelocity(500);
+                                hood.setTarget(0.55);
+                            }
                         })
                         .requires(this)
                         .build()
@@ -221,6 +205,13 @@ public class Turret extends Subsystem {
                 .finished(() -> Math.abs(targetVelocity-getCurrentVelocity())<Tolerance || timer.milliseconds() > maxMinisecond)
                 .build();
     }
+
+//    double MIN_HOOD_VAL = 0.25, MAX_HOOD_VAL = 0.9, MAX_N_HOOD_VAL = 100, MIN_N_HOOD_VAL = 0;
+//    public void setNormalizedHood(double input)
+//    {
+//        input = (input < MIN_N_HOOD_VAL ? MIN_N_HOOD_VAL : (Math.min(input, MAX_N_HOOD_VAL)));
+//        hood.setTarget((input - MIN_N_HOOD_VAL) * (MAX_HOOD_VAL - MIN_HOOD_VAL) / (MAX_N_HOOD_VAL - MIN_N_HOOD_VAL) + MIN_HOOD_VAL);
+//    }
 
     public Command reset()
     {

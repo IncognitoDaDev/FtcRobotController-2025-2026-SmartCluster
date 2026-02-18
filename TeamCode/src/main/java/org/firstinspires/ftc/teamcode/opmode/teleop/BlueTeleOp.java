@@ -11,7 +11,5 @@ public class BlueTeleOp extends BaseTeleOp{
         farShoot = new Pose2d(-15, -56,Math.toRadians(298));
         endPose =  new Pose2d(-35, -56, Math.toRadians(90));
         isRed=true;
-
-
     }
 }

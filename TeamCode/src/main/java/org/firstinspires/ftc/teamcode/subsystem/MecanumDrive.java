@@ -176,9 +176,9 @@ public class MecanumDrive  {
                 .update(()->{
                     ProcessedGamepad.Joystick.JoystickData leftStick = gamepad.left_stick.get();
                     ProcessedGamepad.Joystick.JoystickData rightStick = gamepad.right_stick.get();
-                    if (gamepad.touchpad.get()) {
-                        currentPose= new com.acmerobotics.roadrunner.Pose2d(localizer.getPose().position.x.get(0),localizer.getPose().position.y.get(0), Math.toRadians(90));
-                        localizer.setPose(new Pose2d(localizer.getPose().position.x.get(0),localizer.getPose().position.y.get(0), Math.toRadians(90)));
+                    if (gamepad.options.get()) {
+                        currentPose= new com.acmerobotics.roadrunner.Pose2d(0, 0, Math.toRadians(90));
+                        localizer.setPose(new Pose2d(0,0, Math.toRadians(90)));
                         telemetry.addLine("LOCALIZER RESETED!");
                     }
 
@@ -199,9 +199,7 @@ public class MecanumDrive  {
                         double angle = Math.atan2(dir.y, dir.x);
 
                         rx = rotationPID.update(0, AngleUnit.normalizeRadians(angle-botHeading));
-                    }else {
-                        rx = rightStick.x * boost;
-                    }
+                    }else rx = rightStick.x * boost;
 
                     double y,x;
 
