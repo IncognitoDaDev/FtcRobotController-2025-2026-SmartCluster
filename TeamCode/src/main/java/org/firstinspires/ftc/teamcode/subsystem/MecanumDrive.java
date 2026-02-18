@@ -176,7 +176,7 @@ public class MecanumDrive  {
                 .update(()->{
                     ProcessedGamepad.Joystick.JoystickData leftStick = gamepad.left_stick.get();
                     ProcessedGamepad.Joystick.JoystickData rightStick = gamepad.right_stick.get();
-                    if (gamepad.options.get()) {
+                    if (gamepad.options.get() || gamepad.touchpad.get()) {
                         currentPose= new com.acmerobotics.roadrunner.Pose2d(0, 0, Math.toRadians(90));
                         localizer.setPose(new Pose2d(0,0, Math.toRadians(90)));
                         telemetry.addLine("LOCALIZER RESETED!");
@@ -194,26 +194,25 @@ public class MecanumDrive  {
 
                     if(lockedMode.get())
                     {
-                        if (rightStick.x > 0.65) lockedMode.set(false);
-                        Vector2d dir = corner.position.minus(getPose().value().position);
-//                        dir=dir.unaryMinus();
-                        dir=dir.div(dir.norm());
-                        double angle = Math.atan2(dir.x, dir.y);
+                        if (Math.abs(rightStick.x) > 0.62) lockedMode.set(false);
+                        Vector2d dir = getPose().value().position.minus(corner.position);
+//                        dir=dir.div(dir.norm());
+                        double angle = Math.atan2(dir.y, dir.x);
 
                         rx = rotationPID.update(0, AngleUnit.normalizeRadians(angle-botHeading));
                     } else rx = rightStick.x * boost;
 
                     double y,x;
 
-                    if(!flipRed)
+                    if(flipRed)
                     {
                         y = -leftStick.y * boost;
                         x = leftStick.x * boost;
                     }
                     else
                     {
-                        y=leftStick.y*boost;
-                        x=-leftStick.x*boost;
+                        y = leftStick.y * boost;
+                        x = leftStick.x * boost;
                     }
 
                     double rotX = x * Math.cos(-botHeading) - y * Math.sin(-botHeading);

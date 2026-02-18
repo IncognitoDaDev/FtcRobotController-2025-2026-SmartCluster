@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.roadrunner.oraclelocalizer;
 
 import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.ftc.OverflowEncoder;
 import com.acmerobotics.roadrunner.ftc.RawEncoder;
 import com.qualcomm.ftcrobotcontroller.BuildConfig;
@@ -156,13 +157,16 @@ public class SmartLocalizer extends Localizer {
                 ).div(25.4),
                 headingDelta.log()
         );
+
         if(pinpointTime.milliseconds()>pinpointTimeDelta)
         {
             pinpoint.update();
             Pose2dDual<Time> newPose = pinpoint.getPose();
 
-            if(((Double.isNaN(newPose.heading.log().get(0)) || Double.isNaN(newPose.position.x.get(0)) || Double.isNaN(newPose.position.y.get(0)))) ||
-                pose.position.minus(newPose.position).sqrNorm().get(0) > pinpointRejectionThreshold*pinpointRejectionThreshold)
+            if(((Double.isNaN(newPose.heading.log().get(0)) ||
+                    Double.isNaN(newPose.position.x.get(0)) ||
+                    Double.isNaN(newPose.position.y.get(0)))) ||
+                    pose.position.minus(newPose.position).sqrNorm().get(0) > pinpointRejectionThreshold*pinpointRejectionThreshold)
             {
 
             }else {
@@ -184,7 +188,8 @@ public class SmartLocalizer extends Localizer {
     @Override
     public void setPose(Pose2dDual<Time> pose) {
         super.setPose(pose);
-        gyroVoltageOffset=canandgyro.getVoltage()-pose.heading.log().get(0) *3.3/360;
-        pinpoint.setPose(pose.value());
+        gyroVoltageOffset=canandgyro.getVoltage()-pose.heading.log().get(0) * 3.3/360;
+        com.smartcluster.oracleftc.math.Pose2d Whatisthispinpoint = new com.smartcluster.oracleftc.math.Pose2d(pose.value().position, pose.value().heading.log());
+        pinpoint.setPose(Whatisthispinpoint);
     }
 }

@@ -49,6 +49,7 @@ public class DistTeleOp extends LinearOpMode {
 
         scheduler.schedule(
                     robot.update(),
+                    robot.turret.VelocityUpdate(),
                     robot.drive.driveFieldCentric(driverGamepad, true, cornerCoordinate)
                 );
 

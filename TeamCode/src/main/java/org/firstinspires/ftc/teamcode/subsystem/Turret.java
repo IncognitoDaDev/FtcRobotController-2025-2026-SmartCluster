@@ -177,19 +177,24 @@ public class Turret extends Subsystem {
                             power = power * (Robot.nominalVoltage / voltageSensor.getVoltage());
                             turretUp.setPower(power);
                             turretDown.setPower(power);
-                            
-                            if (isAboutToShot.get())
-                            {
-                                setVelocityAndAngleByDist(drive.getPose().value(), goal);
-                            } else
-                            {
-                                setTargetVelocity(500);
-                                hood.setTarget(0.55);
-                            }
                         })
                         .requires(this)
                         .build()
         );
+    }
+
+    public Command VelocityUpdate() {
+        return Command.builder()
+                .update(() -> {
+                    if (isAboutToShot.get()) setVelocityAndAngleByDist(drive.getPose().value(), goal);
+                    else {
+                        setTargetVelocity(500);
+                        hood.setTarget(0.55);
+                    }
+                })
+                .requires(this)
+                .build();
+
     }
 
     public Command WaitForRPM(double maxMinisecond)
