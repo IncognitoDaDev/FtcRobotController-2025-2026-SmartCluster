@@ -55,7 +55,7 @@ public class Turret extends Subsystem {
 
     // hood = HOOD_SLOPE * velocity + HOOD_INTERCEPT
     private static final double HOOD_SLOPE = 0.000286;
-    private static final double HOOD_INTERCEPT = -0.322233;
+    private static final double HOOD_INTERCEPT = -0.282233;
 
 
     public Turret(OpMode opMode) {
@@ -64,8 +64,9 @@ public class Turret extends Subsystem {
         voltageSensor = hardwareMap.getAll(OracleLynxVoltageSensor.class).iterator().next();
 
         turretUp = hardwareMap.get(DcMotorImplEx.class, "turretUp");
-//        encoderVel = new RawEncoder(hardwareMap.get(DcMotorImplEx.class, "turretUp"));
         turretUp.setDirection(DcMotorSimple.Direction.REVERSE);
+
+//        encoderVel = new RawEncoder(hardwareMap.get(DcMotorImplEx.class, "turretUp"));
         turretDown = hardwareMap.get(DcMotorImplEx.class, "turretDown");
 
 
@@ -161,11 +162,9 @@ public class Turret extends Subsystem {
 
     public Supplier<Boolean> isInsideTheZone(Pose2d coord)
     {
-        double BigTriangle = -Math.abs(coord.position.x);
-        double TinyTriangle = -Math.abs(coord.position.x);
-        return () -> !(coord.position.y >= BigTriangle);
-
-//        return () -> !(coord.position.y>=Math.abs(coord.position.x)+9*1.41 || (coord.position.y>-46+9*1.41 && Math.abs(coord.position.x)<23+9*1.41));
+        double BigTriangle = Math.abs(coord.position.x);
+        double TinyTriangle = -Math.abs(coord.position.x)-3;
+        return () -> coord.position.y >= BigTriangle || coord.position.y <= TinyTriangle;
     }
 
     public Command update() {

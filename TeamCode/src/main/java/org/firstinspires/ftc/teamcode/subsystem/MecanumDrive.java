@@ -108,12 +108,12 @@ public class MecanumDrive  {
         c.setStroke("#0000FF");
         c.strokeLine(p.x, p.y, p.x+pose.velocity().value().linearVel.x, p.y);
         c.strokeLine(p.x, p.y, p.x, p.y+pose.velocity().value().linearVel.y);
-        packet.put("x", t.position.x);
-        packet.put("y", t.position.y);
-        packet.put("heading", Math.toDegrees(t.heading.log()));
-        packet.put("velocityX", pose.velocity().value().linearVel.x);
-        packet.put("velocityY", pose.velocity().value().linearVel.y);
-        packet.put("headingVelocity", Math.toDegrees(pose.heading.velocity().get(0)));
+//        packet.put("x", t.position.x);
+//        packet.put("y", t.position.y);
+//        packet.put("heading", Math.toDegrees(t.heading.log()));
+//        packet.put("velocityX", pose.velocity().value().linearVel.x);
+//        packet.put("velocityY", pose.velocity().value().linearVel.y);
+//        packet.put("headingVelocity", Math.toDegrees(pose.heading.velocity().get(0)));
         return packet;
     }
 
@@ -194,12 +194,14 @@ public class MecanumDrive  {
 
                     if(lockedMode.get())
                     {
-                        Vector2d dir= currentPose.position.minus(corner.position);
+                        if (rightStick.x > 0.65) lockedMode.set(false);
+                        Vector2d dir = corner.position.minus(getPose().value().position);
+//                        dir=dir.unaryMinus();
                         dir=dir.div(dir.norm());
-                        double angle = Math.atan2(dir.y, dir.x);
+                        double angle = Math.atan2(dir.x, dir.y);
 
                         rx = rotationPID.update(0, AngleUnit.normalizeRadians(angle-botHeading));
-                    }else rx = rightStick.x * boost;
+                    } else rx = rightStick.x * boost;
 
                     double y,x;
 

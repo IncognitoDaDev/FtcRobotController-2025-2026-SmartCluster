@@ -148,8 +148,7 @@ public class DistTeleOp extends LinearOpMode {
         while (opModeIsActive()) {
             robot.read();
 
-            telemetry.addData("isAboutToShot", robot.turret.isAboutToShot.get());
-            telemetry.addData("isInsideTheZone", robot.turret.isInsideTheZone(robot.drive.getPose().value()).get());
+            telemetry.addData("is Inside The Zone?", robot.turret.isInsideTheZone(robot.drive.getPose().value()).get());
 
             CurrentState = fsm.getCurrentState();
             telemetry.addData("Dex Current", robot.storage.spindexer.getPosition().get(0));
