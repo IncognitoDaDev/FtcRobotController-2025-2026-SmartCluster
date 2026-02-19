@@ -169,8 +169,8 @@ public class MecanumDrive  {
     public Command driveFieldCentric(ProcessedGamepad gamepad, boolean flipRed, com.acmerobotics.roadrunner.Pose2d corner)
     {
 
-        AtomicBoolean lockedMode=new AtomicBoolean();
-        lockedMode.set(lockedIn);
+        AtomicBoolean TurnToCornerMode=new AtomicBoolean();
+        TurnToCornerMode.set(lockedIn);
         return new Command.CommandBuilder()
                 .update(()->{
                     ProcessedGamepad.Joystick.JoystickData leftStick = gamepad.left_stick.get();
@@ -181,19 +181,14 @@ public class MecanumDrive  {
                         telemetry.addLine("LOCALIZER RESETED!");
                     }
 
-                    if(gamepad.triangle.pressed().get())
-                    {
-                        lockedMode.set(!lockedMode.get());
-                    }
 
                     double botHeading = localizer.getPose().heading.value().log();
                     double boost = (gamepad.right_bumper.get() ? 1 : 0.4);
 
                     double rx;
 
-                    if(lockedMode.get())
+                    if(gamepad.left_trigger.get() > 0.8)
                     {
-                        if (Math.abs(rightStick.x) > 0.62) lockedMode.set(false);
                         Vector2d vel = getPose().velocity().linearVel.value();
                         vel = vel.div(2.2);
                         Vector2d dir = getPose().value().position.minus(corner.position).plus(vel);

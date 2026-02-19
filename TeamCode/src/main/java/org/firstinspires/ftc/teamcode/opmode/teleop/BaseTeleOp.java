@@ -121,7 +121,7 @@ public class BaseTeleOp extends LinearOpMode {
                         })
                 )
 
-                .transition(TeleOpState.FarShooting,TeleOpState.SHOOT,driverGamepad.cross.pressed(),
+                .transition(TeleOpState.FarShooting,TeleOpState.SHOOT, () -> driverGamepad.right_trigger.get() > 0.8,
                         new SequentialCommand(
                                 new InstantCommand(()->robot.turret.hood.setTarget(0.62)),
                                 robot.turret.WaitForRPM(2000),
@@ -164,7 +164,7 @@ public class BaseTeleOp extends LinearOpMode {
                         })
                 )
 
-                .transition(TeleOpState.CloseShooting,TeleOpState.SHOOT,driverGamepad.cross.pressed(),
+                .transition(TeleOpState.CloseShooting,TeleOpState.SHOOT, () -> driverGamepad.right_trigger.get() > 0.8,
                         new SequentialCommand(
                                 new InstantCommand(()->robot.turret.hood.setTarget(0.46)),
                                 robot.turret.WaitForRPM(2000),
