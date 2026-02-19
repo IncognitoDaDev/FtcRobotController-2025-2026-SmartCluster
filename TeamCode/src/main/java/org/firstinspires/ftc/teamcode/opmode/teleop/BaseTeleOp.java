@@ -75,7 +75,10 @@ public class BaseTeleOp extends LinearOpMode {
                 ))
 
                 .transition(TeleOpState.IDLE, TeleOpState.IDLE, driverGamepad.share.pressed(),
-                        robot.cam.scanOrder())
+                        new SequentialCommand(
+                                robot.cam.scanOrder(),
+                                new InstantCommand(() -> Storage.StorageState.Order = robot.cam.getOrder())
+                        ))
 
                 .transition(BaseTeleOp.TeleOpState.IDLE, BaseTeleOp.TeleOpState.INTAKE, driverGamepad.left_bumper.down(),
                         new SequentialCommand(
