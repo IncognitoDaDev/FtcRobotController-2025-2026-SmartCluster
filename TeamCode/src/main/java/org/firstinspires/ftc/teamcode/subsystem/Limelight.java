@@ -22,6 +22,8 @@ public class Limelight extends Subsystem {
 
     private final Limelight3A limelight;
     public static ArtifactColor[] order = {ArtifactColor.EMPTY, ArtifactColor.EMPTY, ArtifactColor.EMPTY};
+    int orderInt = -1;
+
 //    private Pose2d limelightPose = new Pose2d(0,0,0);
     public Limelight(OpMode opMode) {
         super(opMode);
@@ -37,11 +39,11 @@ public class Limelight extends Subsystem {
     }
 
 
-    ElapsedTime timer = new ElapsedTime();
     public Command scanOrder()
     {
-        return new SequentialCommand(
-                Command.builder()
+        ElapsedTime timer = new ElapsedTime();
+
+        return Command.builder()
                         .init(() ->
                         {
                             limelight.pipelineSwitch(0);
@@ -55,40 +57,50 @@ public class Limelight extends Subsystem {
                             LLResult result = limelight.getLatestResult();
                             if (result != null && result.isValid())
                             {
-
                                 List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
                                 if (!fiducials.isEmpty())
                                 {
                                     for (LLResultTypes.FiducialResult tag : fiducials) {
 
-
                                         switch (tag.getFiducialId()) {
                                             case 21:
                                                 order = new ArtifactColor[]{ArtifactColor.GREEN, ArtifactColor.PURPLE, ArtifactColor.PURPLE};
-
+                                                orderInt = 0;
                                                 isFinished = true;
                                                 break;
                                             case 22:
                                                 order = new ArtifactColor[]{ArtifactColor.PURPLE, ArtifactColor.GREEN, ArtifactColor.PURPLE};
+                                                orderInt = 1;
                                                 isFinished = true;
                                                 break;
                                             case 23:
                                                 order = new ArtifactColor[]{ArtifactColor.PURPLE, ArtifactColor.PURPLE, ArtifactColor.GREEN};
-
+                                                orderInt = 2;
                                                 isFinished = true;
                                                 break;
-
-
                                         }
+
                                     }
                                 }
                             }
                         })
-                        .finished(() -> timer.milliseconds() > 400 || isFinished)
-                        .build()
-        );
-
+                        .finished(() -> timer.milliseconds() > 500 || isFinished)
+                        .build();
     }
+
+    public String getOrderString()
+    {
+        switch(orderInt)
+        {
+            case -1: return "none";
+            case 0: return "G-P-P";
+            case 1: return "P-G-P";
+            case 2: return "P-P-G";
+        }
+
+        return "How did we get here?";
+    }
+
 //    public Command getPose(boolean color,Localizer localizer){
 //        return Command.builder()
 //                .init(()->{

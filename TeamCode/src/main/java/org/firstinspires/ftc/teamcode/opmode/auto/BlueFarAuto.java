@@ -105,7 +105,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
     public VelConstraint slow = (pose2dDual, posePath, v) -> 25;
     public VelConstraint normal = (pose2dDual, posePath, v) -> 60;
-    public static PIDController pidController = new PIDController(0.0055, 0.0000, 0.00014);
+//    public static PIDController pidController = new PIDController(0.0055, 0.0000, 0.00014);
 
 
     @Override
@@ -123,8 +123,8 @@ import java.util.concurrent.atomic.AtomicReference;
         (
                 commandToAction(
                         new SequentialCommand(
-//                                robot.cam.scanOrder(),
-                                new InstantCommand(()->robot.storage.PID_Selector(pidController.p,pidController.i,pidController.d)),
+                                robot.cam.scanOrder(),
+//                                new InstantCommand(()->robot.storage.PID_Selector(pidController.p,pidController.i,pidController.d)),
                                 new InstantCommand(() ->
                                 {
                                     robot.storage.storage.OuttakeFacing = -1;
@@ -301,38 +301,34 @@ import java.util.concurrent.atomic.AtomicReference;
 
         boolean running = true;
         while (running && !isStopRequested()) {
-            for (LynxModule lynxModule : lynxModules)
-            {
-                lynxModule.clearBulkCache();
-                lynxModule.getBulkData();
-            }
+            robot.read();
+
             TelemetryPacket p = new TelemetryPacket();
             p.fieldOverlay().getOperations().addAll(c.getOperations());
             running = autoAction.run(p);
             scheduler.update();
 
-//            Storage.ArtifactColor[] order = robot.cam.getOrder();
             FtcDashboard.getInstance().sendTelemetryPacket(p);
-            telemetry.addData("Order [0]", robot.cam.getOrder()[0]);
-            telemetry.addData("Order [1]", robot.cam.getOrder()[1]);
-            telemetry.addData("Order [2]", robot.cam.getOrder()[2]);
+            telemetry.addData("Current pose", robot.drive.localizer.getPose().value().position);
+
+            telemetry.addData("Order", robot.cam.getOrderString());
+
             telemetry.addData("Stock [0]", robot.storage.storage.Slot[0]);
             telemetry.addData("Stock [1]", robot.storage.storage.Slot[1]);
             telemetry.addData("Stock [2]", robot.storage.storage.Slot[2]);
-            telemetry.addData("Flywheel speed", robot.turret.getCurrentVelocity());
-            telemetry.addData("Hood angle", hoodAngle);
-            telemetry.addData("Current pose",robot.drive.localizer.getPose().position);
+
+//            telemetry.addData("Dex Current", robot.storage.spindexer.getPosition().get(0));
+//            telemetry.addData("Dex Target", robot.storage.spindexer.getTarget());
+
+            telemetry.addData("Dex Error", robot.storage.spindexer.getTarget()-robot.storage.spindexer.getPosition().get(0));
+            telemetry.addData("Turret Velocity", robot.turret.getCurrentVelocity());
 
             telemetry.addData("hz", loopTimeFilter.update(1 / (Performance.loopTimeNano() / 1E9)));
             telemetry.update();
         }
 
         while (opModeIsActive()) {
-            for (LynxModule lynxModule : lynxModules)
-            {
-                    lynxModule.clearBulkCache();
-                    lynxModule.getBulkData();
-            }
+            robot.read();
 
             scheduler.update();
             telemetry.update();

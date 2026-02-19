@@ -44,9 +44,8 @@ public class Storage extends Subsystem {
     private final AnalogInput frontColorSensor;
     public final Encoder spindexEncoder;
 
-    public static double offsetPower = 0.08;
-
     public static PIDController spindexerPID = new PIDController(0.0055, 0.00000, 0.00014);
+    public static double offsetPower = 0.08;
     public static double tolerance = 7.0;
 
     public static TrapezoidalMotionProfile flapperProfile = new TrapezoidalMotionProfile(100000, 100000, 100000);
@@ -108,8 +107,8 @@ public class Storage extends Subsystem {
 
         public boolean isEmpty()
         {
-            for(int i = 0; i<3; i++)
-                if (Slot[i] == ArtifactColor.EMPTY)
+            for(int i = 0; i < 3; i++)
+                if (Slot[i] != ArtifactColor.EMPTY)
                     return false;
 
             return true;
@@ -418,12 +417,37 @@ public class Storage extends Subsystem {
                 .build();
     }
 
+    public Command WatchDog(double maxStuckTime)
+    {
+        final ElapsedTime inMotionTimer = new ElapsedTime();
+        return Command.builder()
+                .init(inMotionTimer::reset)
+                .update(() ->
+                {
+                    if (spindexer.isNotInMotion().get()) inMotionTimer.reset();
+                    else if (inMotionTimer.milliseconds() > maxStuckTime)
+                    {
+                        // Sper sa mearga - R
+                        double direction = -Math.signum(spindexer.getTarget()-spindexer.getPosition().get(0));
+
+                        if (direction == 1) storage.next();
+                        else storage.previous();
+
+                        double oppositeDir = 120*direction;
+                        spindexer.setTarget(spindexer.getTarget()+oppositeDir);
+
+                        inMotionTimer.reset();
+                    }
+                })
+                .build();
+    }
+
     public Command update()
     {
         return new ParallelCommand(
                 flapper.update(),
-                spindexer.update()
-
+                spindexer.update(),
+                WatchDog(2000)
         );
     }
 

@@ -74,6 +74,9 @@ public class BaseTeleOp extends LinearOpMode {
                                 })
                 ))
 
+                .transition(TeleOpState.IDLE, TeleOpState.IDLE, driverGamepad.share.pressed(),
+                        robot.cam.scanOrder())
+
                 .transition(BaseTeleOp.TeleOpState.IDLE, BaseTeleOp.TeleOpState.INTAKE, driverGamepad.left_bumper.down(),
                         new SequentialCommand(
                                 robot.storage.intakeMode(),
@@ -110,6 +113,7 @@ public class BaseTeleOp extends LinearOpMode {
                 .transition(TeleOpState.IDLE,TeleOpState.FarShooting,driverGamepad.dpad_down.pressed(),//👍
                         new InstantCommand(()-> {
                             robot.turret.setTargetVelocity(3300);
+                            robot.turret.hood.setTarget(0.62);
 //                            robot.turret.turret.setTarget(0);
                         })
                 )
@@ -153,6 +157,7 @@ public class BaseTeleOp extends LinearOpMode {
                 .transition(TeleOpState.IDLE,TeleOpState.CloseShooting,driverGamepad.dpad_up.pressed(),
                         new InstantCommand(()-> {
                             robot.turret.setTargetVelocity(2600);
+                            robot.turret.hood.setTarget(0.46);
                         })
                 )
 
@@ -208,17 +213,17 @@ public class BaseTeleOp extends LinearOpMode {
             robot.read();
 
             CurrentState = fsm.getCurrentState();
-            telemetry.addData("Dex Current", robot.storage.spindexer.getPosition().get(0));
-            telemetry.addData("Dex Target", robot.storage.spindexer.getTarget());
+//            telemetry.addData("Dex Current", robot.storage.spindexer.getPosition().get(0));
+//            telemetry.addData("Dex Target", robot.storage.spindexer.getTarget());
 
-            telemetry.addData("Order [0]", robot.cam.getOrder()[0]);
-            telemetry.addData("Order [1]", robot.cam.getOrder()[1]);
-            telemetry.addData("Order [2]", robot.cam.getOrder()[2]);
+            telemetry.addData("Dex Error", robot.storage.spindexer.getTarget()-robot.storage.spindexer.getPosition().get(0));
+
+            telemetry.addData("Turret Velocity", robot.turret.getCurrentVelocity());
+
+            telemetry.addData("Order", robot.cam.getOrderString());
             telemetry.addData("Slot [0]", robot.storage.storage.Slot[0]);
             telemetry.addData("Slot [1]", robot.storage.storage.Slot[1]);
             telemetry.addData("Slot [2]", robot.storage.storage.Slot[2]);
-
-            telemetry.addData("Turret Velocity", robot.turret.getCurrentVelocity());
 
             telemetry.addData("x", robot.drive.localizer.getPose().position.x.get(0));
             telemetry.addData("y", robot.drive.localizer.getPose().position.y.get(0));

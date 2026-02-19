@@ -57,7 +57,6 @@ import org.firstinspires.ftc.teamcode.roadrunner.Drawing;
 import org.firstinspires.ftc.teamcode.roadrunner.messages.DriveCommandMessage;
 import org.firstinspires.ftc.teamcode.roadrunner.messages.MecanumCommandMessage;
 import org.firstinspires.ftc.teamcode.roadrunner.messages.PoseMessage;
-import org.firstinspires.ftc.teamcode.roadrunner.oraclelocalizer.Localizer;
 import org.firstinspires.ftc.teamcode.roadrunner.oraclelocalizer.SmartLocalizer;
 
 
@@ -195,7 +194,9 @@ public class MecanumDrive  {
                     if(lockedMode.get())
                     {
                         if (Math.abs(rightStick.x) > 0.62) lockedMode.set(false);
-                        Vector2d dir = getPose().value().position.minus(corner.position);
+                        Vector2d vel = getPose().velocity().linearVel.value();
+                        vel = vel.div(2.2);
+                        Vector2d dir = getPose().value().position.minus(corner.position).plus(vel);
 //                        dir=dir.div(dir.norm());
                         double angle = Math.atan2(dir.y, dir.x);
 
@@ -212,7 +213,7 @@ public class MecanumDrive  {
                     else
                     {
                         y = leftStick.y * boost;
-                        x = leftStick.x * boost;
+                        x = -leftStick.x * boost;
                     }
 
                     double rotX = x * Math.cos(-botHeading) - y * Math.sin(-botHeading);

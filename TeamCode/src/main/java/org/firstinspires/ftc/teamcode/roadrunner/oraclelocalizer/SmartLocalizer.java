@@ -1,7 +1,6 @@
 package org.firstinspires.ftc.teamcode.roadrunner.oraclelocalizer;
 
 import com.acmerobotics.dashboard.config.Config;
-import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.ftc.OverflowEncoder;
 import com.acmerobotics.roadrunner.ftc.RawEncoder;
 import com.qualcomm.ftcrobotcontroller.BuildConfig;
@@ -13,6 +12,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.RobotLog;
 import com.smartcluster.oracleftc.hardware.OracleGoBildaPinpoint;
 import com.smartcluster.oracleftc.math.DualNum;
+import com.smartcluster.oracleftc.math.Pose2d;
 import com.smartcluster.oracleftc.math.Pose2dDual;
 import com.smartcluster.oracleftc.math.Rotation2d;
 import com.smartcluster.oracleftc.math.Rotation2dDual;
@@ -181,7 +181,6 @@ public class SmartLocalizer extends Localizer {
         lastParallel=new DualNum<>(parallel.get(0));
         lastPerpendicular=new DualNum<>(perpendicular.get(0));
 
-
         return updateTwist;
     }
 
@@ -189,7 +188,6 @@ public class SmartLocalizer extends Localizer {
     public void setPose(Pose2dDual<Time> pose) {
         super.setPose(pose);
         gyroVoltageOffset=canandgyro.getVoltage()-pose.heading.log().get(0) * 3.3/360;
-        com.smartcluster.oracleftc.math.Pose2d Whatisthispinpoint = new com.smartcluster.oracleftc.math.Pose2d(pose.value().position, pose.value().heading.log());
-        pinpoint.setPose(Whatisthispinpoint);
+        pinpoint.setPose(pose.value());
     }
 }

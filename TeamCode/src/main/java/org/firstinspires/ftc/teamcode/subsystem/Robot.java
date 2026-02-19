@@ -42,6 +42,7 @@ public class Robot {
         OracleLynxVoltageSensor voltageSensor = mode.hardwareMap.getAll(OracleLynxVoltageSensor.class).iterator().next();
         voltageSensor.setPolicy(OracleLynxVoltageSensor.OracleLynxVoltageSensorPolicy.CACHED);
         voltageSensor.setVoltageCacheFreshness(50);
+
         this.storage = new Storage(mode);
         this.intake = new Intake(mode);
         this.drive = new MecanumDrive(mode.hardwareMap, opMode.telemetry);
@@ -83,9 +84,4 @@ public class Robot {
                 storage.update()
         );
     }
-
-    public Command slotRewind(Supplier<Boolean> condition){
-        return new ConditionalCommand(condition, intake.outake(), new WaitCommand(1));
-    }
-
 }

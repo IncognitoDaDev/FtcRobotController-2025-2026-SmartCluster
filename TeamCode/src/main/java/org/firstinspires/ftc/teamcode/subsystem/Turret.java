@@ -47,6 +47,8 @@ public class Turret extends Subsystem {
 
     public MecanumDrive drive;
     private Pose2d goal;
+
+    private AtomicBoolean enabledVel = new AtomicBoolean(true);
     public AtomicBoolean isAboutToShot = new AtomicBoolean(false);
 
     // velocity = VELOCITY_SLOPE * distance_cm + VELOCITY_INTERCEPT
@@ -153,18 +155,18 @@ public class Turret extends Subsystem {
         double velocity = VELOCITY_SLOPE * getDistanceToTarget(currPos, corner) + VELOCITY_INTERCEPT;
         double angle = getCurrentVelocity()*HOOD_SLOPE + HOOD_INTERCEPT;
 
-        // No longer in zone so stop wasting energy
-        if (!isInsideTheZone(currPos).get()) velocity = 500;
+        // No longer in zone? You say so?! Stop wasting energy then!!! - R
+        enabledVel.set(isInsideTheZone(currPos).get());
 
         setTargetVelocity(velocity);
         hood.setTarget(angle);
     }
 
-    public Supplier<Boolean> isInsideTheZone(Pose2d coord)
+    public Supplier<Boolean> isInsideTheZone(Pose2d pose)
     {
-        double BigTriangle = Math.abs(coord.position.x);
-        double TinyTriangle = -Math.abs(coord.position.x)-3;
-        return () -> coord.position.y >= BigTriangle || coord.position.y <= TinyTriangle;
+        double BigTriangle = Math.abs(pose.position.x)-4;
+        double TinyTriangle = -Math.abs(pose.position.x)-7;
+        return () -> pose.position.y >= BigTriangle || pose.position.y <= TinyTriangle;
     }
 
     public Command update() {
@@ -172,11 +174,19 @@ public class Turret extends Subsystem {
                 hood.update(),
                 Command.builder()
                         .update(() -> {
-                            double currentVelocity = getCurrentVelocity(); //RPM
-                            double power = flywheelPID.update(targetVelocity, currentVelocity) + flywheelFeedforward.update(targetVelocity, 0);
-                            power = power * (Robot.nominalVoltage / voltageSensor.getVoltage());
-                            turretUp.setPower(power);
-                            turretDown.setPower(power);
+                            if (enabledVel.get()) {
+                                double currentVelocity = getCurrentVelocity(); //RPM
+                                double power = flywheelPID.update(targetVelocity, currentVelocity) + flywheelFeedforward.update(targetVelocity, 0);
+                                power = power * (Robot.nominalVoltage / voltageSensor.getVoltage());
+
+                                turretUp.setPower(power);
+                                turretDown.setPower(power);
+                            }
+                            else
+                            {
+                                turretUp.setPower(0);
+                                turretDown.setPower(0);
+                            }
                         })
                         .requires(this)
                         .build()
@@ -194,10 +204,9 @@ public class Turret extends Subsystem {
                 })
                 .requires(this)
                 .build();
-
     }
 
-    public Command WaitForRPM(double maxMinisecond)
+    public Command WaitForRPM(double maxDuration)
     {
         ElapsedTime timer = new ElapsedTime();
         return Command.builder()
@@ -206,7 +215,7 @@ public class Turret extends Subsystem {
                 {
                     telemetry.addData("VelocityErrDist", Math.abs(targetVelocity-getCurrentVelocity()));
                 })
-                .finished(() -> Math.abs(targetVelocity-getCurrentVelocity())<Tolerance || timer.milliseconds() > maxMinisecond)
+                .finished(() -> Math.abs(targetVelocity-getCurrentVelocity())<Tolerance || timer.milliseconds() > maxDuration)
                 .build();
     }
 

@@ -31,7 +31,8 @@ public class DistTeleOp extends LinearOpMode {
         INIT,
         IDLE,
         INTAKE,
-        SHOOT, PRESHOOT,CloseShooting,PARKING,
+        SHOOT,
+        PRESHOOT
     }
     private TeleOpState CurrentState = TeleOpState.INIT;
 
@@ -67,6 +68,9 @@ public class DistTeleOp extends LinearOpMode {
                                 })
                 ))
 
+                .transition(TeleOpState.IDLE, TeleOpState.IDLE, driverGamepad.share.pressed(),
+                        robot.cam.scanOrder())
+
                 .transition(DistTeleOp.TeleOpState.IDLE, DistTeleOp.TeleOpState.INTAKE, driverGamepad.left_bumper.down(),
                         new SequentialCommand(
                                 robot.storage.intakeMode(),
@@ -101,8 +105,7 @@ public class DistTeleOp extends LinearOpMode {
 
                 //Charge init
                 .transition(TeleOpState.IDLE, TeleOpState.PRESHOOT, driverGamepad.dpad_down.pressed(),//👍
-                        new InstantCommand(() -> robot.turret.isAboutToShot.set(true))
-                        )
+                        new InstantCommand(() -> robot.turret.isAboutToShot.set(true)))
 
                 .transition(TeleOpState.PRESHOOT, TeleOpState.SHOOT, driverGamepad.cross.pressed(),
                         new SequentialCommand(
@@ -119,27 +122,22 @@ public class DistTeleOp extends LinearOpMode {
                         ))
 
                 .transition(TeleOpState.PRESHOOT, TeleOpState.SHOOT, driverGamepad.square.pressed(),
-                        new RaceCommand(
-                                new SequentialCommand(
-                                        robot.storage.sort(0),
-                                        robot.turret.WaitForRPM(2000),
-                                        robot.storage.BallToOuttake(),
+                        new SequentialCommand(
+                                robot.storage.sort(0),
+                                robot.turret.WaitForRPM(2000),
+                                robot.storage.BallToOuttake(),
 
-                                        robot.storage.sort(1),
-                                        robot.turret.WaitForRPM(500),
-                                        robot.storage.BallToOuttake(),
+                                robot.storage.sort(1),
+                                robot.turret.WaitForRPM(500),
+                                robot.storage.BallToOuttake(),
 
-                                        robot.storage.sort(2),
-                                        robot.turret.WaitForRPM(500),
-                                        robot.storage.BallToOuttake()
-                                ),
-                                robot.storage.BroPleaseStopItsEmpty()
-                        )
-                )
+                                robot.storage.sort(2),
+                                robot.turret.WaitForRPM(500),
+                                robot.storage.BallToOuttake()
+                        ))
 
                 .transition(TeleOpState.SHOOT, TeleOpState.IDLE, () -> CurrentState == TeleOpState.SHOOT,
-                        new InstantCommand(() -> robot.turret.isAboutToShot.set(false))
-                )
+                        new InstantCommand(() -> robot.turret.isAboutToShot.set(false)))
                 .build(scheduler);
 
         waitForStart();
@@ -149,17 +147,16 @@ public class DistTeleOp extends LinearOpMode {
         while (opModeIsActive()) {
             robot.read();
 
-            telemetry.addData("is Inside The Zone?", robot.turret.isInsideTheZone(robot.drive.getPose().value()).get());
+            telemetry.addData("Inside zone?", robot.turret.isInsideTheZone(robot.drive.getPose().value()).get());
 
             CurrentState = fsm.getCurrentState();
-            telemetry.addData("Dex Current", robot.storage.spindexer.getPosition().get(0));
-            telemetry.addData("Dex Target", robot.storage.spindexer.getTarget());
+//            telemetry.addData("Dex Current", robot.storage.spindexer.getPosition().get(0));
+//            telemetry.addData("Dex Target", robot.storage.spindexer.getTarget());
+            telemetry.addData("Dex Error", robot.storage.spindexer.getTarget()-robot.storage.spindexer.getPosition().get(0));
 
             telemetry.addData("Turret Velocity", robot.turret.getCurrentVelocity());
 
-            telemetry.addData("Order [0]", robot.cam.getOrder()[0]);
-            telemetry.addData("Order [1]", robot.cam.getOrder()[1]);
-            telemetry.addData("Order [2]", robot.cam.getOrder()[2]);
+            telemetry.addData("Order", robot.cam.getOrderString());
             telemetry.addData("Slot [0]", robot.storage.storage.Slot[0]);
             telemetry.addData("Slot [1]", robot.storage.storage.Slot[1]);
             telemetry.addData("Slot [2]", robot.storage.storage.Slot[2]);
@@ -173,7 +170,6 @@ public class DistTeleOp extends LinearOpMode {
             telemetry.update();
 
             fsm.update();
-
             driverGamepad.process();
         }
     }

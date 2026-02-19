@@ -11,7 +11,6 @@ import com.smartcluster.oracleftc.hardware.subsystem.SubsystemFlavor;
 
 public class Intake extends Subsystem {
 
-
     private final DcMotorImplEx intakeMotor;
     private final OracleLynxVoltageSensor voltageSensor;
     public Intake(OpMode opMode) {
