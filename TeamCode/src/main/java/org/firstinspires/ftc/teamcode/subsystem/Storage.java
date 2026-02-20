@@ -63,7 +63,7 @@ public class Storage extends Subsystem {
     public static class StorageState {
 
         // Order is F R L, clockwise
-        public ArtifactColor[] Slot = {ArtifactColor.EMPTY, ArtifactColor.EMPTY, ArtifactColor.EMPTY};
+        public static ArtifactColor[] Slot = {ArtifactColor.EMPTY, ArtifactColor.EMPTY, ArtifactColor.EMPTY};
         public static ArtifactColor[] Order = {ArtifactColor.EMPTY, ArtifactColor.EMPTY, ArtifactColor.EMPTY};
 
         // 0 for none; 1 for Clockwise, -1 for Anticlockwise
@@ -105,7 +105,7 @@ public class Storage extends Subsystem {
             return true;
         }
 
-        public boolean isEmpty()
+        public static boolean isEmpty()
         {
             for(int i = 0; i < 3; i++)
                 if (Slot[i] != ArtifactColor.EMPTY)

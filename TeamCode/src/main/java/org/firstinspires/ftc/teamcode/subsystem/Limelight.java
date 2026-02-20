@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.subsystem;
 
-import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
@@ -11,24 +10,34 @@ import com.smartcluster.oracleftc.commands.InstantCommand;
 import com.smartcluster.oracleftc.commands.SequentialCommand;
 import com.smartcluster.oracleftc.commands.WaitCommand;
 import com.smartcluster.oracleftc.hardware.subsystem.Subsystem;
+import com.smartcluster.oracleftc.math.Pose2d;
+import com.smartcluster.oracleftc.math.Pose2dDual;
+import com.smartcluster.oracleftc.math.PoseVelocity2d;
+import com.smartcluster.oracleftc.math.Time;
+import com.smartcluster.oracleftc.math.Vector2d;
 
 import java.util.List;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.teamcode.roadrunner.Localizer;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
+import org.firstinspires.ftc.teamcode.roadrunner.oraclelocalizer.SmartLocalizer;
 import org.firstinspires.ftc.teamcode.subsystem.Storage.ArtifactColor;
 
 public class Limelight extends Subsystem {
 
     private final Limelight3A limelight;
     public static ArtifactColor[] order = {ArtifactColor.EMPTY, ArtifactColor.EMPTY, ArtifactColor.EMPTY};
+    private
     int orderInt = -1;
 
-//    private Pose2d limelightPose = new Pose2d(0,0,0);
-    public Limelight(OpMode opMode) {
+    private SmartLocalizer localizer;
+    static public int limelightRejectionThreshold = 4;
+
+    public Limelight(OpMode opMode, SmartLocalizer localizer) {
         super(opMode);
         limelight = hardwareMap.get(Limelight3A.class, "Webcam Turret");
         limelight.setPollRateHz(100);
+        this.localizer = localizer;
     }
 
     boolean isFinished = false;
@@ -101,48 +110,51 @@ public class Limelight extends Subsystem {
         return "How did we get here?";
     }
 
-//    public Command getPose(boolean color,Localizer localizer){
-//        return Command.builder()
-//                .init(()->{
-//                    timer.reset();
-//                })
-//                .update(()->{LLResult result = limelight.getLatestResult();
-//        if (result != null && result.isValid())
+//    private boolean isValidPose(Pose2dDual<Time> newPose)
+//    {
+//        return !(Double.isNaN(newPose.heading.log().get(0)) ||
+//                Double.isNaN(newPose.position.x.get(0)) ||
+//                Double.isNaN(newPose.position.y.get(0)) ||
+//                localizer.getPose().position.minus(newPose.position).sqrNorm().get(0) > limelightRejectionThreshold*limelightRejectionThreshold);
+//    }
+//
+//    public Command changePipeline(int pipeline)
+//    {
+//        return new SequentialCommand(
+//                new InstantCommand(() -> limelight.pipelineSwitch(pipeline)),
+//                new WaitCommand(20)
+//        );
+//    }
+//
+//    public void getEstimatedPose_MT2()
+//    {
+//        LLResult scan = limelight.getLatestResult();
+//
+//        double robotYaw = Math.toDegrees(localizer.getPose().heading.log().get(0));
+//        robotYaw = (robotYaw >= -90 ? robotYaw: -robotYaw);
+//        limelight.updateRobotOrientation(robotYaw);
+//
+//        if (scan != null && scan.isValid())
 //        {
-//            localizer.update();
-//            List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
-//            limelight.updateRobotOrientation(localizer.getPose().heading.log());
-//            if (!fiducials.isEmpty())
-//            {
-//                for (LLResultTypes.FiducialResult tag : fiducials) {
-//                    switch (tag.getFiducialId()) {
-//                        case 20:
-//                            if(color)limelightPose = new Pose2d(result.getBotpose_MT2().getPosition().x,result.getBotpose_MT2().getPosition().y,result.getBotpose_MT2().getOrientation().getYaw(AngleUnit.RADIANS));
-//                            double x = result.getBotpose_MT2().getPosition().x;
-//                            double y = result.getBotpose_MT2().getPosition().y;
-//                            telemetry.addData("MT2 Location:", "(" + x + ", " + y + ")");
-//                            break;
-//                        case 24:
-//                            if(!color)limelightPose = new Pose2d(result.getBotpose().getPosition().x,result.getBotpose().getPosition().y,result.getBotpose().getOrientation().getYaw(AngleUnit.RADIANS));
-//                            double X = result.getBotpose_MT2().getPosition().x;
-//                            double Y = result.getBotpose_MT2().getPosition().y;
-//                            telemetry.addData("MT2 Location:", "(" + X + ", " + Y + ")");
-//                    }
-//                }
+//            Pose3D botpose = scan.getBotpose_MT2();
+//            Pose2d botposeTranslated = new Pose2d(-botpose.getPosition().toUnit(DistanceUnit.INCH).x, botpose.getPosition().toUnit(DistanceUnit.INCH).y, localizer.getPose().heading.log().get(0));
+//            Pose2dDual<Time> newPose = new Pose2dDual<>(botposeTranslated, new PoseVelocity2d(new Vector2d(0,0), 0));
+//
+//            double x = botposeTranslated.position.x;
+//            double y = botposeTranslated.position.y;
+//
+//            telemetry.addData("Camera X", x);
+//            telemetry.addData("Camera Y", y);
+//            telemetry.addData("Excepted angle", scan.getBotpose().getOrientation().getYaw());
+//            telemetry.addData("Instead got angle", robotYaw);
+//
+//
+//
+//            if (isValidPose(newPose)) {
+//                telemetry.addLine("Good pose!");
+//                localizer.setPosition(newPose);
 //            }
 //        }
-//                })
-//                .build();
-//
-//    }
-
-//    public Pose2d avgPose(Pose2d a, Pose2d b){
-//        telemetry.addData("Limelight Pose estimate",limelightPose);
-//        return new Pose2d((a.position.x+b.position.x)/2,(a.position.y+b.position.y)/2,Math.toRadians((a.heading.log()+b.heading.log())/2));
-//    }
-//    public Pose2d getPose(){
-//        telemetry.addData("Limelight Pose estimate",limelightPose);
-//        return limelightPose;
 //    }
 
     public void reset() {

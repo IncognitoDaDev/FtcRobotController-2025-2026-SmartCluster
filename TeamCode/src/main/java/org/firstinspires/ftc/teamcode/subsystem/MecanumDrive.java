@@ -190,7 +190,7 @@ public class MecanumDrive  {
                     if(gamepad.left_trigger.get() > 0.8)
                     {
                         Vector2d vel = getPose().velocity().linearVel.value();
-                        vel = vel.div(2.2);
+                        vel = vel.div(2.5);
                         Vector2d dir = getPose().value().position.minus(corner.position).plus(vel);
 //                        dir=dir.div(dir.norm());
                         double angle = Math.atan2(dir.y, dir.x);

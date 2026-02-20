@@ -190,4 +190,12 @@ public class SmartLocalizer extends Localizer {
         gyroVoltageOffset=canandgyro.getVoltage()-pose.heading.log().get(0) * 3.3/360;
         pinpoint.setPose(pose.value());
     }
+
+    public void setPosition(Pose2dDual<Time> pose) {
+        Pose2d newPose = new Pose2d(pose.position.x.get(0), pose.position.y.get(0), getPose().heading.value().log());
+
+        super.setPose(newPose);
+        gyroVoltageOffset=canandgyro.getVoltage()-pose.heading.log().get(0) * 3.3/360;
+        pinpoint.setPose(newPose);
+    }
 }

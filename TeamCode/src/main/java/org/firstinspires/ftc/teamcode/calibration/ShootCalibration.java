@@ -85,7 +85,7 @@ public class ShootCalibration extends LinearOpMode {
                         robot.storage.previousBall())
                 .transition(TeleOpState.INTAKE, TeleOpState.IDLE, driverGamepad.left_bumper.up(),
                         new SequentialCommand(
-                            robot.intake.outake(),
+                            robot.intake.outtake(),
                             new WaitCommand(100),
                             robot.intake.stop(),
                             robot.storage.outtakeMode(-1)
@@ -122,7 +122,7 @@ public class ShootCalibration extends LinearOpMode {
             robot.turret.setTargetVelocity(TurrVelocity);
 //            robot.turret.setNormalizedHood(HoodAngle);
             robot.turret.hood.setTarget(HoodAngle);
-            telemetry.addData("Dist To Target", robot.turret.getDistanceToTarget(robot.drive.getPose().value(), RedGoal));
+            telemetry.addData("Dist To Target", robot.turret.getDistanceToTarget());
 
             CurrentState = fsm.getCurrentState();
 //            telemetry.addData("Dex Current", robot.storage.spindexer.getPosition().get(0));

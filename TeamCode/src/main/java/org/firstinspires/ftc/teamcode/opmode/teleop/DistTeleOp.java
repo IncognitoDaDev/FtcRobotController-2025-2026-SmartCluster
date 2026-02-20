@@ -9,7 +9,6 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.smartcluster.oracleftc.commands.Command;
 import com.smartcluster.oracleftc.commands.CommandScheduler;
 import com.smartcluster.oracleftc.commands.InstantCommand;
-import com.smartcluster.oracleftc.commands.RaceCommand;
 import com.smartcluster.oracleftc.commands.SequentialCommand;
 import com.smartcluster.oracleftc.commands.WaitCommand;
 import com.smartcluster.oracleftc.fsm.FSM;
@@ -72,8 +71,7 @@ public class DistTeleOp extends LinearOpMode {
                         new SequentialCommand(
                                 robot.cam.scanOrder(),
                                 new InstantCommand(() -> Storage.StorageState.Order = robot.cam.getOrder())
-                        )
-                )
+                                ))
 
                 .transition(DistTeleOp.TeleOpState.IDLE, DistTeleOp.TeleOpState.INTAKE, driverGamepad.left_bumper.down(),
                         new SequentialCommand(
@@ -96,7 +94,7 @@ public class DistTeleOp extends LinearOpMode {
                         robot.storage.previousBall())
                 .transition(TeleOpState.INTAKE, TeleOpState.IDLE, driverGamepad.left_bumper.up(),
                         new SequentialCommand(
-                            robot.intake.outake(),
+                            robot.intake.outtake(),
                             new WaitCommand(100),
                             robot.intake.stop(),
                             robot.storage.outtakeMode(-1)
@@ -113,30 +111,30 @@ public class DistTeleOp extends LinearOpMode {
 
                 .transition(TeleOpState.PRESHOOT, TeleOpState.SHOOT, () -> driverGamepad.right_trigger.get() > 0.8,
                         new SequentialCommand(
-                                robot.turret.WaitForRPM(2000),
+                                robot.turret.WaitForRPM(3000),
                                 robot.storage.BallToOuttake(),
 
                                 robot.storage.nextBall(),
-                                robot.turret.WaitForRPM(500),
+//                                robot.turret.WaitForRPM(500),
                                 robot.storage.BallToOuttake(),
 
                                 robot.storage.nextBall(),
-                                robot.turret.WaitForRPM(500),
+//                                robot.turret.WaitForRPM(500),
                                 robot.storage.BallToOuttake()
                         ))
 
                 .transition(TeleOpState.PRESHOOT, TeleOpState.SHOOT, driverGamepad.square.pressed(),
                         new SequentialCommand(
                                 robot.storage.sort(0),
-                                robot.turret.WaitForRPM(2000),
+                                robot.turret.WaitForRPM(3000),
                                 robot.storage.BallToOuttake(),
 
                                 robot.storage.sort(1),
-                                robot.turret.WaitForRPM(500),
+//                                robot.turret.WaitForRPM(500),
                                 robot.storage.BallToOuttake(),
 
                                 robot.storage.sort(2),
-                                robot.turret.WaitForRPM(500),
+//                                robot.turret.WaitForRPM(500),
                                 robot.storage.BallToOuttake()
                         ))
 
@@ -151,13 +149,12 @@ public class DistTeleOp extends LinearOpMode {
         while (opModeIsActive()) {
             robot.read();
 
-            telemetry.addData("Inside zone?", robot.turret.isInsideTheZone(robot.drive.getPose().value()).get());
+            telemetry.addData("Inside zone?", robot.turret.isInsideTheZone().get());
 
             CurrentState = fsm.getCurrentState();
 //            telemetry.addData("Dex Current", robot.storage.spindexer.getPosition().get(0));
 //            telemetry.addData("Dex Target", robot.storage.spindexer.getTarget());
             telemetry.addData("Dex Error", robot.storage.spindexer.getTarget()-robot.storage.spindexer.getPosition().get(0));
-
             telemetry.addData("Turret Velocity", robot.turret.getCurrentVelocity());
 
             telemetry.addData("Order", robot.cam.getOrderString());

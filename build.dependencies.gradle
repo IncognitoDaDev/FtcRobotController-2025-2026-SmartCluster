@@ -12,6 +12,7 @@ repositories {
 dependencies {
     implementation 'org.firstinspires.ftc:Inspection:11.1.0'
     implementation 'org.firstinspires.ftc:Blocks:11.1.0'
+    //noinspection Aligned16KB
     implementation 'org.firstinspires.ftc:RobotCore:11.1.0'
     implementation 'org.firstinspires.ftc:RobotServer:11.1.0'
     implementation 'org.firstinspires.ftc:OnBotJava:11.1.0'
@@ -19,6 +20,7 @@ dependencies {
     implementation 'org.firstinspires.ftc:FtcCommon:11.1.0'
     implementation 'org.firstinspires.ftc:Vision:11.1.0'
 
+    //noinspection GradleDependency
     implementation 'androidx.appcompat:appcompat:1.2.0'
 
     // Extras - R.

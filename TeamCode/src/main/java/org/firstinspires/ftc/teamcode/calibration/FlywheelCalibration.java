@@ -9,6 +9,8 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.smartcluster.oracleftc.commands.CommandScheduler;
 
+import org.firstinspires.ftc.teamcode.roadrunner.Localizer;
+import org.firstinspires.ftc.teamcode.roadrunner.oraclelocalizer.SmartLocalizer;
 import org.firstinspires.ftc.teamcode.subsystem.Turret;
 
 import java.util.List;
@@ -20,13 +22,14 @@ public class FlywheelCalibration extends LinearOpMode {
     private static final CommandScheduler scheduler = new CommandScheduler();
     public static double targetVelocity=0;
 
+    SmartLocalizer localizer = new SmartLocalizer(this.hardwareMap, telemetry);
 
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         telemetry = new MultipleTelemetry(telemetry, PanelsTelemetry.INSTANCE.getFtcTelemetry());
         telemetry.setMsTransmissionInterval(100);
-        Turret flywheel =new Turret(this);
+        Turret flywheel =new Turret(this, localizer);
         waitForStart();
 
         List<LynxModule> lynxModules = hardwareMap.getAll(LynxModule.class);
