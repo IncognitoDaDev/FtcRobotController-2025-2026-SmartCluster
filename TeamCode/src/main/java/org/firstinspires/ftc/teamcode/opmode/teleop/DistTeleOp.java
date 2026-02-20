@@ -170,6 +170,8 @@ public class DistTeleOp extends LinearOpMode {
             telemetry.addData("heading (deg)",  Math.toDegrees(robot.drive.localizer.getPose().heading.value().log()));
             telemetry.addData("state", CurrentState);
 
+            telemetry.addData("Distance: ", robot.turret.getDistanceToTarget(new Pose2d(robot.drive.localizer.getPose().position.value().x, robot.drive.localizer.getPose().position.value().y, robot.drive.localizer.getPose().heading.value().log()), cornerCoordinate));
+
             telemetry.addData("hz", loopTimeFilter.update(1/(Performance.loopTimeNano()/1E9)));
             telemetry.update();
 

@@ -102,6 +102,14 @@ public class turretCalibration extends LinearOpMode {
             telemetry.addData("current angle", robot.turret.hood.getTarget());
 
 
+            telemetry.addData("x", robot.drive.localizer.getPose().position.x.get(0));
+            telemetry.addData("y", robot.drive.localizer.getPose().position.y.get(0));
+            telemetry.addData("heading (deg)",  Math.toDegrees(robot.drive.localizer.getPose().heading.value().log()));
+
+            telemetry.addData("Distance: ", robot.turret.getDistanceToTarget(new Pose2d(robot.drive.localizer.getPose().position.value().x, robot.drive.localizer.getPose().position.value().y, robot.drive.localizer.getPose().heading.value().log()),  new Pose2d(60,63, Math.toRadians(-45))));
+
+
+
             telemetry.update();
 
             fsm.update();

@@ -51,13 +51,15 @@ public class Turret extends Subsystem {
     private AtomicBoolean enabledVel = new AtomicBoolean(true);
     public AtomicBoolean isAboutToShot = new AtomicBoolean(false);
 
-    // velocity = VELOCITY_SLOPE * distance_cm + VELOCITY_INTERCEPT
-    private static final double VELOCITY_SLOPE = 5.245323;
-    private static final double VELOCITY_INTERCEPT = 1670.528036;
+    // Velocity linear regression constants
+// Formula: velocity = VELOCITY_SLOPE * distance_cm + VELOCITY_INTERCEPT
+    private static final double VELOCITY_SLOPE = 5.202340;
+    private static final double VELOCITY_INTERCEPT = 1689.019787;
 
-    // hood = HOOD_SLOPE * velocity + HOOD_INTERCEPT
-    private static final double HOOD_SLOPE = 0.000286;
-    private static final double HOOD_INTERCEPT = -0.282233;
+    // Hood angle linear regression constants
+// Formula: hood = HOOD_SLOPE * velocity + HOOD_INTERCEPT
+    private static final double HOOD_SLOPE = 0.000271;
+    private static final double HOOD_INTERCEPT = -0.277722;
 
 
     public Turret(OpMode opMode) {
