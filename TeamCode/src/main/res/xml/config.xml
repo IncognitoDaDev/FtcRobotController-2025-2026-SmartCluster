@@ -18,9 +18,8 @@
             <LynxEmbeddedIMU name="imu" port="0" bus="0" />
             <AnalogInput name="canandgyro" port="2"/>
         </LynxModule>
-    </LynxUsbDevice>
 
-    <LynxUsbDevice name="Expansion Hub Portal 1" serialNumber="DQ8P04TT" parentModuleAddress="2">
+
         <LynxModule name="Expansion Hub 2" port="2">
             <goBILDA5202SeriesMotor name="turretRotate" port="0" /> <!-- TurretRot Encoder -->
             <goBILDA5202SeriesMotor name="turretUp" port="1" />

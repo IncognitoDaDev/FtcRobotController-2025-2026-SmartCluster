@@ -6,6 +6,7 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
@@ -43,6 +44,7 @@ public class Storage extends Subsystem {
     private final ServoImplEx flapperRight, flapperLeft;
 
     private final AnalogInput frontColorSensor;
+    private final AnalogInput frontDistSensor;
     public final Encoder spindexEncoder;
 
     public static PIDController spindexerPID = new PIDController(0.0055, 0.00000, 0.00014);
@@ -120,6 +122,7 @@ public class Storage extends Subsystem {
 
     public Storage(OpMode opMode) {
         super(opMode);
+        frontDistSensor=hardwareMap.get(AnalogInput.class,"rotaryColorSensorF_Analog");
         spindexRight = hardwareMap.get(CRServoImplEx.class, "dexRight");
         spindexLeft = hardwareMap.get(CRServoImplEx.class, "dexLeft");
         flapperRight=hardwareMap.get(ServoImplEx.class,"flapperRight");
@@ -180,13 +183,7 @@ public class Storage extends Subsystem {
     public Command flapperDown() { return flapper.move(new AtomicReference<>(flapperDownVal)); }
     public Storage.ArtifactColor identifyObj()
     {
-        double coly = frontColorSensor.getVoltage()*360/3.3;
-        telemetry.addData("Color Sensor", coly);
-
-        if (coly >= 129 && coly <= 132) return ArtifactColor.GREEN;
-        if (coly >= 117 && coly < 125) return ArtifactColor.PURPLE;
-
-        return Storage.ArtifactColor.EMPTY;
+       return frontColorSensor.getVoltage()/3.3*100<30?ArtifactColor.PURPLE:ArtifactColor.EMPTY;
     }
 
 
