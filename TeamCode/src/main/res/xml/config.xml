@@ -11,7 +11,7 @@
             <ContinuousRotationServo name = "dexLeft" port="0" />
             <ContinuousRotationServo name= "dexRight" port="1"/>
 
-<!--            <RevColorSensorV3 name="rotaryColorSensorF" port="0" bus="3"/>-->
+<!--            <RevColorSensorV3 name="rotaryColorSensorF" port="0" bus="2"/>-->
             <AnalogInput name="rotaryColorSensorF_Analog" port="0"/>
 
             <OracleGoBildaPinpoint name="pinpoint" port="1"/>

@@ -122,7 +122,7 @@ public class ShootCalibration extends LinearOpMode {
             robot.turret.setTargetVelocity(TurrVelocity);
 //            robot.turret.setNormalizedHood(HoodAngle);
             robot.turret.hood.setTarget(HoodAngle);
-            telemetry.addData("Dist To Target", robot.turret.getDistanceToTarget());
+//            telemetry.addData("Dist To Target", robot.turret.getDistanceToTarget());
 
             CurrentState = fsm.getCurrentState();
 //            telemetry.addData("Dex Current", robot.storage.spindexer.getPosition().get(0));

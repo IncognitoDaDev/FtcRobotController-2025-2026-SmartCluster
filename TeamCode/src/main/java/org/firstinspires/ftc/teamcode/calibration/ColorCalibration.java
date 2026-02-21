@@ -34,7 +34,7 @@ public class ColorCalibration extends LinearOpMode {
 //            telemetry.addData("B", data.blue*256);
 //            telemetry.addData("Distance", sensor_i2c.getDistance(DistanceUnit.MM));
 
-            telemetry.addData("Analog output", sensor_Analog.getVoltage());
+            telemetry.addData("Analog output", sensor_Analog.getVoltage()*360.0/3.3);
 
             telemetry.update();
 

@@ -91,19 +91,20 @@ public class RedFarAuto extends LinearOpMode {
         };
     }
     private final Pose2d startPose = new Pose2d(13,-59, Math.toRadians(-90));
-    private final Pose2d shootPose = new Pose2d(15,-54,Math.toRadians(-122));
+    private final Pose2d shootPose = new Pose2d(15,-54,Math.toRadians(-120));
     private final Pose2d closePose = new Pose2d(-15, -54,Math.toRadians(-62));
 
 
-    private final Pose2d stack1 = new Pose2d(28.5,-34,Math.toRadians(-2));
-    private final Pose2d stack2 = new Pose2d(28.5,-11,Math.toRadians(-2));
-    private final Pose2d stack3 = new Pose2d(28,12.5,Math.toRadians(-2));
+    private final Pose2d stack1 = new Pose2d(30,-32,Math.toRadians(0));
+    private final Pose2d stack2 = new Pose2d(30,-9,Math.toRadians(0));
+    private final Pose2d stack3 = new Pose2d(28,13.5,Math.toRadians(0));
 
     private final Pose2d endPose = new Pose2d(35, -56, Math.toRadians(90));
-    public static double hoodAngle = 0.58;
+    public static double hoodAngle = 0.64;
 
+    public VelConstraint gate = (pose2dDual, posePath, v) -> 20;
 
-    public VelConstraint slow = (pose2dDual, posePath, v) -> 30;
+    public VelConstraint slow = (pose2dDual, posePath, v) -> 15;
     public VelConstraint normal = (pose2dDual, posePath, v) -> 60;
 //    public static PIDController pidController = new PIDController(0.0055, 0.0000, 0.00014);
 
@@ -129,9 +130,9 @@ public class RedFarAuto extends LinearOpMode {
                                         {
                                             robot.storage.storage.OuttakeFacing = -1;
                                             Storage.StorageState.Order = robot.cam.getOrder();
-                                            robot.storage.storage.Slot[0]= Storage.ArtifactColor.PURPLE;
-                                            robot.storage.storage.Slot[1]= Storage.ArtifactColor.PURPLE;
-                                            robot.storage.storage.Slot[2]= Storage.ArtifactColor.GREEN;
+                                            Storage.StorageState.Slot[0]= Storage.ArtifactColor.PURPLE;
+                                            Storage.StorageState.Slot[1]= Storage.ArtifactColor.PURPLE;
+                                            Storage.StorageState.Slot[2]= Storage.ArtifactColor.GREEN;
 
                                         })
                                 )),
@@ -145,8 +146,8 @@ public class RedFarAuto extends LinearOpMode {
                                 new SequentialCommand(
 
                                         new InstantCommand(() -> {
-                                            robot.turret.setTargetVelocity(3300);
-                                            robot.turret.hood.setTarget(0.57);
+                                            robot.turret.setTargetVelocity(3100);
+                                            robot.turret.hood.setTarget(0.58);
                                         }),
 
                                         robot.storage.sort(0),
@@ -179,27 +180,26 @@ public class RedFarAuto extends LinearOpMode {
                         new ParallelAction(
                                 robot.drive.actionBuilder(stack1)
                                         .setTangent(Math.toRadians(0))
-                                        .splineToConstantHeading(new Vector2d(65, stack1.position.y), Math.toRadians(0), slow)
+                                        .splineToConstantHeading(new Vector2d(65, stack1.position.y), Math.toRadians(0), gate)
                                         .build(),
 
                                 commandToAction(new SequentialCommand(
                                         robot.intake.intake(),
-                                        robot.storage.distanceSwitch(3, 2200),
+                                        robot.storage.WaitForBall(3, 3000),
                                         new InstantCommand(() ->
                                         {
-                                            robot.storage.storage.Slot[0]= Storage.ArtifactColor.GREEN;
-                                            robot.storage.storage.Slot[1]= Storage.ArtifactColor.PURPLE;
-                                            robot.storage.storage.Slot[2]= Storage.ArtifactColor.PURPLE;
-
+                                            Storage.StorageState.Slot[0]= Storage.ArtifactColor.PURPLE;
+                                            Storage.StorageState.Slot[1]= Storage.ArtifactColor.PURPLE;
+                                            Storage.StorageState.Slot[2]= Storage.ArtifactColor.GREEN;
                                         }),
                                         robot.intake.stop()
                                 ))
                         ),
 
                         new ParallelAction(
-                                robot.drive.actionBuilder(new Pose2d(65, stack3.position.y, Math.toRadians(0)))
+                                robot.drive.actionBuilder(new Pose2d(65, stack1.position.y, Math.toRadians(0)))
                                         .setTangent(Math.toRadians(-140))
-                                        .splineToLinearHeading(shootPose, Math.toRadians(0), normal)
+                                        .splineToLinearHeading(shootPose, Math.toRadians(-140), normal)
                                         .build(),
                                 commandToAction(robot.storage.outtakeMode(-1))
                         ),
@@ -208,8 +208,8 @@ public class RedFarAuto extends LinearOpMode {
                                 new SequentialCommand(
 
                                         new InstantCommand(() -> {
-                                            robot.turret.setTargetVelocity(3300);
-                                            robot.turret.hood.setTarget(0.57);
+                                            robot.turret.setTargetVelocity(3100);
+                                            robot.turret.hood.setTarget(0.58);
                                         }),
 
                                         robot.storage.sort(0),
@@ -242,17 +242,17 @@ public class RedFarAuto extends LinearOpMode {
                         new ParallelAction(
                                 robot.drive.actionBuilder(stack2)
                                         .setTangent(Math.toRadians(0))
-                                        .splineToConstantHeading(new Vector2d(65, stack2.position.y), Math.toRadians(0), slow)
+                                        .splineToConstantHeading(new Vector2d(61, stack2.position.y), Math.toRadians(0), slow)
                                         .build(),
 
                                 commandToAction(new SequentialCommand(
                                         robot.intake.intake(),
-                                        robot.storage.distanceSwitch(3, 2200),
+                                        robot.storage.WaitForBall(3, 3000),
                                         new InstantCommand(() ->
                                         {
-                                            robot.storage.storage.Slot[0]= Storage.ArtifactColor.PURPLE;
-                                            robot.storage.storage.Slot[1]= Storage.ArtifactColor.GREEN;
-                                            robot.storage.storage.Slot[2]= Storage.ArtifactColor.PURPLE;
+                                            Storage.StorageState.Slot[0]= Storage.ArtifactColor.PURPLE;
+                                            Storage.StorageState.Slot[1]= Storage.ArtifactColor.GREEN;
+                                            Storage.StorageState.Slot[2]= Storage.ArtifactColor.PURPLE;
 
                                         }),
                                         robot.intake.stop()
@@ -260,9 +260,9 @@ public class RedFarAuto extends LinearOpMode {
                         ),
 
                         new ParallelAction(
-                                robot.drive.actionBuilder(new Pose2d(65, stack2.position.y, Math.toRadians(0)))
+                                robot.drive.actionBuilder(new Pose2d(61, stack2.position.y, Math.toRadians(0)))
                                         .setTangent(Math.toRadians(-120))
-                                        .splineToLinearHeading(shootPose, Math.toRadians(0), normal)
+                                        .splineToLinearHeading(shootPose, Math.toRadians(-120), normal)
                                         .build(),
                                 commandToAction(robot.storage.outtakeMode(-1))
                         ),
@@ -271,8 +271,8 @@ public class RedFarAuto extends LinearOpMode {
                                 new SequentialCommand(
 
                                         new InstantCommand(() -> {
-                                            robot.turret.setTargetVelocity(3300);
-                                            robot.turret.hood.setTarget(0.57);
+                                            robot.turret.setTargetVelocity(3100);
+                                            robot.turret.hood.setTarget(0.58);
                                         }),
 
                                         robot.storage.sort(0),
@@ -288,7 +288,7 @@ public class RedFarAuto extends LinearOpMode {
                                         robot.turret.WaitForRPM(1000),
                                         robot.storage.BallToOuttake(),
 
-                                        new InstantCommand(() -> robot.turret.setTargetVelocity(1000))
+                                        new InstantCommand(() -> robot.turret.setTargetVelocity(500))
                                 )
                         ),
 
@@ -296,28 +296,29 @@ public class RedFarAuto extends LinearOpMode {
 
                         robot.drive.actionBuilder(shootPose)
                                 .setTangent(Math.toRadians(90))
-                                .splineToLinearHeading(stack3, Math.toRadians(0))
-                                .build(),
-                        commandToAction(robot.storage.intakeMode()),
-                        new ParallelAction(
-                                robot.drive.actionBuilder(stack3)
-                                        .setTangent(Math.toRadians(0))
-                                        .splineToConstantHeading(new Vector2d(65, stack3.position.y), Math.toRadians(0), slow)
-                                        .build(),
-
-                                commandToAction(new SequentialCommand(
-                                        robot.intake.intake(),
-                                        robot.storage.distanceSwitch(3, 2200),
-                                        new InstantCommand(() ->
-                                        {
-                                            robot.storage.storage.Slot[0]= Storage.ArtifactColor.GREEN;
-                                            robot.storage.storage.Slot[1]= Storage.ArtifactColor.PURPLE;
-                                            robot.storage.storage.Slot[2]= Storage.ArtifactColor.PURPLE;
-
-                                        }),
-                                        robot.intake.stop()
-                                ))
-                        )
+                                .splineToLinearHeading(endPose, Math.toRadians(0))
+                                .build()
+//                        commandToAction(robot.storage.intakeMode()),
+//                        new ParallelAction(
+//                                robot.drive.actionBuilder(stack3)
+//                                        .setTangent(Math.toRadians(0))
+//                                        .splineToConstantHeading(new Vector2d(65, stack3.position.y), Math.toRadians(0), slow)
+//                                        .build(),
+//
+//                                commandToAction(new SequentialCommand(
+//                                        robot.intake.intake(),
+//                                        robot.storage.WaitForBall(3, 2200),
+//                                        new InstantCommand(() ->
+//                                        {
+//                                            Storage.StorageState.Slot[0]= Storage.ArtifactColor.GREEN;
+//                                            Storage.StorageState.Slot[1]= Storage.ArtifactColor.PURPLE;
+//                                            Storage.StorageState.Slot[2]= Storage.ArtifactColor.PURPLE;
+//
+//                                        }),
+//                                        robot.intake.stop(),
+//                                        robot.storage.outtakeMode(-1)
+//                                ))
+//                        )
 
                         /*
                         / Honorable mentions!!!

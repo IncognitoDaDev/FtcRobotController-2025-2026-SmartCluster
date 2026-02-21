@@ -26,7 +26,7 @@ import org.firstinspires.ftc.teamcode.subsystem.Storage.ArtifactColor;
 public class Limelight extends Subsystem {
 
     private final Limelight3A limelight;
-    public static ArtifactColor[] order = {ArtifactColor.EMPTY, ArtifactColor.EMPTY, ArtifactColor.EMPTY};
+    public static ArtifactColor[] order = {ArtifactColor.PURPLE, ArtifactColor.PURPLE, ArtifactColor.GREEN};
     private
     int orderInt = -1;
 
@@ -59,7 +59,6 @@ public class Limelight extends Subsystem {
                             limelight.start();
                             isFinished = false;
                             timer.reset();
-
                         })
                         .update(() ->
                         {

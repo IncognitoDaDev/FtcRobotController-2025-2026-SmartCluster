@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.subsystem;
 
 import com.acmerobotics.dashboard.config.Config;
+import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
@@ -46,7 +47,7 @@ public class Storage extends Subsystem {
 
     public static PIDController spindexerPID = new PIDController(0.0055, 0.00000, 0.00014);
     public static double offsetPower = 0.08;
-    public static double tolerance = 7.0;
+    public static double tolerance = 6.0;
 
     public static TrapezoidalMotionProfile flapperProfile = new TrapezoidalMotionProfile(100000, 100000, 100000);
 
@@ -179,16 +180,15 @@ public class Storage extends Subsystem {
     public Command flapperDown() { return flapper.move(new AtomicReference<>(flapperDownVal)); }
     public Storage.ArtifactColor identifyObj()
     {
-        double coly = frontColorSensor.getVoltage()*1000;
+        double coly = frontColorSensor.getVoltage()*360/3.3;
+        telemetry.addData("Color Sensor", coly);
 
-        if (coly>1100) // Is something in front?
-        {
-            if (coly>1186 && coly<1208) return ArtifactColor.GREEN;
-            else return ArtifactColor.PURPLE;
-        }
+        if (coly >= 129 && coly <= 132) return ArtifactColor.GREEN;
+        if (coly >= 117 && coly < 125) return ArtifactColor.PURPLE;
 
         return Storage.ArtifactColor.EMPTY;
     }
+
 
     public Command nextBall() // Clockwise
     {
@@ -276,30 +276,49 @@ public class Storage extends Subsystem {
 
     public Command WaitForBall(int maxBall, double maxDuration)
     {
-        final ElapsedTime timer = new ElapsedTime();
+        final ElapsedTime timer = new ElapsedTime(),
+                lastFinishedTurn = new ElapsedTime(),
+                delayEnter = new ElapsedTime();
 
         AtomicBoolean isSpin = new AtomicBoolean(false);
+        AtomicBoolean isDelay = new AtomicBoolean(false);
         AtomicInteger ballCount = new AtomicInteger(0);
         return Command.builder()
-                .init(timer::reset)
+                .init(() ->
+                {
+                    timer.reset();
+                    lastFinishedTurn.reset();
+                    delayEnter.reset();
+                })
                 .update(() -> {
                     if (isSpin.get())
                     {
-                        if (spindexer.isNotInMotion().get())
+                        if (spindexer.isNotInMotion().get()) {
                             isSpin.set(false);
-                    } else { // Spindexer doesn't need to move, so scan all you can!
-                        ArtifactColor dataScanned = identifyObj();
-                        if (dataScanned != ArtifactColor.EMPTY) {
-                            ballCount.getAndIncrement();
-                            storage.Slot[0] = dataScanned;
-
-                            if (!storage.isFull() || ballCount.get() < maxBall)
-                            {
-                                isSpin.set(true);
-                                spindexer.setTarget(spindexer.getTarget()+120);
-                                storage.next();
-                            }
+                            lastFinishedTurn.reset();
                         }
+                    } else if (lastFinishedTurn.milliseconds() > 200) { // Spindexer doesn't need to move, so scan all you can!
+                       if (isDelay.get())
+                       {
+                           if (delayEnter.milliseconds() > 250) {
+                               isDelay.set(false);
+                               isSpin.set(true);
+                               storage.next();
+                               spindexer.setTarget(spindexer.getTarget() + 120);
+                           }
+                       }
+                       else {
+                           ArtifactColor dataScanned = identifyObj();
+                           if (dataScanned != ArtifactColor.EMPTY) {
+                               ballCount.getAndIncrement();
+                               StorageState.Slot[0] = dataScanned;
+
+                               if (!storage.isFull() || ballCount.get() < maxBall) {
+                                   delayEnter.reset();
+                                   isDelay.set(true);
+                               }
+                           }
+                       }
                     }
                 })
                 .finished(() -> storage.isFull()
@@ -307,6 +326,7 @@ public class Storage extends Subsystem {
                         || ballCount.get() >= maxBall)
                 .build();
     }
+
     public Command distanceSwitch(int maxBall, double maxDuration)
     {
         final ElapsedTime timer = new ElapsedTime();

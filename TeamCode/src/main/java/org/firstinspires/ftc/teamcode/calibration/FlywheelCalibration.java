@@ -29,7 +29,7 @@ public class FlywheelCalibration extends LinearOpMode {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         telemetry = new MultipleTelemetry(telemetry, PanelsTelemetry.INSTANCE.getFtcTelemetry());
         telemetry.setMsTransmissionInterval(100);
-        Turret flywheel =new Turret(this, localizer);
+        Turret flywheel =new Turret(this);
         waitForStart();
 
         List<LynxModule> lynxModules = hardwareMap.getAll(LynxModule.class);

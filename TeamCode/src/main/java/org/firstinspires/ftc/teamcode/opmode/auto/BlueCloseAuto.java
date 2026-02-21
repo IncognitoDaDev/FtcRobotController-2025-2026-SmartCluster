@@ -92,16 +92,19 @@ public class BlueCloseAuto extends LinearOpMode {
     }
 
     private final Pose2d startPose = new Pose2d(-46.5, 55.5, Math.toRadians(-125));
-    private final Pose2d shootPose = new Pose2d(-12, 12,Math.toRadians(180));
-    private final Vector2d shootpose = new Vector2d(-12,12);
-    private final Pose2d stack1 = new Pose2d(-28,-35,Math.toRadians(180));
-    private final Pose2d stack2 = new Pose2d(-28,-11.5,Math.toRadians(180));
-    private final Pose2d stack3 = new Pose2d(-28,12.5,Math.toRadians(180));
+    private final Pose2d shootPose = new Pose2d(-11, 11,Math.toRadians(-43));
+//    private final Vector2d shootpose = new Vector2d(-12,12);
+    private final Pose2d stack1 = new Pose2d(-28,-40, Math.toRadians(180));
+    private final Pose2d stack2 = new Pose2d(-24,-16.5, Math.toRadians(180));
+    private final Pose2d stack3 = new Pose2d(-28,7.5, Math.toRadians(180));
 
     private final Pose2d endPose = new Pose2d(-24, -15, Math.toRadians(-90));
-    public static double hoodAngle = 0.58;
-    public VelConstraint slow = (pose2dDual, posePath, v) -> 20;
-    public VelConstraint normal = (pose2dDual, posePath, v) -> 50;
+    public static double hoodAngle = 0.46;
+
+    public VelConstraint gate = (pose2dDual, posePath, v) -> 20;
+
+    public VelConstraint slow = (pose2dDual, posePath, v) -> 25;
+    public VelConstraint normal = (pose2dDual, posePath, v) -> 60;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -113,34 +116,38 @@ public class BlueCloseAuto extends LinearOpMode {
         Command.run(robot.reset());
         SequentialAction autoAction = new SequentialAction(
                         //FIRST SHOOT
-                        new ParallelAction( // Move to a better pos for obelisk scan
-                                robot.drive.actionBuilder(startPose)
-                                        .setTangent(Math.toRadians(-45))
-                                        .splineToLinearHeading(new Pose2d(shootpose,Math.toRadians(90)), Math.toRadians(-45))
-                                        .build(),
-
-                                commandToAction(
-                                        new SequentialCommand(
-                                            new WaitCommand(1500),
-                                            robot.cam.scanOrder(),
-                                            new InstantCommand(() ->
-                                            {
-                                                robot.storage.storage.OuttakeFacing = -1;
-                                                Storage.StorageState.Order = robot.cam.getOrder();
-                                                robot.storage.storage.Slot[0]= Storage.ArtifactColor.PURPLE;
-                                                robot.storage.storage.Slot[1]= Storage.ArtifactColor.PURPLE;
-                                                robot.storage.storage.Slot[2]= Storage.ArtifactColor.GREEN;
-                                            })
-                                ))),
+                new ParallelAction(
                         robot.drive.actionBuilder(startPose)
-                                    .turnTo(Math.toRadians(-45))
-                                     .build(),
+                                .setTangent(Math.toRadians(-45))
+                                .splineToConstantHeading(new Vector2d(-18,18), Math.toRadians(-45))
+//                        .turnTo(Math.toRadians(270+30))
+                                .build(),
+                        commandToAction(
+                                new SequentialCommand(
+                                        new WaitCommand(1000),
+                                        robot.cam.scanOrder(),
+                                        new InstantCommand(() ->
+                                        {
+                                            robot.storage.storage.OuttakeFacing = -1;
+                                            Storage.StorageState.Order = robot.cam.getOrder();
+                                            Storage.StorageState.Slot[0]= Storage.ArtifactColor.PURPLE;
+                                            Storage.StorageState.Slot[1]= Storage.ArtifactColor.PURPLE;
+                                            Storage.StorageState.Slot[2]= Storage.ArtifactColor.GREEN;
+
+                                        })
+                                ))),
+                    robot.drive.actionBuilder(new Pose2d(-18,18,Math.toRadians(-50)))
+                        .setTangent(Math.toRadians(-45))
+                        .splineToLinearHeading(shootPose, Math.toRadians(-45))
+//                        .turnTo(Math.toRadians(270+30))
+                        .build(),
+
 
 
                         commandToAction(
                                 new SequentialCommand(
                                     new InstantCommand(() -> {
-                                        robot.turret.setTargetVelocity(2700);
+                                        robot.turret.setTargetVelocity(2500);
                                         robot.turret.hood.setTarget(hoodAngle);
                                     }),
 
@@ -156,7 +163,7 @@ public class BlueCloseAuto extends LinearOpMode {
 
                                     new InstantCommand(() -> robot.turret.setTargetVelocity(500))
                         )),
-                        //STACK 3 INTAKE
+                        //STACK 3 INTAKE, 2nd Shoot
                         new ParallelAction( //Heads to stack3 pos
                                 robot.drive.actionBuilder(shootPose)
                                         .setTangent(Math.toRadians(180))
@@ -168,32 +175,40 @@ public class BlueCloseAuto extends LinearOpMode {
                         new ParallelAction( // Intakes stack3
                                 robot.drive.actionBuilder(stack3)
                                         .setTangent(Math.toRadians(180))
-                                        .splineToConstantHeading(new Vector2d(-54, stack3.position.y), Math.toRadians(180), slow)
+                                        .splineToConstantHeading(new Vector2d(-52, stack3.position.y), Math.toRadians(180), gate)
                                         .build(),
 
                                 commandToAction(new SequentialCommand(
                                         robot.intake.intake(),
                                         robot.storage.WaitForBall(3,3500),
+//                                        new InstantCommand(() ->
+//                                        {
+//                                            Storage.StorageState.Slot[0]= Storage.ArtifactColor.GREEN;
+//                                            Storage.StorageState.Slot[1]= Storage.ArtifactColor.PURPLE;
+//                                            Storage.StorageState.Slot[2]= Storage.ArtifactColor.PURPLE;
+//
+//                                        }),
+
                                         robot.intake.stop()
                                 ))
                         ),
                         //SECOND SHOOT
                         new ParallelAction( //Heads to shooting pos (from stack3)
-                                robot.drive.actionBuilder(new Pose2d(-54, stack3.position.y, Math.toRadians(0)))
+                                robot.drive.actionBuilder(new Pose2d(-52, stack3.position.y, Math.toRadians(0)))
                                         .setTangent(Math.toRadians(0))
-                                        .splineToConstantHeading(shootpose, Math.toRadians(0), normal)
+                                        .splineToLinearHeading(shootPose, Math.toRadians(0), normal)
                                         .build(),
                                 commandToAction(robot.storage.outtakeMode(-1))
                         ),
 
                         commandToAction( new SequentialCommand(
                                 new InstantCommand(() -> {
-                                    robot.turret.setTargetVelocity(2700);
-                                    robot.turret.hood.setTarget(hoodAngle);
+                                    robot.turret.setTargetVelocity(2500);
+                                    robot.turret.hood.setTarget(hoodAngle-0.02);
                                 }),
 
                                 robot.storage.sort(0),
-                                robot.turret.WaitForRPM(1000),
+                                robot.turret.WaitForRPM(2000),
                                 robot.storage.BallToOuttake(),
                                 robot.storage.sort(1),
                                 robot.turret.WaitForRPM(1000),
@@ -202,43 +217,51 @@ public class BlueCloseAuto extends LinearOpMode {
                                 robot.turret.WaitForRPM(1000),
                                 robot.storage.BallToOuttake(),
 
-                                new InstantCommand(() -> robot.turret.setTargetVelocity(0))
+                                new InstantCommand(() -> robot.turret.setTargetVelocity(500))
                         )),
 //
 //                        //SECOND STACK
                         new ParallelAction(
                         robot.drive.actionBuilder(shootPose)
                                 .setTangent(Math.toRadians(-100))
-                                .splineToLinearHeading(stack2, Math.toRadians(180))
+                                .splineToLinearHeading(stack1, Math.toRadians(180))
                                 .build(),
                         commandToAction(robot.storage.intakeMode())
                         ),
 
                         new ParallelAction(
-                                robot.drive.actionBuilder(stack2)
+                                robot.drive.actionBuilder(stack1)
                                         .setTangent(Math.toRadians(180))
-                                        .splineToConstantHeading(new Vector2d(-50, stack2.position.y), Math.toRadians(180), slow)
+                                        .splineToConstantHeading(new Vector2d(-55, stack1.position.y), Math.toRadians(180), gate)
                                         .build(),
 
                                 commandToAction(new SequentialCommand(
                                         robot.intake.intake(),
-                                        robot.storage.WaitForBall(3,3500),
+                                        robot.storage.WaitForBall(3,3000),
+//                                        new InstantCommand(() ->
+//                                        {
+//                                            Storage.StorageState.Slot[0]= Storage.ArtifactColor.PURPLE;
+//                                            Storage.StorageState.Slot[1]= Storage.ArtifactColor.PURPLE;
+//                                            Storage.StorageState.Slot[2]= Storage.ArtifactColor.GREEN;
+//
+//                                        }),
                                         robot.intake.stop()
                                 ))
                         ),
                         //THIRD SHOOT
                         new ParallelAction(
-                                robot.drive.actionBuilder(new Pose2d(-54, stack2.position.y, Math.toRadians(0)))
-                                        .setTangent(Math.toRadians(0))
-                                        .splineToLinearHeading(shootPose, Math.toRadians(45), normal)
+                                robot.drive.actionBuilder(new Pose2d(-55, stack1.position.y, Math.toRadians(0)))
+                                        .setTangent(Math.toRadians(-70))
+                                        .splineToLinearHeading(shootPose, Math.toRadians(120), normal)
                                         .build(),
                                 commandToAction(robot.storage.outtakeMode(-1))
                         ),
 
+
                         commandToAction( new SequentialCommand(
                                 new InstantCommand(() -> {
-                                    robot.turret.setTargetVelocity(2700);
-                                    robot.turret.hood.setTarget(hoodAngle);
+                                    robot.turret.setTargetVelocity(2500);
+                                    robot.turret.hood.setTarget(hoodAngle-0.01);
                                 }),
 
                                 robot.storage.sort(0),
@@ -251,13 +274,36 @@ public class BlueCloseAuto extends LinearOpMode {
                                 robot.turret.WaitForRPM(1000),
                                 robot.storage.BallToOuttake(),
 
-                                new InstantCommand(() -> robot.turret.setTargetVelocity(0))
+                                new InstantCommand(() -> robot.turret.setTargetVelocity(500))
                         )),
+                        new ParallelAction(
+                                robot.drive.actionBuilder(shootPose)
+                                        .setTangent(Math.toRadians(-150))
+                                        .splineToLinearHeading(stack2, Math.toRadians(180))
+                                        .build(),
+                                commandToAction(robot.storage.intakeMode())
+                        ),
 
-                        robot.drive.actionBuilder(shootPose)
-                                .setTangent(Math.toRadians(-45))
-                                .splineToLinearHeading(endPose, Math.toRadians(-45))
-                                .build()
+                        new ParallelAction(
+                            robot.drive.actionBuilder(stack2)
+                                    .setTangent(Math.toRadians(180))
+                                    .splineToConstantHeading(new Vector2d(-55, stack2.position.y), Math.toRadians(180), gate)
+                                    .build(),
+
+                                commandToAction(new SequentialCommand(
+                                        robot.intake.intake(),
+                                        robot.storage.WaitForBall(3, 2500),
+//                                        new InstantCommand(() ->
+//                                        {
+//                                            Storage.StorageState.Slot[0]= Storage.ArtifactColor.PURPLE;
+//                                            Storage.StorageState.Slot[1]= Storage.ArtifactColor.GREEN;
+//                                            Storage.StorageState.Slot[2]= Storage.ArtifactColor.PURPLE;
+//
+//                                        }),
+                                        robot.intake.stop(),
+                                        robot.storage.outtakeMode(-1)
+                                )))
+
                 );
 
         waitForStart();

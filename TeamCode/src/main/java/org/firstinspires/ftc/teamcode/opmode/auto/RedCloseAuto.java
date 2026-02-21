@@ -93,8 +93,11 @@ public class RedCloseAuto extends LinearOpMode {
     private final Pose2d stack3 = new Pose2d(28,12,Math.toRadians(0));
     private final Pose2d endPose = new Pose2d(24, -15, Math.toRadians(-90));
     public static double hoodAngle = 0.4;
-    public VelConstraint slow = (pose2dDual, posePath, v) -> 20;
-    public VelConstraint normal = (pose2dDual, posePath, v) -> 300;
+
+    public VelConstraint gate = (pose2dDual, posePath, v) -> 25;
+
+    public VelConstraint slow = (pose2dDual, posePath, v) -> 30;
+    public VelConstraint normal = (pose2dDual, posePath, v) -> 60;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -123,9 +126,9 @@ public class RedCloseAuto extends LinearOpMode {
                                         {
                                             robot.storage.storage.OuttakeFacing = -1;
                                             Storage.StorageState.Order = robot.cam.getOrder();
-                                            robot.storage.storage.Slot[0]= Storage.ArtifactColor.PURPLE;
-                                            robot.storage.storage.Slot[1]= Storage.ArtifactColor.PURPLE;
-                                            robot.storage.storage.Slot[2]= Storage.ArtifactColor.GREEN;
+                                            Storage.StorageState.Slot[0]= Storage.ArtifactColor.PURPLE;
+                                            Storage.StorageState.Slot[1]= Storage.ArtifactColor.PURPLE;
+                                            Storage.StorageState.Slot[2]= Storage.ArtifactColor.GREEN;
 
                                         })
                                 ))),
@@ -139,7 +142,7 @@ public class RedCloseAuto extends LinearOpMode {
                         commandToAction(
                                 new SequentialCommand(
                                         new InstantCommand(() -> {
-                                            robot.turret.setTargetVelocity(2900);
+                                            robot.turret.setTargetVelocity(2700);
                                             robot.turret.hood.setTarget(hoodAngle);
                                         }),
 
@@ -156,6 +159,7 @@ public class RedCloseAuto extends LinearOpMode {
                                         new InstantCommand(() -> robot.turret.setTargetVelocity(0))
                                 )
                         ),
+                        //End of pre-load, Stack 3
                         new ParallelAction(
                                 robot.drive.actionBuilder(shootPose)
                                         .setTangent(Math.toRadians(0))
@@ -170,26 +174,26 @@ public class RedCloseAuto extends LinearOpMode {
                                         .build(),
                                 commandToAction(
                                         new SequentialCommand(
-                                                robot.intake.intake(),
-                                                robot.storage.SlotCheck(500),
-                                                robot.storage.nextBall(),
-                                                robot.storage.SlotCheck(500),
-                                                robot.storage.nextBall(),
-                                                robot.storage.SlotCheck(500),
-                                                robot.storage.nextBall(),
-                                                robot.intake.stop()
+                                            robot.intake.intake(),
+                                            robot.storage.distanceSwitch(3, 2200),
+                                            new InstantCommand(() ->
+                                            {
+                                                Storage.StorageState.Slot[0]= Storage.ArtifactColor.GREEN;
+                                                Storage.StorageState.Slot[1]= Storage.ArtifactColor.PURPLE;
+                                                Storage.StorageState.Slot[2]= Storage.ArtifactColor.PURPLE;
 
-                                        )
-                                )
+                                            }),
+                                            robot.intake.stop(),
+                                            robot.storage.outtakeMode(-1)
+                                ))
                         ),
+                        //Second Shoot
                         robot.drive.actionBuilder(new Pose2d(53, 12, Math.toRadians(0)))
                                 .setTangent(Math.toRadians(180))
                                 .splineToLinearHeading(shootPose, Math.toRadians(180),normal)
                                 .build(),
                         commandToAction(
                                 new SequentialCommand(
-                                        robot.storage.outtakeMode(-1),
-
                                         new InstantCommand(() -> {
                                             robot.turret.setTargetVelocity(2900);
                                             robot.turret.hood.setTarget(hoodAngle);
@@ -209,13 +213,86 @@ public class RedCloseAuto extends LinearOpMode {
                                         new InstantCommand(() -> robot.turret.setTargetVelocity(0))
                                 )
                         ),
-                        robot.drive.actionBuilder(shootPose)
-                                .setTangent(Math.toRadians(-45))
-                                .splineToLinearHeading(endPose,Math.toRadians(-45))
+                        //End of second shoot, Stack 1
+                        new ParallelAction(
+                                robot.drive.actionBuilder(shootPose)
+                                        .setTangent(Math.toRadians(-90))
+                                        .splineToLinearHeading(stack1,Math.toRadians(0))
+                                        .build(),
+                                commandToAction(robot.storage.intakeMode())
+                        ),
+                        new ParallelAction(
+                                robot.drive.actionBuilder(stack1)
+                                        .setTangent(Math.toRadians(180))
+                                        .splineToConstantHeading(new Vector2d(60, stack1.position.y), Math.toRadians(180), slow)
+                                        .build(),
+
+                                commandToAction(new SequentialCommand(
+                                        robot.intake.intake(),
+                                        robot.storage.distanceSwitch(3, 2200),
+                                        new InstantCommand(() ->
+                                        {
+                                            Storage.StorageState.Slot[0]= Storage.ArtifactColor.PURPLE;
+                                            Storage.StorageState.Slot[1]= Storage.ArtifactColor.PURPLE;
+                                            Storage.StorageState.Slot[2]= Storage.ArtifactColor.GREEN;
+
+                                        }),
+                                        robot.intake.stop(),
+                                        robot.storage.outtakeMode(-1)
+                                ))),
+                        //Third shoot
+                        robot.drive.actionBuilder(new Pose2d(60, 12, Math.toRadians(0)))
+                                .setTangent(Math.toRadians(180))
+                                .splineToLinearHeading(shootPose, Math.toRadians(180),normal)
                                 .build(),
+                        commandToAction(
+                                new SequentialCommand(
+                                        new InstantCommand(() -> {
+                                            robot.turret.setTargetVelocity(2900);
+                                            robot.turret.hood.setTarget(hoodAngle);
+                                        }),
 
+                                        robot.storage.sort(0),
+                                        robot.turret.WaitForRPM(250),
+                                        robot.storage.BallToOuttake(),
+                                        new InstantCommand(()->robot.turret.hood.setTarget(hoodAngle+0.008)),
+                                        robot.storage.sort(1),
+                                        robot.turret.WaitForRPM(250),
+                                        robot.storage.BallToOuttake(),
+                                        robot.storage.sort(2),
+                                        robot.turret.WaitForRPM(250),
+                                        robot.storage.BallToOuttake(),
 
-                        commandToAction(robot.storage.intakeMode())
+                                        new InstantCommand(() -> robot.turret.setTargetVelocity(500))
+                                )
+                        ),
+                        //End of third shoot, stack 2
+                        new ParallelAction(
+                                robot.drive.actionBuilder(shootPose)
+                                        .setTangent(Math.toRadians(0))
+                                        .splineToLinearHeading(stack2,Math.toRadians(0))
+                                        .build(),
+                                commandToAction(robot.storage.intakeMode())
+                        ),
+                        new ParallelAction(
+                                robot.drive.actionBuilder(stack2)
+                                        .setTangent(Math.toRadians(180))
+                                        .splineToConstantHeading(new Vector2d(53, stack2.position.y), Math.toRadians(180), slow)
+                                        .build(),
+
+                                commandToAction(new SequentialCommand(
+                                        robot.intake.intake(),
+                                        robot.storage.distanceSwitch(3, 2200),
+                                        new InstantCommand(() ->
+                                        {
+                                            Storage.StorageState.Slot[0]= Storage.ArtifactColor.PURPLE;
+                                            Storage.StorageState.Slot[1]= Storage.ArtifactColor.GREEN;
+                                            Storage.StorageState.Slot[2]= Storage.ArtifactColor.PURPLE;
+
+                                        }),
+                                        robot.intake.stop(),
+                                        robot.storage.outtakeMode(-1)
+                                )))
                 );
 
         waitForStart();
@@ -246,9 +323,9 @@ public class RedCloseAuto extends LinearOpMode {
 
             telemetry.addData("Order", robot.cam.getOrderString());
 
-            telemetry.addData("Stock [0]", robot.storage.storage.Slot[0]);
-            telemetry.addData("Stock [1]", robot.storage.storage.Slot[1]);
-            telemetry.addData("Stock [2]", robot.storage.storage.Slot[2]);
+            telemetry.addData("Stock [0]", Storage.StorageState.Slot[0]);
+            telemetry.addData("Stock [1]", Storage.StorageState.Slot[1]);
+            telemetry.addData("Stock [2]", Storage.StorageState.Slot[2]);
 
 //            telemetry.addData("Dex Current", robot.storage.spindexer.getPosition().get(0));
 //            telemetry.addData("Dex Target", robot.storage.spindexer.getTarget());

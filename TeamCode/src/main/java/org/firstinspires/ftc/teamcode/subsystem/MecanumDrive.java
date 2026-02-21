@@ -166,6 +166,7 @@ public class MecanumDrive  {
                 .build();
     }
     public static PIDController rotationPID = new PIDController(3.5,0, 0.09);
+    public static Pose2d resetPose;
     public Command driveFieldCentric(ProcessedGamepad gamepad, boolean flipRed, com.acmerobotics.roadrunner.Pose2d corner)
     {
 
@@ -177,7 +178,7 @@ public class MecanumDrive  {
                     ProcessedGamepad.Joystick.JoystickData rightStick = gamepad.right_stick.get();
                     if (gamepad.options.get() || gamepad.touchpad.get()) {
                         currentPose= new com.acmerobotics.roadrunner.Pose2d(0, 0, Math.toRadians(90));
-                        localizer.setPose(new Pose2d(0,0, Math.toRadians(90)));
+                        localizer.setPose(resetPose);
                         telemetry.addLine("LOCALIZER RESETED!");
                     }
 
@@ -246,31 +247,32 @@ public class MecanumDrive  {
 
         // drive model parameters
         public double inPerTick = 0.00198489276065501461101615482164;
-        public double lateralInPerTick = 0.0011684157603547806;
-        public double trackWidthTicks = 6449.470659804927;
+        public double lateralInPerTick = 0.0011379103242589962;
+        public double trackWidthTicks = 6312.526638680137;
 
         // feedforward parameters (in tick units)
-        public double kS = 1.5408819962455707;
-        public double kV = 0.00025079813810809705;
-        public double kA = 0.00008;
+        public double kS = 1.4859592293519428;
+        public double kV = 0.000171804859606018;
+        public double kA = 0.000125;
 
         // path profile parameters (in inches)
-        public double maxWheelVel = 75;
-        public double minProfileAccel = -75;
-        public double maxProfileAccel = 75;
+        public double maxWheelVel = 60;
+        public double minProfileAccel = -60;
+        public double maxProfileAccel = 60;
 
         // turn profile parameters (in radians)
         public double maxAngVel = Math.PI; // shared with path
         public double maxAngAccel = Math.PI;
 
         // path controller gains
-        public double axialGain =15;
-        public double lateralGain = 2.5;
-        public double headingGain = 3; // shared with turn
+        public double axialGain = 8;
+        public double lateralGain = 5;
+        public double headingGain = 5; // shared with turn
 
-        public double axialVelGain = 0.5;
+        public double axialVelGain = 0.35;
         public double lateralVelGain = 0.5;
-        public double headingVelGain = 0.6; // shared with turn
+        public double headingVelGain = 0.6;
+ // shared with turn
     }
 
     public static Params PARAMS = new Params();

@@ -46,7 +46,7 @@ public class Robot {
         this.storage = new Storage(mode);
         this.intake = new Intake(mode);
         this.drive = new MecanumDrive(mode.hardwareMap, opMode.telemetry);
-        this.turret = new Turret(mode, drive.localizer);
+        this.turret = new Turret(mode);
         this.cam = new Limelight(mode, drive.localizer);
         this.color = color;
 

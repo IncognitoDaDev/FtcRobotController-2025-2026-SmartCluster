@@ -26,8 +26,6 @@ import com.smartcluster.oracleftc.math.control.PIDController;
 import com.smartcluster.oracleftc.math.control.TrapezoidalMotionProfile;
 import com.smartcluster.oracleftc.math.filters.LowPassFilter;
 
-import org.firstinspires.ftc.teamcode.roadrunner.oraclelocalizer.SmartLocalizer;
-
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
@@ -46,27 +44,24 @@ public class Turret extends Subsystem {
     public final Actuator turret;
     public final Encoder encoderRot;
     public final ServoActuator hood;
+
+    public MecanumDrive drive;
     private Pose2d goal;
 
-    private AtomicBoolean enabledVel = new AtomicBoolean(true);
+    public AtomicBoolean enabledVel = new AtomicBoolean(true);
     public AtomicBoolean isAboutToShot = new AtomicBoolean(false);
 
-    // Velocity linear regression constants
-// Formula: velocity = VELOCITY_SLOPE * distance_cm + VELOCITY_INTERCEPT
-    private static final double VELOCITY_SLOPE = 5.202340;
-    private static final double VELOCITY_INTERCEPT = 1689.019787;
+    // velocity = VELOCITY_SLOPE * distance_cm + VELOCITY_INTERCEPT
+    private static final double VELOCITY_SLOPE = 5.245323;
+    private static final double VELOCITY_INTERCEPT = 1670.528036;
 
-    // Hood angle linear regression constants
-// Formula: hood = HOOD_SLOPE * velocity + HOOD_INTERCEPT
-    private static final double HOOD_SLOPE = 0.000271;
-    private static final double HOOD_INTERCEPT = -0.277722;
-
-    private SmartLocalizer localizer;
+    // hood = HOOD_SLOPE * velocity + HOOD_INTERCEPT
+    private static final double HOOD_SLOPE = 0.000286;
+    private static final double HOOD_INTERCEPT = -0.282233;
 
 
-    public Turret(OpMode opMode, SmartLocalizer localizer) {
+    public Turret(OpMode opMode) {
         super(opMode);
-        this.localizer = localizer;
 
         voltageSensor = hardwareMap.getAll(OracleLynxVoltageSensor.class).iterator().next();
 
@@ -100,7 +95,7 @@ public class Turret extends Subsystem {
             public boolean setTarget(double target) {
                 if(target<0.25) target = 0.25;
                 if(target>0.9) target = 0.9;
-                this.target.set(target);
+                this.target.set(target-0.03);
                 return true;
             }
         };
@@ -126,6 +121,7 @@ public class Turret extends Subsystem {
 
     public void setTracking(MecanumDrive drive, Pose2d goal)
     {
+        this.drive = drive;
         this.goal = goal;
     }
 
@@ -146,36 +142,28 @@ public class Turret extends Subsystem {
         targetVelocity = velocity;
     }
 
-    public double getDistanceToTarget(){
-        double currentX = localizer.getPose().value().position.x;
-        double currentY = localizer.getPose().value().position.y;
+    public double getDistanceToTarget(Pose2d currPos, com.acmerobotics.roadrunner.Pose2d corner){
+        double currentX = currPos.position.x;
+        double currentY = currPos.position.y;
 
-        double dx = goal.position.x - currentX;
-        double dy = goal.position.y - currentY;
+        double dx = corner.position.x - currentX;
+        double dy = corner.position.y - currentY;
         return Math.sqrt(dx * dx + dy * dy) * 2.54; // returns distance in cm
     }
 
-    public void setVelocityAndAngleByDist(){
-        double velocity = VELOCITY_SLOPE * getDistanceToTarget() + VELOCITY_INTERCEPT;
+    public void setVelocityAndAngleByDist(Pose2d currPos, Pose2d corner){
+        double velocity = VELOCITY_SLOPE * getDistanceToTarget(currPos, corner) + VELOCITY_INTERCEPT;
         double angle = getCurrentVelocity()*HOOD_SLOPE + HOOD_INTERCEPT;
 
         // No longer in zone? You say so?! Stop wasting energy then!!! - R
-        if (isInsideTheZone().get() || !Storage.StorageState.isEmpty())
-        {
-            enabledVel.set(true);
-        }
-        else
-        {
-            enabledVel.set(false);
-        }
+        enabledVel.set(isInsideTheZone(currPos).get());
 
         setTargetVelocity(velocity);
         hood.setTarget(angle);
     }
 
-    public Supplier<Boolean> isInsideTheZone()
+    public Supplier<Boolean> isInsideTheZone(Pose2d pose)
     {
-        com.smartcluster.oracleftc.math.Pose2d pose = localizer.getPose().value();
         double BigTriangle = Math.abs(pose.position.x)-4;
         double TinyTriangle = -Math.abs(pose.position.x)-7;
         return () -> pose.position.y >= BigTriangle || pose.position.y <= TinyTriangle;
@@ -208,7 +196,7 @@ public class Turret extends Subsystem {
     public Command VelocityUpdate() {
         return Command.builder()
                 .update(() -> {
-                    if (isAboutToShot.get()) setVelocityAndAngleByDist();
+                    if (isAboutToShot.get()) setVelocityAndAngleByDist(drive.getPose().value(), goal);
                     else {
                         setTargetVelocity(500);
                         hood.setTarget(0.55);
@@ -242,7 +230,8 @@ public class Turret extends Subsystem {
     {
         return new SequentialCommand(
                 hood.reset(),
-                turret.reset()
+                turret.reset(),
+                new InstantCommand(()->enabledVel.set(true))
                 );
     }
 
