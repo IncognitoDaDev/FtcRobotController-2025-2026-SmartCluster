@@ -91,7 +91,7 @@ public class HyperCluster extends LinearOpMode {
     private final Pose2d stack1 = new Pose2d(28,-35,Math.toRadians(0));
     private final Pose2d stack2 = new Pose2d(28,-10.5,Math.toRadians(0));
     private final Pose2d stack3 = new Pose2d(28,12,Math.toRadians(0));
-    private final Pose2d gatePose = new Pose2d(54, -1, Math.toRadians(-90));
+    private final Pose2d gatePose = new Pose2d(52, -1, Math.toRadians(-90));
     private final Pose2d endPose = new Pose2d(24, -15, Math.toRadians(-90));
     public static double hoodAngle = 0.4;
 
@@ -131,6 +131,7 @@ public class HyperCluster extends LinearOpMode {
                                         )),
                         commandToAction(
                                 new SequentialCommand(
+                                        new InstantCommand(()->robot.turret.setTargetVelocity(2700)),
                                         new InstantCommand(()->robot.turret.hood.setTarget(0.4)),
                                         robot.turret.WaitForRPM(2000),
                                         robot.storage.BallToOuttake(),
@@ -157,7 +158,7 @@ public class HyperCluster extends LinearOpMode {
                         new ParallelAction(
                                 robot.drive.actionBuilder(stack2)
                                         .setTangent(Math.toRadians(0))
-                                        .splineToConstantHeading(new Vector2d(56, -10.5), Math.toRadians(0),slow)
+                                        .splineToConstantHeading(new Vector2d(56, -12.5), Math.toRadians(0),slow)
                                         .build(),
                                 commandToAction(
                                         new SequentialCommand(
@@ -177,7 +178,7 @@ public class HyperCluster extends LinearOpMode {
                         ),
                         //INNER GATE 8, RELEASE
                         new ParallelAction(
-                                robot.drive.actionBuilder(new Pose2d(53, 12, Math.toRadians(0)))
+                                robot.drive.actionBuilder(new Pose2d(56, 12, Math.toRadians(0)))
                                     .setTangent(Math.toRadians(180))
                                     .splineToLinearHeading(gatePose, Math.toRadians(180),normal)
                                     .build(),
