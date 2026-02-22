@@ -33,16 +33,20 @@ import java.util.function.Supplier;
 public class Turret extends Subsystem {
 
 
-    private final DcMotorImplEx turretUp, turretDown, turretRot;
+    private final DcMotorImplEx turretUp, turretDown;
+
+//    private final DcMotorImplEx turretRot;
     private final ServoImplEx rightHood, leftHood;
     private final OracleLynxVoltageSensor voltageSensor;
-    public static TrapezoidalMotionProfile hoodMotionProfile = new TrapezoidalMotionProfile(12, 16, 16);
-    public static TrapezoidalMotionProfile turretMotionProfile = new TrapezoidalMotionProfile(80, 100, 100);
-    public static PIDController turretPID = new PIDController(0.025, 0.00002, 0.0019, 1);
-    public static MotorFeedforward turretFeedForward = new MotorFeedforward(0.01, 0.0015, 0);
+    public static TrapezoidalMotionProfile hoodMotionProfile = new TrapezoidalMotionProfile(30, 30, 30);
 
-    public final Actuator turret;
-    public final Encoder encoderRot;
+//    public static TrapezoidalMotionProfile turretMotionProfile = new TrapezoidalMotionProfile(80, 100, 100);
+//    public static PIDController turretPID = new PIDController(0.025, 0.00002, 0.0019, 1);
+//    public static MotorFeedforward turretFeedForward = new MotorFeedforward(0.01, 0.0015, 0);
+
+//    public final Actuator turret;
+//    public final Encoder encoderRot;
+
     public final ServoActuator hood;
 
     public MecanumDrive drive;
@@ -72,8 +76,8 @@ public class Turret extends Subsystem {
         turretDown = hardwareMap.get(DcMotorImplEx.class, "turretDown");
 
 
-        turretRot = hardwareMap.get(DcMotorImplEx.class, "turretRotate");
-        encoderRot = new RawEncoder(hardwareMap.get(DcMotorImplEx.class,"turretRotate"));
+//        turretRot = hardwareMap.get(DcMotorImplEx.class, "turretRotate");
+//        encoderRot = new RawEncoder(hardwareMap.get(DcMotorImplEx.class,"turretRotate"));
 
         hardwareMap.get(ServoImplEx.class, "leftHood");
         rightHood = hardwareMap.get(ServoImplEx.class, "rightHood");
@@ -100,23 +104,23 @@ public class Turret extends Subsystem {
             }
         };
 
-        turret = new Actuator(this, "turret", turretPID, turretMotionProfile, turretFeedForward, 2, turretRot) {
-            @Override
-            public Command reset() {
-                return new InstantCommand(encoderRot::reset);
-            }
-
-            @Override
-            public boolean setTarget(double target) {
-                this.target.set(target);
-                return true;
-            }
-
-            @Override
-            public DualNum<Time> getPosition() {
-                return encoderRot.getCurrentPosition().div(28).times(48).div(260).times(103.8);
-            }
-        };
+//        turret = new Actuator(this, "turret", turretPID, turretMotionProfile, turretFeedForward, 2, turretRot) {
+//            @Override
+//            public Command reset() {
+//                return new InstantCommand(encoderRot::reset);
+//            }
+//
+//            @Override
+//            public boolean setTarget(double target) {
+//                this.target.set(target);
+//                return true;
+//            }
+//
+//            @Override
+//            public DualNum<Time> getPosition() {
+//                return encoderRot.getCurrentPosition().div(28).times(48).div(260).times(103.8);
+//            }
+//        };
     }
 
     public void setTracking(MecanumDrive drive, Pose2d goal)
@@ -230,7 +234,7 @@ public class Turret extends Subsystem {
     {
         return new SequentialCommand(
                 hood.reset(),
-                turret.reset(),
+//                turret.reset(),
                 new InstantCommand(()->enabledVel.set(true))
                 );
     }

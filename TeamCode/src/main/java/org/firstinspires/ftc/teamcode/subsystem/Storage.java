@@ -274,7 +274,6 @@ public class Storage extends Subsystem {
     public Command WaitForBall(int maxBall, double maxDuration)
     {
         final ElapsedTime timer = new ElapsedTime(),
-                lastFinishedTurn = new ElapsedTime(),
                 delayEnter = new ElapsedTime();
 
         AtomicBoolean isSpin = new AtomicBoolean(false);
@@ -284,7 +283,6 @@ public class Storage extends Subsystem {
                 .init(() ->
                 {
                     timer.reset();
-                    lastFinishedTurn.reset();
                     delayEnter.reset();
                 })
                 .update(() -> {
@@ -292,12 +290,11 @@ public class Storage extends Subsystem {
                     {
                         if (spindexer.isNotInMotion().get()) {
                             isSpin.set(false);
-                            lastFinishedTurn.reset();
                         }
-                    } else if (lastFinishedTurn.milliseconds() > 200) { // Spindexer doesn't need to move, so scan all you can!
+                    } else  { // Spindexer doesn't need to move, so scan all you can!
                        if (isDelay.get())
                        {
-                           if (delayEnter.milliseconds() > 250) {
+                           if (delayEnter.milliseconds() > 130) {
                                isDelay.set(false);
                                isSpin.set(true);
                                storage.next();
@@ -310,7 +307,7 @@ public class Storage extends Subsystem {
                                ballCount.getAndIncrement();
                                StorageState.Slot[0] = dataScanned;
 
-                               if (!storage.isFull() || ballCount.get() < maxBall) {
+                               if (ballCount.get() < maxBall) {
                                    delayEnter.reset();
                                    isDelay.set(true);
                                }
@@ -318,9 +315,7 @@ public class Storage extends Subsystem {
                        }
                     }
                 })
-                .finished(() -> storage.isFull()
-                        || timer.milliseconds() > maxDuration
-                        || ballCount.get() >= maxBall)
+                .finished(() -> timer.milliseconds() > maxDuration || ballCount.get() >= maxBall)
                 .build();
     }
 
@@ -393,6 +388,29 @@ public class Storage extends Subsystem {
                 })
                 .update(() -> telemetry.addData("Looking for", ball))
                 .finished(spindexer.isNotInMotion())
+                .build();
+    }
+
+    public Command ManualBallSwitch(int ballsAmount, double timeBetweenMilliseconds)
+    {
+        final ElapsedTime timer = new ElapsedTime();
+
+        AtomicBoolean isSpin = new AtomicBoolean(false);
+        AtomicInteger ballCount = new AtomicInteger(0);
+        return Command.builder()
+                .init(timer::reset)
+                .update(() -> {
+                    if (isSpin.get())
+                    {
+                        if (spindexer.isNotInMotion().get()) {
+                            isSpin.set(false);
+                        }
+                    } else if (timer.milliseconds() > timeBetweenMilliseconds*(ballCount.get()+1)) {
+                        ballCount.getAndIncrement();
+                        isSpin.set(true);
+                    }
+                })
+                .finished(() -> ballCount.get() >= ballsAmount)
                 .build();
     }
 
