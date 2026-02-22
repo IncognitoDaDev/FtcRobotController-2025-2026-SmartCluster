@@ -93,17 +93,15 @@ import java.util.concurrent.atomic.AtomicReference;
     }
 
     private final Pose2d startPose = new Pose2d(-13.5, -59, Math.toRadians(-90));
-    private final Pose2d endPose = new Pose2d(-36, -52, Math.toRadians(0));
+    private final Pose2d endPose = new Pose2d(-36, -50, Math.toRadians(0));
 
-    private final Pose2d shootPose = new Pose2d(-18, -50, Math.toRadians(-62));
-    private final Pose2d farPose = new Pose2d(15,-54,Math.toRadians(-122));
-
+    private final Pose2d shootPose = new Pose2d(-20, -50, Math.toRadians(-63));
 
     private final Pose2d stack1 = new Pose2d(-27,-33.5, Math.toRadians(180));
     private final Pose2d stack2 = new Pose2d(-27,-10.5, Math.toRadians(180));
-    private final Pose2d stack3 = new Pose2d(-27,12.5, Math.toRadians(180));
+//    private final Pose2d stack3 = new Pose2d(-27,12.5, Math.toRadians(180));
 
-    public static double hoodAngle = 0.61, velocityTarget = 3100;
+    public static double hoodAngle = 0.615, velocityTarget = 3100;
 
     public VelConstraint slow = (pose2dDual, posePath, v) -> 30;
     public VelConstraint normal = (pose2dDual, posePath, v) -> 50;
@@ -276,34 +274,6 @@ import java.util.concurrent.atomic.AtomicReference;
                                 .setTangent(Math.toRadians(90))
                                 .splineToLinearHeading(endPose, Math.toRadians(90))
                                 .build()
-
-
-//                        //Third stack
-//                        robot.drive.actionBuilder(shootPose)
-//                                .setTangent(Math.toRadians(90))
-//                                .splineToLinearHeading(endPose, Math.toRadians(180))
-//                                .build()
-//                        commandToAction(robot.storage.intakeMode()),
-//                        new ParallelAction(
-//                            robot.drive.actionBuilder(stack3)
-//                                    .setTangent(Math.toRadians(-180))
-//                                    .splineToConstantHeading(new Vector2d(65, stack3.position.y), Math.toRadians(-180), gate)
-//                                    .build(),
-//
-//                            commandToAction(new SequentialCommand(
-//                                    robot.intake.intake(),
-//                                    robot.storage.distanceSwitch(3, 2200),
-//                                    new InstantCommand(() ->
-//                                    {
-//                                        Storage.StorageState.Slot[0]= Storage.ArtifactColor.GREEN;
-//                                        Storage.StorageState.Slot[1]= Storage.ArtifactColor.PURPLE;
-//                                        Storage.StorageState.Slot[2]= Storage.ArtifactColor.PURPLE;
-//
-//                                    }),
-//                                    robot.intake.stop(),
-//                                    robot.storage.outtakeMode(-1)
-//                            ))
-//                )
         );
 
         waitForStart();
